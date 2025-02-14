@@ -67,26 +67,24 @@ sz = size(imtest, /dim)
 dimx = sz[0]
 dimy = sz[1]
 
-if ~keyword_set(fov_mask_pars) then fov_mask_pars=[dimx,dimy,0]
-charis_generate_roi,output=fov_mask,roirange=fov_mask_pars,roidim=[dimx,dimy]
-outside_fov = where(fov_mask eq 0)
+if keyword_set(fov_mask_pars) then begin
+    charis_generate_roi,output=fov_mask,roirange=fov_mask_pars,roidim=[dimx,dimy]
+    outside_fov = where(fov_mask eq 0)
+endif
 
 for i=0,nfiles-1 do begin
     Lcube = readfits(files_polleft[i],h1L,/exten,/silent) ; Left pol
     Rcube = readfits(files_polright[i],h1R,/exten,/silent) ; Right pol
-
-    badl=where(Lcube eq 0)
-    badr=where(Rcube eq 0)
-    Lcube[badl] = !values.f_nan
-    Rcube[badr] = !values.f_nan
-    for Li=0,sz[2]-1 do begin
-        left_slice = Lcube[*,*,Li]
-        left_slice[outside_fov] = !values.f_nan
-        Lcube[*,*,Li] = left_slice
-        right_slice = Rcube[*,*,Li]
-        right_slice[outside_fov] = !values.f_nan
-        Rcube[*,*,Li] = right_slice
-    endfor
+    if keyword_set(fov_mask_pars) then begin
+        for Li=0,sz[2]-1 do begin
+            left_slice = Lcube[*,*,Li]
+            left_slice[outside_fov] = !values.f_nan
+            Lcube[*,*,Li] = left_slice
+            right_slice = Rcube[*,*,Li]
+            right_slice[outside_fov] = !values.f_nan
+            Rcube[*,*,Li] = right_slice
+        endfor
+    endif
 
     Icube = Lcube+Rcube ; Single sum cube on which to perform specphotcal
     bad = where(~finite(Icube))

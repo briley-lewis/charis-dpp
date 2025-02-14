@@ -3,7 +3,7 @@ pro charis_pdi_flatfield, pfname, prefname=prefname, suffname=suffname, darkflat
 if (N_PARAMS() eq 0 or keyword_set(help)) then begin
     print,'charis_pdi_flatfield.pro: Computation and application of CHARIS PDI master flatfield'
     print,"If the working directory already contains 'master_pdiflat.fits', it will be used."
-    print,"Otherwise, 'master_pdiflat.fits' will be computed from bright and dark PDI flats."
+    print,"Otherwise, 'master_pdiflat.fits' will be computed from bright and (if available) dark PDI flats."
     print,"Typically executed after 'charis_imprep' and before 'charis_subtract_sky'."
     print,'Written by K. Lawson (2021)'
     print,''
@@ -42,29 +42,33 @@ if ~keyword_set(prefname) then prefname='n'
 if ~keyword_set(suffname) then suffname='e'
 
 test=file_search('./master_pdiflat.fits',count=count)
-if count eq 0 then begin
+if count eq 0 or keyword_set(brightflatdir) then begin
     ; If the master flat doesn't already exist, create one.
-    if ~keyword_set(darkflatdir) then darkflatdir='./darkflats/'
+    
     if ~keyword_set(brightflatdir) then brightflatdir='./brightflats/'
+    if ~keyword_set(darkflatdir) then darkflatdir='./darkflats/'
 
-    darkflat_files = file_search(darkflatdir+'*.fits', count=ndark)
     brightflat_files = file_search(brightflatdir+'*.fits', count=nbright)
+    darkflat_files = file_search(darkflatdir+'*.fits', count=ndark)
 
-    h0 = headfits(darkflat_files[0], ext=0, /silent)
-    imtest = readfits(darkflat_files[0],h1,/exten,/silent)
+    h0 = headfits(brightflat_files[0], ext=0, /silent)
+    imtest = readfits(brightflat_files[0],h1,/exten,/silent)
     sz = size(imtest, /dim)
-
-    dark_array = fltarr(sz[0],sz[1],sz[2],ndark)
-    for i=0,ndark-1 do dark_array[*,*,*,i] = readfits(darkflat_files[i],/exten,/silent)
-    darkcube = median(dark_array, dimension=4, /even)
 
     bright_array = fltarr(sz[0],sz[1],sz[2],nbright)
     for i=0,nbright-1 do bright_array[*,*,*,i] = readfits(brightflat_files[i],/exten,/silent)
     brightcube = median(bright_array, dimension=4, /even)
+    flatcube = brightcube
 
+    if ndark gt 0 then begin
+        dark_array = fltarr(sz[0],sz[1],sz[2],ndark)
+        for i=0,ndark-1 do dark_array[*,*,*,i] = readfits(darkflat_files[i],/exten,/silent)
+        darkcube = median(dark_array, dimension=4, /even)
+        flatcube -= darkcube
+    endif
+    
     charis_generate_roi,output=fov_mask,roirange=[125,125,-26.9166],roidim=[sz[0],sz[1]]
     fov_mask = where(fov_mask eq 1)
-    flatcube = brightcube-darkcube
     for i=0,sz[2]-1 do begin
         flatslice = flatcube[*,*,i]
         flatslice = flatslice/(median(flatslice[fov_mask], /even))
@@ -73,7 +77,6 @@ if count eq 0 then begin
     endfor
     writefits,'master_pdiflat.fits',0,h0
     writefits,'master_pdiflat.fits',flatcube,h1,/append
-
 endif else begin
     ; If it DOES exist already, then load it.
     flatcube=readfits('master_pdiflat.fits',h1,/exten,/silent)
