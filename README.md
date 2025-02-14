@@ -91,15 +91,23 @@ A note on satellite spot contrasts:
 The CHARIS satellite spot contrast measurement has changed over the years. The pipeline currently does not have a decision tree that leads you to more recent values -- you may have to update them yourself, whether here or in [pyklip-charis](https://pyklip.readthedocs.io/en/latest/instruments/CHARIS.html). A guide to the best of my knowledge is below, and can be cited as T. Currie priv. comm.
 
 Using whatever the standard modulation frequency was:
+
 Before Aug 30 2017: 9.97e-04
+
 Aug 30 2017 to Dec 31 2021: 2.72e-03 (a Lozi+2018 calibration differs by ~8%, 2.94e-3)
+
 Dec 31 2021 to May 20 2022: 1.36e-03
+
 After May 20 2022: 1.25e-03
 
 If using 500 Hz modulation frequency:
+
 Before Dec 31 2021: ???????? (presumably no data)
+
 Dec 31 2021 to May 20 2022: 1.80e-03
+
 May 20 2022 to Oct 20 2022: ???????? (presumably no data)
+
 After Oct 20, 2022: 2.56e-03
 
 
