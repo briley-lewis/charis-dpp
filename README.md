@@ -1,12 +1,12 @@
-CHARIS Data Processing Pipeline [documentation under construction!]
+CHARIS Data Processing Pipeline
 ===============================================================
 
-The CHARIS Data Processing Pipeline is a full end-to-end, supported pipeline for processing and analyzing SCExAO/CHARIS integral field spectrograph data cubes.   
+The CHARIS Data Processing Pipeline is a full end-to-end, supported pipeline for processing and analyzing SCExAO/CHARIS integral field spectrograph data cubes. This fork contains substantial improvements to the Mueller matrix model for CHARIS pol mode made by Kellen Lawson (kdlawson on GitHub), plus minor edits and updates from Briley Lewis (briley-lewis on GitHub)
 
 Requirements: 
 -------------------------------
 - the distributed CHARIS-DPP package (available here)
-- an IDL license (code is not pre-compiled).   Note that a future release (~late 2021) will be available in Python 3.
+- an IDL license (code is not pre-compiled)
 - the IDL Astronomer User's Library.  http://idlastro.gsfc.nasa.gov/
 - SAOImage/DS9 or similar image display program (STRONGLY recommended but not strictly required)
 
@@ -19,7 +19,7 @@ To set up this package you need to do the following ...
 A. With Git
 
 1. cd to your preferred directory
-2. git clone https://github.com/thaynecurrie/charis-dpp.git
+2. git clone
 
 B. Manually
 
@@ -54,7 +54,7 @@ You should see a print out of the path to charis_test and the following message:
 Documentation:
 -----------------
 
-My plan is to provide full documentation on readthedocs at some point in the near future.   The full documentation will also included tutorials to cover standard cases for data reduction.   Stay tuned.
+work in progress :) 
 
 Overview:
 -----------
@@ -85,9 +85,3 @@ Overview:
 
 For __Disk sources__, steps 8--9 are replaced by a disk forward-modeling module
       - charis_aloci_disk_fwdmod, charis_klip_disk_fwdmod
-
-
-
-Quick Start Guide:
------------
-Coming Soon.
