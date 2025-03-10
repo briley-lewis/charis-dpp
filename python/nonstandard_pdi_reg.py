@@ -15,8 +15,9 @@ from skimage.registration._phase_cross_correlation import _upsampled_dft
 from scipy.ndimage import fourier_shift, shift
 import cv2
 from alive_progress import alive_bar
+from skimage.measure import centroid
 
-def register_cubes(datadir,offset=[31.758, 16.542],save_hypercube=False,save_plots=False):
+def register_cubes(datadir,offset=[31.758, 16.542],save_hypercube=False,save_plots=False,centroiding=True):
     """
     Function for registering CHARIS pol image cubes via cross-correlation. 
     Assumes data is in the format provided by CHARIS-DPP of n0001left.fits, n0001right.fits, etc.
@@ -28,7 +29,13 @@ def register_cubes(datadir,offset=[31.758, 16.542],save_hypercube=False,save_plo
         directory containing the data you want to register
         should have names like "n0001left.fits"
     offset : tuple, optional
-        offset in pixels to shift the data by, default is [31.758, 16.542] (from CHARIS-DPP charis_pdi_register_cube)
+        offset in pixels to shift the data by if centroiding=False, default is [31.758, 16.542] (from CHARIS-DPP charis_pdi_register_cube)
+    save_hypercube : bool, optional
+        whether to save the hypercube of registered data, default is False
+    save_plots : bool, optional
+        whether to save plots of the cross-correlation, default is False
+    centroiding : bool, optional
+        whether to use centroiding to determine the shift, default is True (False uses the offset parameter)
         
     Returns
     -------
@@ -44,14 +51,25 @@ def register_cubes(datadir,offset=[31.758, 16.542],save_hypercube=False,save_plo
     print("creating centered reference cubes")
     cntred_cubel = fits.getdata(prep_files_left[0])
     testcube_l = fits.getdata(prep_files_left[0])
+    cent = np.shape(testcube_l)[1]/2
     for i in range(np.shape(testcube_l)[0]):
-        cntred_image = shift(testcube_l[i], (offset[1],offset[0]))
+        #hardcoded values here are a hack to ignore junk at the edge of the FOV in centroiding
+        mask = np.zeros(np.shape(testcube_l[i])) # create a mask with the image's shape
+        mask[50:120,35:100] = 1 # create a mask
+        offset_centroid_y = -centroid(testcube_l[i]*mask)[0]+cent
+        offset_centroid_x = -centroid(testcube_l[i]*mask)[1]+cent
+        cntred_image = shift(testcube_l[i], (offset_centroid_y,offset_centroid_x))
         cntred_cubel[i,:,:] = cntred_image
 
     cntred_cuber = fits.getdata(prep_files_right[0])
     testcube_r = fits.getdata(prep_files_right[0])
     for i in range(np.shape(testcube_r)[0]):
-        cntred_image = shift(testcube_r[i], (-offset[1],-offset[0]))
+        #hardcoded values here are a hack to ignore junk at the edge of the FOV in centroiding
+        mask = np.zeros(np.shape(testcube_r[i])) # create a mask with the image's shape
+        mask[80:150,98:163] = 1 # create a mask 
+        offset_centroid_x = -centroid(testcube_r[i]*mask)[1]+cent
+        offset_centroid_y = -centroid(testcube_r[i]*mask)[0]+cent
+        cntred_image = shift(testcube_r[i], (offset_centroid_y,offset_centroid_x))
         cntred_cuber[i,:,:] = cntred_image
 
     #create mask for aliasing effects
@@ -85,7 +103,7 @@ def register_cubes(datadir,offset=[31.758, 16.542],save_hypercube=False,save_plo
                 cntred_data_tmp[i,:,:] = cntred_image*mask_left
             header['HISTORY'] = 'Registered to data cube 0001left.fits for each wavelength slice'
             header['HISTORY'] = 'Registration completed with skimage.phase_cross_correlation bfrom nonstandard_pdi_reg by B. Lewis (2025)'
-            fits.writeto(datadir+'n{:04d}left_reg.fits'.format(count),cntred_data_tmp,header,overwrite=True)
+            fits.writeto(datadir+'n{:04d}left_reg.fits'.format(count+1),cntred_data_tmp,header,overwrite=True)
             cntred_data_hypercubel[count,:,:,:] = cntred_data_tmp
             count+=1
             bar()
@@ -112,8 +130,8 @@ def register_cubes(datadir,offset=[31.758, 16.542],save_hypercube=False,save_plo
                 cntred_data_tmp[i,:,:] = cntred_image*mask_right
             header['HISTORY'] = 'Registered to data cube 0001right.fits for each wavelength slice'
             header['HISTORY'] = 'Registration completed with skimage.phase_cross_correlation bfrom nonstandard_pdi_reg by B. Lewis (2025)'
-            fits.writeto(datadir+'n{:04d}right_reg.fits'.format(count),cntred_data_tmp,header,overwrite=True)
-            cntred_data_hypercubel[count,:,:,:] = cntred_data_tmp
+            fits.writeto(datadir+'n{:04d}right_reg.fits'.format(count+1),cntred_data_tmp,header,overwrite=True)
+            cntred_data_hypercuber[count,:,:,:] = cntred_data_tmp
             count+=1
             bar()
 
@@ -159,7 +177,7 @@ def register_cubes(datadir,offset=[31.758, 16.542],save_hypercube=False,save_plo
     ax2.set_axis_off()
     ax2.set_title('Offset image')
 
-    ax3.imshow(cntred_data_hypercuber[0,19,:,:], cmap='gray',vmax=1e2)
+    ax3.imshow(cntred_data_hypercuber[0,19,:,:], cmap='gray',vmax=1e3)
     #ax3.scatter(100,100,marker='x',color='red')
     ax3.set_axis_off()
     ax3.set_title('Centered data image')
