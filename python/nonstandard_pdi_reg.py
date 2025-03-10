@@ -21,7 +21,7 @@ def register_cubes(datadir,offset=[31.758, 16.542],save_hypercube=False,save_plo
     """
     Function for registering CHARIS pol image cubes via cross-correlation. 
     Assumes data is in the format provided by CHARIS-DPP of n0001left.fits, n0001right.fits, etc.
-    Saves registered data as "n0001left_reg.fits", "n0001right_reg.fits", etc. to be compatible with next steps in CHARIS-DPP.
+    Saves registered data as "n0001leftreg.fits", "n0001rightreg.fits", etc. to be compatible with next steps in CHARIS-DPP.
 
     Parameters
     ----------
@@ -103,7 +103,7 @@ def register_cubes(datadir,offset=[31.758, 16.542],save_hypercube=False,save_plo
                 cntred_data_tmp[i,:,:] = cntred_image*mask_left
             header['HISTORY'] = 'Registered to data cube 0001left.fits for each wavelength slice'
             header['HISTORY'] = 'Registration completed with skimage.phase_cross_correlation bfrom nonstandard_pdi_reg by B. Lewis (2025)'
-            fits.writeto(datadir+'n{:04d}left_reg.fits'.format(count+1),cntred_data_tmp,header,overwrite=True)
+            fits.writeto(datadir+'n{:04d}leftreg.fits'.format(count+1),cntred_data_tmp,header,overwrite=True)
             cntred_data_hypercubel[count,:,:,:] = cntred_data_tmp
             count+=1
             bar()
@@ -130,7 +130,7 @@ def register_cubes(datadir,offset=[31.758, 16.542],save_hypercube=False,save_plo
                 cntred_data_tmp[i,:,:] = cntred_image*mask_right
             header['HISTORY'] = 'Registered to data cube 0001right.fits for each wavelength slice'
             header['HISTORY'] = 'Registration completed with skimage.phase_cross_correlation bfrom nonstandard_pdi_reg by B. Lewis (2025)'
-            fits.writeto(datadir+'n{:04d}right_reg.fits'.format(count+1),cntred_data_tmp,header,overwrite=True)
+            fits.writeto(datadir+'n{:04d}rightreg.fits'.format(count+1),cntred_data_tmp,header,overwrite=True)
             cntred_data_hypercuber[count,:,:,:] = cntred_data_tmp
             count+=1
             bar()
