@@ -26,7 +26,8 @@ def register_cubes(datadir,offset=[31.758, 16.542],save_hypercube=False,save_plo
     Parameters
     ----------
     datadir : string
-        directory containing the data you want to register
+        directory containing the "prep" folder of data you want to register
+        e.g. /Users/brileylewis/Documents/postdoc/europa/2023-07-30/reduc/
         should have names like "n0001left.fits"
     offset : tuple, optional
         offset in pixels to shift the data by if centroiding=False, default is [31.758, 16.542] (from CHARIS-DPP charis_pdi_register_cube)
@@ -42,8 +43,8 @@ def register_cubes(datadir,offset=[31.758, 16.542],save_hypercube=False,save_plo
     None
     """
 
-    prep_files_right = glob.glob(datadir+'*right.fits')
-    prep_files_left = glob.glob(datadir+'*left.fits')
+    prep_files_right = glob.glob(datadir+'prep/*right.fits')
+    prep_files_left = glob.glob(datadir+'prep/*left.fits')
 
     print(len(prep_files_left), 'files left', len(prep_files_right), 'files right')
 
@@ -101,9 +102,16 @@ def register_cubes(datadir,offset=[31.758, 16.542],save_hypercube=False,save_plo
                 ##shift cube to reference center
                 cntred_image = shift(data[i], shiftval)
                 cntred_data_tmp[i,:,:] = cntred_image*mask_left
-            header['HISTORY'] = 'Registered to data cube 0001left.fits for each wavelength slice'
-            header['HISTORY'] = 'Registration completed with skimage.phase_cross_correlation bfrom nonstandard_pdi_reg by B. Lewis (2025)'
-            fits.writeto(datadir+'n{:04d}leftreg.fits'.format(count+1),cntred_data_tmp,header,overwrite=True)
+            tmphdr = fits.getheader(file)
+            tmphdr['HISTORY'] = 'Registered to data cube 0001left.fits for each wavelength slice'
+            tmphdr['HISTORY'] = 'Registration completed with skimage.phase_cross_correlation bfrom nonstandard_pdi_reg by B. Lewis (2025)'
+            hdu = fits.PrimaryHDU()
+            hdu.header.extend(tmphdr.copy(strip=True))
+            image_hdu = fits.ImageHDU(data=cntred_data_tmp, name="data")
+            image_hdu.header.extend(tmphdr.copy(strip=True))
+            hdul = fits.HDUList([hdu,image_hdu])
+            hdul.writeto(datadir+'reg/n{:04d}leftreg.fits'.format(count+1),overwrite=True)
+
             cntred_data_hypercubel[count,:,:,:] = cntred_data_tmp
             count+=1
             bar()
@@ -128,9 +136,15 @@ def register_cubes(datadir,offset=[31.758, 16.542],save_hypercube=False,save_plo
                 ##shift cube to reference center
                 cntred_image = shift(data[i], shiftval)
                 cntred_data_tmp[i,:,:] = cntred_image*mask_right
-            header['HISTORY'] = 'Registered to data cube 0001right.fits for each wavelength slice'
-            header['HISTORY'] = 'Registration completed with skimage.phase_cross_correlation bfrom nonstandard_pdi_reg by B. Lewis (2025)'
-            fits.writeto(datadir+'n{:04d}rightreg.fits'.format(count+1),cntred_data_tmp,header,overwrite=True)
+            tmphdr = fits.getheader(file)
+            tmphdr['HISTORY'] = 'Registered to data cube 0001right.fits for each wavelength slice'
+            tmphdr['HISTORY'] = 'Registration completed with skimage.phase_cross_correlation bfrom nonstandard_pdi_reg by B. Lewis (2025)'
+            hdu = fits.PrimaryHDU()
+            hdu.header.extend(tmphdr.copy(strip=True))
+            image_hdu = fits.ImageHDU(data=cntred_data_tmp, name="data")
+            image_hdu.header.extend(tmphdr.copy(strip=True))
+            hdul = fits.HDUList([hdu,image_hdu])
+            hdul.writeto(datadir+'reg/n{:04d}rightreg.fits'.format(count+1),overwrite=True)
             cntred_data_hypercuber[count,:,:,:] = cntred_data_tmp
             count+=1
             bar()
