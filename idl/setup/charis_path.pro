@@ -10,7 +10,7 @@ function charis_path,pathname=pathname
 ;*****MODIFY THESE****
 
 ;1.
-charispath='/Users/brileylewis/Documents/postdoc/charis-dpp'
+charispath='/Users/brileylewis/Documents/postdoc/charis-dpp/'
 
 ;these models have are from the online substellar atmosphere model server: 
 ;http://svo2.cab.inta-csic.es/theory/newov2/
@@ -27,7 +27,7 @@ btsettldirectory='/Users/thaynecurrie/Research/Planets/DI/ames/btsettl/'
 ;****do NOT modify anything below this line
 
 modeldirectory=charispath+'models/'
-wavecaldirectory=charispath+'cals/'
+wavecaldirectory=charispath+'idl/cals/'
 filterresponsedirectory=charispath+'tools/filters/filter_response/'
 
 planetdirectory=charispath+'models/planetmodels/'

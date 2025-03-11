@@ -24,7 +24,7 @@ if ~keyword_set(manual) then begin
 ;Note: must change wavecal path in line 9
 
 filtname=strtrim(sxpar(header,'CAL_BAND',count=filtcount))  ;for right now, using the calibration band to define the mode since FILTNAME gets unpopulated.
-
+print,filtname
 
 if filtcount eq 0 then read,'Select the filter to use (lowres,J,H,K)',filtname
 
@@ -38,7 +38,9 @@ if ~keyword_set(wavecalfile) then begin
 ;broadband
 if filtname eq 'lowres' then begin
 wavecalfile='lowres_wvlh.txt'
-
+endif
+if filtname eq 'Broadband' then begin
+wavecalfile='lowres_wvlh.txt'
 endif
 
 if filtname eq 'J' then begin
