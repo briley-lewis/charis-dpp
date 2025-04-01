@@ -73,6 +73,9 @@ def hwp_match(f_sat):
         elif hwp_ang_i==67.5:
             hwp_pos_i = 3
         
+        if hwp_cycles.count(cycle_counter)>=4:
+            cycle_counter += 1
+        
         if hwp_ang_i==-1:
             pass
         else:
@@ -82,12 +85,27 @@ def hwp_match(f_sat):
             hwp_cycles.append(cycle_counter)
         hdul.close()
 
+    #now, do a check each cycle index appears exactly four times
+    cycles_to_remove = []
+    for v in np.unique(hwp_cycles):
+        if hwp_cycles.count(v)!=4:
+            print('Cycle '+str(v)+' does not have 4 entries')
+            cycles_to_remove.append(v)
+
     hwp_ang = np.asarray(hwp_ang)  
+    hwp_ang = np.delete(hwp_ang, np.where(np.isin(hwp_cycles,cycles_to_remove)))
     hwp_pos = np.asarray(hwp_pos)
-    hwp_cycles = np.asarray(hwp_cycles)
+    hwp_pos = np.delete(hwp_pos, np.where(np.isin(hwp_cycles,cycles_to_remove)))
     hwp_files = np.asarray(hwp_files)
+    hwp_files = np.delete(hwp_files, np.where(np.isin(hwp_cycles,cycles_to_remove)))
+    hwp_cycles = np.asarray(hwp_cycles)
+    hwp_cycles = np.delete(hwp_cycles, np.where(np.isin(hwp_cycles,cycles_to_remove)))
+
+    print('incomplete cycles removed')
+
     hwp_info = np.column_stack((hwp_files, hwp_pos, hwp_ang, hwp_cycles))
     np.savetxt(hwpfileout, hwp_info, delimiter='       ', fmt=['%.0d','%.0d','%06.04f','%.0d'],header='FILE, HWP_POS, HWP_ANG, CYCLE')
+    np.savetxt('index.txt', hwp_files, fmt='%d')
     print('HWP info saved to '+hwpfileout)
 
     #print('work in progress, no hwp log for you yet')
