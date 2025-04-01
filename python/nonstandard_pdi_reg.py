@@ -42,7 +42,7 @@ def register_cubes(datadir,offset=[31.758, 16.542],save_hypercube=False,save_plo
     -------
     None
     """
-
+    
     prep_files_right = glob.glob(datadir+'prep/*right.fits')
     prep_files_left = glob.glob(datadir+'prep/*left.fits')
 
