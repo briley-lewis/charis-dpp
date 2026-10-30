@@ -12,7 +12,7 @@
 ; CALLING SEQUENCE:
 ;   PLOTPAN, x, y, ...
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   PLOTPAN is almost identical to PLOT, except that it accounts for
 ;   panels and subpanels in the display.  In fact, after a short
@@ -63,21 +63,21 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
 pro plotpan, x, y, $
-             subpanel=subpanel, panel=panel, $
-             _EXTRA=extra
+  subpanel = subpanel, panel = panel, $
+  _extra = extra
+  compile_opt idl2
 
-  ;; Default is full-screen
-  if n_elements(panel) EQ 0 AND n_elements(subpanel) EQ 0 then begin
-      plot, x, y, _EXTRA=extra
+  ; ; Default is full-screen
+  if n_elements(panel) eq 0 and n_elements(subpanel) eq 0 then begin
+    plot, x, y, _extra = extra
   endif else begin
-      if n_elements(panel) EQ 0 then panel=[0.0,0.0,1.0,1.0]
-      plot, x, y, /normal, position=subcell(subpanel, panel, /marg), $
-        _EXTRA=extra
+    if n_elements(panel) eq 0 then panel = [0.0, 0.0, 1.0, 1.0]
+    plot, x, y, /normal, position = subcell(subpanel, panel, /marg), $
+      _extra = extra
   endelse
 
   return
 end
-

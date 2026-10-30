@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -44,10 +44,10 @@
 ;        the speed of light*.
 ;
 ;  The formula for computing the relativistic doppler shift is:
-;              
+;
 ;    NU1_NU0 =  (1 - U0 . V) * GAMMA
-;              
-;  where 
+;
+;  where
 ;    GAMMA is the Lorentz factor = 1/SQRT(1 - |V|^2)
 ;    "." is the vector dot product
 ;
@@ -105,49 +105,53 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-function srvdopp, u, v, classical=classical
+function srvdopp, u, v, classical = classical
+  compile_opt idl2
 
-  nu = n_elements(u)/3
-  nv = n_elements(v)/3
+  nu = n_elements(u) / 3
+  nv = n_elements(v) / 3
 
-  if nu EQ 0 OR nv EQ 0 then begin
-      message, 'USAGE: NU_NU0 = SRVDOPP(U, V)', /info
-      message, '   U = unit vector of photon in lab; '+$
-        'V is velocity of rocket in lab', /info
-      message, '   NU_NU0 = (freq. in rocket frame) / '+$
-        '(freq. in lab frame)', /info
-      return, -1d
+  if nu eq 0 or nv eq 0 then begin
+    message, 'USAGE: NU_NU0 = SRVDOPP(U, V)', /info
+    message, '   U = unit vector of photon in lab; ' + $
+      'V is velocity of rocket in lab', /info
+    message, '   NU_NU0 = (freq. in rocket frame) / ' + $
+      '(freq. in lab frame)', /info
+    return, -1d
   endif
 
-  ;; Expand either of the arguments
-  if nu NE nv AND nu NE 1 AND nv NE 1 then begin
-      message, 'ERROR: U and V must have the same number of vectors'
-  endif else if nu EQ 1 then begin
-      v1 = v
-      u1 = v*0
-      u1(0,*) = u(0) & u1(1,*) = u(1) & u1(2,*) = u(2)
-  endif else if nv EQ 1 then begin
-      u1 = u
-      v1 = u*0
-      v1(0,*) = v(0) & v1(1,*) = v(1) & v1(2,*) = v(2)
+  ; ; Expand either of the arguments
+  if nu ne nv and nu ne 1 and nv ne 1 then begin
+    message, 'ERROR: U and V must have the same number of vectors'
+  endif else if nu eq 1 then begin
+    v1 = v
+    u1 = v * 0
+    u1[0, *] = u[0]
+    u1[1, *] = u[1]
+    u1[2, *] = u[2]
+  endif else if nv eq 1 then begin
+    u1 = u
+    v1 = u * 0
+    v1[0, *] = v[0]
+    v1[1, *] = v[1]
+    v1[2, *] = v[2]
   endif else begin
-      u1 = u
-      v1 = v
+    u1 = u
+    v1 = v
   endelse
 
-  ;; Compute unit vector v, along with 1/gamma and 1 - 1/gamma
+  ; ; Compute unit vector v, along with 1/gamma and 1 - 1/gamma
   vunit = v1
-  vnorm = total(vunit^2,1)        ;; Momentarily = |V|^2
+  vnorm = total(vunit ^ 2, 1) ; ; Momentarily = |V|^2
 
-  if NOT keyword_set(classical) then begin
-      oogamma = sqrt(1 - vnorm)       ;; 1/gamma
-      ;; (1 - v . u) * gamma
-      return, (1-total(v1*u1,1))/oogamma
+  if not keyword_set(classical) then begin
+    oogamma = sqrt(1 - vnorm) ; ; 1/gamma
+    ; ; (1 - v . u) * gamma
+    return, (1 - total(v1 * u1, 1)) / oogamma
   endif else begin
-      ;; Classical Doppler shift
-      return, (1-total(v1*u1,1))
+    ; ; Classical Doppler shift
+    return, (1 - total(v1 * u1, 1))
   endelse
-
 end

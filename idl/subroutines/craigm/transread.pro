@@ -221,229 +221,228 @@
 ; Permission to use, copy and distribute unmodified copies for
 ; non-commercial purposes, and to modify and use for personal or
 ; internal use, is granted.  All other rights are reserved.
-;-
+; -
 
 pro transread, unit, l1, l2, l3, l4, l5, l6, l7, l8, l9, l10, $
-               l11, l12, l13, l14, l15, l16, l17, l18, l19, l20, $
-; NOTE: ADD COLUMNS HERE, as l21, l22, etc.  Remember to end lines
-; with a dollar-sign, as "l20" is above.
-               skiplines=skiplines, maxlines=maxlines, $
-               format=format, comment=comment, nocatch=nocatch, debug=debug, $
-               startcue=startcue, stopcue=stopcue, filename=filename, $
-               lines=lines, count=count, noclose=noclose, failcount=failcount
+  l11, l12, l13, l14, l15, l16, l17, l18, l19, l20, $
+  ; NOTE: ADD COLUMNS HERE, as l21, l22, etc.  Remember to end lines
+  ; with a dollar-sign, as "l20" is above.
+  skiplines = skiplines, maxlines = maxlines, $
+  format = format, comment = comment, nocatch = nocatch, debug = debug, $
+  startcue = startcue, stopcue = stopcue, filename = filename, $
+  lines = lines, count = count, noclose = noclose, failcount = failcount
+  compile_opt idl2
 
-  count = 0L               
-  if n_params() LE 1 then begin
-      message, 'USAGES: TRANSREAD, UNIT, VAR1, VAR2, ...', /info
-      message, '        TRANSREAD, UNIT, VAR1, VAR2, ..., FILENAME=FILENAME',$
-        /info
-      message, '        TRANSREAD, STRINGARRAY, VAR1, VAR2, ...', /info
-      return
+  count = 0l
+  if n_params() le 1 then begin
+    message, 'USAGES: TRANSREAD, UNIT, VAR1, VAR2, ...', /info
+    message, '        TRANSREAD, UNIT, VAR1, VAR2, ..., FILENAME=FILENAME', $
+      /info
+    message, '        TRANSREAD, STRINGARRAY, VAR1, VAR2, ...', /info
+    return
   endif
 
-  ;; Default parameters
-  if n_elements(maxlines) EQ 0 then maxlines = ishft(1L, 31) - 1
-  if n_elements(skiplines) EQ 0 then skiplines = 0L
-  s = strtrim(lindgen(n_params()-1)+1, 2)
-  
-  ;; Values are intermediately parsed into a structure.  The structure
-  ;; needs to be created once, here, with the correct data types for
-  ;; each column.  A special statement is composed explicitly and then
-  ;; executed.  The data type of only the *first* element of the input
-  ;; array is used.
+  ; ; Default parameters
+  if n_elements(maxlines) eq 0 then maxlines = ishft(1l, 31) - 1
+  if n_elements(skiplines) eq 0 then skiplines = 0l
+  s = strtrim(lindgen(n_params() - 1) + 1, 2)
+
+  ; ; Values are intermediately parsed into a structure.  The structure
+  ; ; needs to be created once, here, with the correct data types for
+  ; ; each column.  A special statement is composed explicitly and then
+  ; ; executed.  The data type of only the *first* element of the input
+  ; ; array is used.
 
   structexpr = 'st0 = create_struct('
-  for i = 0L, n_params()-2 do begin
-      structexpr = structexpr + '"d'+s(i)+'", l'+s(i)+'(0)'
-      if i LT n_params()-2 then structexpr = structexpr + ','
+  for i = 0l, n_params() - 2 do begin
+    structexpr = structexpr + '"d' + s[i] + '", l' + s[i] + '(0)'
+    if i lt n_params() - 2 then structexpr = structexpr + ','
   end
-  st0 = 0L
+  st0 = 0l
   structexpr = structexpr + ')'
   dummy = execute(structexpr)
   st = st0
 
-  ;; Initialize the statistics
-  lines = 0L
-  count = 0L
-  failcount = 0L
-  startwaiting = n_elements(startcue) GT 0  ;; If we wait for a STARTCUE
-  stopwaiting  = n_elements(stopcue)  GT 0  ;; If we wait for a STOPCUE
-  ccheck = n_elements(comment) GT 0
+  ; ; Initialize the statistics
+  lines = 0l
+  count = 0l
+  failcount = 0l
+  startwaiting = n_elements(startcue) gt 0 ; ; If we wait for a STARTCUE
+  stopwaiting = n_elements(stopcue) gt 0 ; ; If we wait for a STOPCUE
+  ccheck = n_elements(comment) gt 0
   done = 0
 
-  ;; It saves a *lot* of execution time to avoid the x = [x, newx]
-  ;; construction.  I allocate new memory for the "result" array in
-  ;; chunks, which saves much time.
-  outbuffersize = 0L
+  ; ; It saves a *lot* of execution time to avoid the x = [x, newx]
+  ; ; construction.  I allocate new memory for the "result" array in
+  ; ; chunks, which saves much time.
+  outbuffersize = 0l
 
-  ;; Check for a file unit, not a string array.
+  ; ; Check for a file unit, not a string array.
   sz = size(unit)
-  if n_elements(filename) GT 0 AND sz(sz(0)+1) NE 7 then begin
-      on_ioerror, OPEN_ERROR
-      openr, unit, filename, /get_lun
-      on_ioerror, NULL
-      if 0 then begin
-          OPEN_ERROR:
-          message, 'ERROR: could not open '+filename
-          return
-      endif
-  endif
-
-  ;; If reading from a string buffer
-  strread = 0
-  if sz(sz(0)+1) EQ 7 then begin
-      strread = 1
-      xeof = 0
-      nstrings = n_elements(unit)
-      j = 0L   ;; j is the index into the string buffer
-      goto, START_LOOP
-  endif
-
-  ;; Check for a valid file unit and that it is readable.  The catch
-  ;; expression here is used to trap invalid file handles.
-  catch, catcherror
-  if catcherror NE 0 then begin
-      catch, /cancel
-      message, 'ERROR: file unit '+strtrim(unit)+' must be open and readable.'
+  if n_elements(filename) gt 0 and sz[sz[0] + 1] ne 7 then begin
+    on_ioerror, open_error
+    openr, unit, filename, /get_lun
+    on_ioerror, null
+    if 0 then begin
+      open_error:
+      message, 'ERROR: could not open ' + filename
       return
+    endif
+  endif
+
+  ; ; If reading from a string buffer
+  strread = 0
+  if sz[sz[0] + 1] eq 7 then begin
+    strread = 1
+    xeof = 0
+    nstrings = n_elements(unit)
+    j = 0l ; ; j is the index into the string buffer
+    goto, start_loop
+  endif
+
+  ; ; Check for a valid file unit and that it is readable.  The catch
+  ; ; expression here is used to trap invalid file handles.
+  catch, catcherror
+  if catcherror ne 0 then begin
+    catch, /cancel
+    message, 'ERROR: file unit ' + strtrim(unit) + ' must be open and readable.'
+    return
   end
   xeof = eof(unit)
   if xeof then return
   catch, /cancel
 
-  START_LOOP:
-  ;; Set up a catch handler which deals with a conversion error
+  start_loop:
+  ; ; Set up a catch handler which deals with a conversion error
   catcherror = 0
-  if NOT keyword_set(nocatch) then catch, catcherror
-  if catcherror NE 0 then begin
-
-      ;; Some errors are worse than others.  If something goes wrong
-      ;; during a parse, we can still go on to read more.
-      if parsing then begin
-          parsing = 0
-          watchdog = 0
-          failcount = failcount + 1  ;; but we increase the "fail" count
-
-          DEBUG_CHECK:
-          if keyword_set(debug) then begin
-              print, '**DEBUGGING MESSAGE:  could not parse the following line'
-              print, '**   <'+strbuffer(0)+'>'
-              print, '**The error message was:'
-              print, '**   '+!err_string
-              print, '**The parsed variables were as follows:'
-              help, /struct, st
-              print, '**END OF DEBUGGING MESSAGE'
-          endif
-      endif
-          
-      goto, NEXT_LINE
-  endif
-  on_ioerror, DEBUG_CHECK
-
-  ;; We keep reading until one of the three conditions are satisfied:
-  ;; (a) the end of file (or end of string array) is reached; or
-  ;; (b) the maximum number of lines is read; or
-  ;; (c) the "stop" cue is encountered; or
-  ;; (d) an "utter" failure occurs, prevent us from reading more data.
-
-  while NOT xeof AND lines LT maxlines AND NOT done do begin
-
-      ;; The watchdog is here to prevent infinite loops.  Since the
-      ;; CATCH handler above causes the loop to restart, we could be
-      ;; in trouble.  If at least the read fails, then there is no
-      ;; sense in continuing the loop.  See the end of the loop where
-      ;; the value of the watchdog is checked. 
-      watchdog = 1
-      strbuffer = ''
-
-      ;; Either read from the file, or copy from the string array
-      if strread then strbuffer = unit(j) else readf, unit, strbuffer
-      
-      ;; Successful read indicates that the loop can repeat.
-      watchdog = 0
-
-      ;; Check for the STARTCUE if needed
-      if startwaiting then begin
-          if strpos(strbuffer, startcue(0)) GE 0 then startwaiting = 0
-          goto, NEXT_LINE
-      endif
-
-      ;; line count increases only once the STARTCUE is satisfied.
-      lines = lines + 1
-
-      ;; We may need to skip some lines, according to SKIPLINES
-      if lines LE skiplines then goto, NEXT_LINE
-
-      ;; Strip out surrounding white space.  Yes, white space should
-      ;; not make a difference.
-      trimbuffer = strtrim(strbuffer, 2)
-      if trimbuffer EQ '' then goto, NEXT_LINE
-
-      ;; Check for the STOPCUE if needed
-      if stopwaiting then begin
-          if strpos(strbuffer, stopcue(0)) GE 0 then begin
-              done = 1
-              goto, NEXT_LOOP
-          endif
-      endif
-
-      ;; Check for a comment character if requested
-      if ccheck then if strmid(strbuffer, 0, 1) EQ comment then $
-        goto, NEXT_LINE
-
-      ;; Parse data from the input string buffer.  Data is parsed into
-      ;; the structure ST for convenience.  The PARSING variable
-      ;; indicates to the CATCH handler that an error occurred here.
-      st = st0
-      parsing = 1
-      reads, strbuffer, st, format=format
+  if not keyword_set(nocatch) then catch, catcherror
+  if catcherror ne 0 then begin
+    ; ; Some errors are worse than others.  If something goes wrong
+    ; ; during a parse, we can still go on to read more.
+    if parsing then begin
       parsing = 0
+      watchdog = 0
+      failcount = failcount + 1 ; ; but we increase the "fail" count
 
-      ;; Increase the size of the result buffer as needed.  Minimum
-      ;; size is 128 elements.  Growth rate doubles until the
-      ;; increment exceeds 4096.
-      while count GE outbuffersize do begin
-          if outbuffersize EQ 0 then outbuffersize = 64L
-          outbuffersize = outbuffersize + (outbuffersize < 4096L)
-          newresult = make_array(outbuffersize, value=st)
-          if n_elements(result) GT 0 then newresult(0) = result
-          result = temporary(newresult)
-      endwhile
-      result(count) = st
+      debug_check:
+      if keyword_set(debug) then begin
+        print, '**DEBUGGING MESSAGE:  could not parse the following line'
+        print, '**   <' + strbuffer[0] + '>'
+        print, '**The error message was:'
+        print, '**   ' + !err_string
+        print, '**The parsed variables were as follows:'
+        help, /struct, st
+        print, '**END OF DEBUGGING MESSAGE'
+      endif
+    endif
 
-      ;; Upon a successful parse, then increase the count.
-      count = count + 1
+    goto, next_line
+  endif
+  on_ioerror, debug_check
 
-      ;; Update status variables for either the input file or the
-      ;; string array.
-      NEXT_LINE:
-      if strread then begin
-          j = j + 1
-          xeof = j GE nstrings
-      endif else begin
-          xeof = eof(unit)
-      endelse
-      
-      NEXT_LOOP:
-      ;; Watchdog is checked here to prevent infinite loops, as noted above.
-      if watchdog then done = 1
+  ; ; We keep reading until one of the three conditions are satisfied:
+  ; ; (a) the end of file (or end of string array) is reached; or
+  ; ; (b) the maximum number of lines is read; or
+  ; ; (c) the "stop" cue is encountered; or
+  ; ; (d) an "utter" failure occurs, prevent us from reading more data.
+
+  while not xeof and lines lt maxlines and not done do begin
+    ; ; The watchdog is here to prevent infinite loops.  Since the
+    ; ; CATCH handler above causes the loop to restart, we could be
+    ; ; in trouble.  If at least the read fails, then there is no
+    ; ; sense in continuing the loop.  See the end of the loop where
+    ; ; the value of the watchdog is checked.
+    watchdog = 1
+    strbuffer = ''
+
+    ; ; Either read from the file, or copy from the string array
+    if strread then strbuffer = unit[j] else readf, unit, strbuffer
+
+    ; ; Successful read indicates that the loop can repeat.
+    watchdog = 0
+
+    ; ; Check for the STARTCUE if needed
+    if startwaiting then begin
+      if strpos(strbuffer, startcue[0]) ge 0 then startwaiting = 0
+      goto, next_line
+    endif
+
+    ; ; line count increases only once the STARTCUE is satisfied.
+    lines = lines + 1
+
+    ; ; We may need to skip some lines, according to SKIPLINES
+    if lines le skiplines then goto, next_line
+
+    ; ; Strip out surrounding white space.  Yes, white space should
+    ; ; not make a difference.
+    trimbuffer = strtrim(strbuffer, 2)
+    if trimbuffer eq '' then goto, next_line
+
+    ; ; Check for the STOPCUE if needed
+    if stopwaiting then begin
+      if strpos(strbuffer, stopcue[0]) ge 0 then begin
+        done = 1
+        goto, next_loop
+      endif
+    endif
+
+    ; ; Check for a comment character if requested
+    if ccheck then if strmid(strbuffer, 0, 1) eq comment then $
+      goto, next_line
+
+    ; ; Parse data from the input string buffer.  Data is parsed into
+    ; ; the structure ST for convenience.  The PARSING variable
+    ; ; indicates to the CATCH handler that an error occurred here.
+    st = st0
+    parsing = 1
+    reads, strbuffer, st, format = format
+    parsing = 0
+
+    ; ; Increase the size of the result buffer as needed.  Minimum
+    ; ; size is 128 elements.  Growth rate doubles until the
+    ; ; increment exceeds 4096.
+    while count ge outbuffersize do begin
+      if outbuffersize eq 0 then outbuffersize = 64l
+      outbuffersize = outbuffersize + (outbuffersize < 4096l)
+      newresult = make_array(outbuffersize, value = st)
+      if n_elements(result) gt 0 then newresult[0] = result
+      result = temporary(newresult)
+    endwhile
+    result[count] = st
+
+    ; ; Upon a successful parse, then increase the count.
+    count = count + 1
+
+    ; ; Update status variables for either the input file or the
+    ; ; string array.
+    next_line:
+    if strread then begin
+      j = j + 1
+      xeof = j ge nstrings
+    endif else begin
+      xeof = eof(unit)
+    endelse
+
+    next_loop:
+    ; ; Watchdog is checked here to prevent infinite loops, as noted above.
+    if watchdog then done = 1
   end
 
-  FINISH:
-  on_ioerror, NULL
+  finish:
+  on_ioerror, null
   catch, /cancel
-  ;; Close the file if needed
-  if n_elements(filename) GT 0 AND NOT keyword_set(noclose) then begin
-      free_lun, unit
+  ; ; Close the file if needed
+  if n_elements(filename) gt 0 and not keyword_set(noclose) then begin
+    free_lun, unit
   endif
 
-  ;; Finally, extract the elements from the result structure
-  if count GT 0 then begin
-      result = result(0:count-1)
-      for i = 0L, n_params()-2 do begin
-          copyexpr = 'l'+s(i)+' = result.('+strtrim(i,2)+')'
-          dummy = execute(copyexpr)
-      endfor
+  ; ; Finally, extract the elements from the result structure
+  if count gt 0 then begin
+    result = result[0 : count - 1]
+    for i = 0l, n_params() - 2 do begin
+      copyexpr = 'l' + s[i] + ' = result.(' + strtrim(i, 2) + ')'
+      dummy = execute(copyexpr)
+    endfor
   end
 
   return

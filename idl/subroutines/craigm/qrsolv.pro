@@ -33,7 +33,7 @@
 ;
 ;  If pivoting was performed in the factorization, the permutation
 ;  vector IPVT returned by QRFAC must also be passed to QRSOLV.
-;  
+;
 ;
 ; PARAMETERS:
 ;
@@ -91,81 +91,83 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-function qrsolv, q, r, b, pivots=ipvt0
+function qrsolv, q, r, b, pivots = ipvt0
+  compile_opt idl2
 
-  if n_params() EQ 0 then begin
-      USAGE:
-      message, 'USAGE:', /info
-      message, 'X = QRSOLV(Q, R, B, [PIVOTS=IPVT])', /info
-      message, '  Q and R are factorization from QRFAC', /info
-      message, '  B is right hand side of equation Q # X = B', /info
-      return, 0
+  if n_params() eq 0 then begin
+    usage:
+    message, 'USAGE:', /info
+    message, 'X = QRSOLV(Q, R, B, [PIVOTS=IPVT])', /info
+    message, '  Q and R are factorization from QRFAC', /info
+    message, '  B is right hand side of equation Q # X = B', /info
+    return, 0
   endif
 
   sz = size(q)
-  m = sz(1)
-  n = sz(2)
-  if sz(0) NE 2 OR m LT n then $
-    goto, USAGE
+  m = sz[1]
+  n = sz[2]
+  if sz[0] ne 2 or m lt n then $
+    goto, usage
 
   szr = size(r)
-  if szr(0) NE 2 OR szr(1) NE szr(2) OR szr(1) NE n then $
-    goto, USAGE
+  if szr[0] ne 2 or szr[1] ne szr[2] or szr[1] ne n then $
+    goto, usage
 
-  if n_elements(b) NE m then $
-    goto, USAGE
+  if n_elements(b) ne m then $
+    goto, usage
 
-  delm = lindgen(n) * (n+1) ;; Diagonal elements of r
+  delm = lindgen(n) * (n + 1) ; ; Diagonal elements of r
 
-  ;; Default pivoting if not specified
-  if n_elements(ipvt0) EQ 0 then ipvt = lindgen(n) $
+  ; ; Default pivoting if not specified
+  if n_elements(ipvt0) eq 0 then ipvt = lindgen(n) $
   else ipvt = ipvt0
 
-  ;; Multiply QT * B to get QTB.  Because Q is stored as reflectors,
-  ;; they must be expanded explicitly.
+  ; ; Multiply QT * B to get QTB.  Because Q is stored as reflectors,
+  ; ; they must be expanded explicitly.
   wa4 = b
-  for j=0L, n-1 do begin
-      lj = ipvt(j)
-      temp3 = q(j,lj)
-      if temp3 NE 0 then begin
-          fj = q(j:*,lj)
-          wj = wa4(j:*)
-          ;; *** optimization wa4(j:*)
-          wa4(j) = wj - fj * total(fj*wj) / temp3  
-      endif
+  for j = 0l, n - 1 do begin
+    lj = ipvt[j]
+    temp3 = q[j, lj]
+    if temp3 ne 0 then begin
+      fj = q[j : *, lj]
+      wj = wa4[j : *]
+      ; ; *** optimization wa4(j:*)
+      wa4[j] = wj - fj * total(fj * wj) / temp3
+    endif
   endfor
-  qtb = wa4(0:n-1)
+  qtb = wa4[0 : n - 1]
 
-  ;; Get some initial parameters
-  diag = r(delm)
+  ; ; Get some initial parameters
+  diag = r[delm]
   x = qtb
 
-  ;; Solve the triangular system for x.  If the system is singular
-  ;; then obtain a least squares solution
+  ; ; Solve the triangular system for x.  If the system is singular
+  ; ; then obtain a least squares solution
   nsing = n
-  wh = where(diag EQ 0, ct)
-  if ct GT 0 then begin
-      nsing = wh(0)
-      x(nsing:*) = 0
+  wh = where(diag eq 0, ct)
+  if ct gt 0 then begin
+    nsing = wh[0]
+    x[nsing : *] = 0
   endif
 
-  if nsing GE 1 then begin
-      ;; Could use LUSOL here, but it turns out that the largest
-      ;; expense for most reasonable problems is in computing QT*B,
-      ;; rather than the solution here.  For huge problems where that
-      ;; is not true, you are going to run into other problems.
-      x(nsing-1) = x(nsing-1)/diag(nsing-1) ;; Degenerate case
-      ;; *** Reverse loop ***
-      for j=nsing-2,0,-1 do begin  
-          sum = total(r(j+1:nsing-1,j)*x(j+1:nsing-1))
-          x(j) = (x(j)-sum)/diag(j)
-      endfor
+  if nsing ge 1 then begin
+    ; ; Could use LUSOL here, but it turns out that the largest
+    ; ; expense for most reasonable problems is in computing QT*B,
+    ; ; rather than the solution here.  For huge problems where that
+    ; ; is not true, you are going to run into other problems.
+    x[nsing - 1] = x[nsing - 1] / diag[nsing - 1] ; ; Degenerate case
+    ; ; *** Reverse loop ***
+    for j = nsing - 2, 0, -1 do begin
+      sum = total(r[j + 1 : nsing - 1, j] * x[j + 1 : nsing - 1])
+      x[j] = (x[j] - sum) / diag[j]
+    endfor
   endif
 
-  ;; Permute the components of x back to original
-  xp = x & xp(ipvt) = x
+  ; ; Permute the components of x back to original
+  xp = x
+  xp[ipvt] = x
 
   return, xp
 end

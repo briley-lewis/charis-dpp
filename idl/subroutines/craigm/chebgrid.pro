@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -17,7 +17,7 @@
 ; CALLING SEQUENCE:
 ;   p = CHEBGRID(T, X, [ DXDT, NPOINTS=, NPOLY=, NGRANULE= , $
 ;                RMS=, DRMS=, RESIDUALS=, DRESIDUALS= , $
-;                XMATRIX=, DXMATRIX=, RESET=, 
+;                XMATRIX=, DXMATRIX=, RESET=,
 ;                DERIV_WEIGHT= ] )
 ;
 ; DESCRIPTION:
@@ -113,7 +113,7 @@
 ;   different, depending on whether derivative information is known or
 ;   not. ]
 ;
-;   
+;
 ; INPUTS:
 ;
 ;   T - array of regularly sampled *independent* variables.  The number
@@ -133,7 +133,7 @@
 ;              Default: 8
 ;
 ;   NPOINTS - number of points per granule that are fitted.  NPOINTS
-;             must be at least 2, and a factor of NGRANULE. 
+;             must be at least 2, and a factor of NGRANULE.
 ;             Default: NGRANULE
 ;
 ;   NPOLYNOMIAL - number of Chebyshev polynomial terms per fit.
@@ -186,7 +186,7 @@
 ; EXAMPLE:
 ;
 ;   ;; Estimate Chebyshev coefficients for the function SIN(X), on the
-;   ;; interval [-1,+1].  
+;   ;; interval [-1,+1].
 ;   xx = dindgen(9)/4d - 1d   ;; Regular grid from -1 to 1 (9 points)
 ;   yy = sin(xx)              ;; Function values, sin(x), ...
 ;   dy = cos(xx)              ;; ... and derivatives
@@ -230,243 +230,251 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-;; Utility function: compute XMATRIX and DXMATRIX using Newhall approach
-pro chebpcmat, npts, npoly, xmat, vmat, dweight=weight0
+; ; Utility function: compute XMATRIX and DXMATRIX using Newhall approach
+pro chebpcmat, npts, npoly, xmat, vmat, dweight = weight0
+  compile_opt idl2
 
-  ;; n0 is the number of intervals in Cheb approx.
+  ; ; n0 is the number of intervals in Cheb approx.
   n0 = npts - 1
-  if n_elements(weight0) EQ 0 then $
+  if n_elements(weight0) eq 0 then $
     weight = 0.16d $
   else $
-    weight = weight0(0)
+    weight = weight0[0]
 
   tmat = dblarr(npoly, npts)
   tdot = tmat
 
   cj = dblarr(npoly)
-  xj = 1d - 2d*dindgen(npts)/n0
-  for i = 0, npoly-1 do begin
-      cj(*) = 0 & cj(i) = 1
-      tmat(i,*) = chebeval(xj, cj, deriv=v)
-      tdot(i,*) = v
+  xj = 1d - 2d * dindgen(npts) / n0
+  for i = 0, npoly - 1 do begin
+    cj[*] = 0
+    cj[i] = 1
+    tmat[i, *] = chebeval(xj, cj, deriv = v)
+    tdot[i, *] = v
   endfor
 
-  ;; Form matrix T*W
-  tw = dblarr(2,npts,npoly)
-  tw(0,*,*) = transpose(tmat)
-  tw(1,*,*) = transpose(tdot) * weight
+  ; ; Form matrix T*W
+  tw = dblarr(2, npts, npoly)
+  tw[0, *, *] = transpose(tmat)
+  tw[1, *, *] = transpose(tdot) * weight
 
-  ;; Form matrix T*WT
-  twt = reform(tw(0,*,*),npts,npoly) ## tmat + $
-    reform(tw(1,*,*),npts,npoly) ## tdot
+  ; ; Form matrix T*WT
+  twt = reform(tw[0, *, *], npts, npoly) ## tmat + $
+    reform(tw[1, *, *], npts, npoly) ## tdot
 
-  tw  = reform(tw, 2*npts, npoly, /overwrite)
+  tw = reform(tw, 2 * npts, npoly, /overwrite)
   twt = reform(twt, npoly, npoly, /overwrite)
 
-  ;; Augment matrix T*W to get matrix C2
-  c2 = dblarr(2*npts,npoly+4)
-  c2(*,0:npoly-1) = tw
-  c2(0,npoly)          = 1 & c2(1,npoly+1)        = 1
-  c2(2*npts-2,npoly+2) = 1 & c2(2*npts-1,npoly+3) = 1
+  ; ; Augment matrix T*W to get matrix C2
+  c2 = dblarr(2 * npts, npoly + 4)
+  c2[*, 0 : npoly - 1] = tw
+  c2[0, npoly] = 1
+  c2[1, npoly + 1] = 1
+  c2[2 * npts - 2, npoly + 2] = 1
+  c2[2 * npts - 1, npoly + 3] = 1
 
-  ;; Augment matrix T*WT to get the matrix C1
-  c1 = dblarr(npoly+4,npoly+4)
-  c1(0:npoly-1,0:npoly-1) = twt
+  ; ; Augment matrix T*WT to get the matrix C1
+  c1 = dblarr(npoly + 4, npoly + 4)
+  c1[0 : npoly - 1, 0 : npoly - 1] = twt
 
-  c1(0:npoly-1,npoly+0) = tmat(*,0)
-  c1(0:npoly-1,npoly+1) = tdot(*,0)
-  c1(0:npoly-1,npoly+2) = tmat(*,npts-1)
-  c1(0:npoly-1,npoly+3) = tdot(*,npts-1)
+  c1[0 : npoly - 1, npoly + 0] = tmat[*, 0]
+  c1[0 : npoly - 1, npoly + 1] = tdot[*, 0]
+  c1[0 : npoly - 1, npoly + 2] = tmat[*, npts - 1]
+  c1[0 : npoly - 1, npoly + 3] = tdot[*, npts - 1]
 
-  c1(npoly:*,0:npoly-1) = transpose(c1(0:npoly-1,npoly:*))
+  c1[npoly : *, 0 : npoly - 1] = transpose(c1[0 : npoly - 1, npoly : *])
 
-  ;; Compute matrix C1^(-1)
+  ; ; Compute matrix C1^(-1)
   c1inv = invert(c1)
-  ;; Compute matrix C1^(-1) C2
+  ; ; Compute matrix C1^(-1) C2
   c1c2 = c1inv ## c2
 
-  c1c2 = reform(c1c2, 2,npts,npoly+4)
-  c1c2 = reverse(c1c2,2)
-  c1c2 = reform(c1c2, 2*npts,npoly+4)
+  c1c2 = reform(c1c2, 2, npts, npoly + 4)
+  c1c2 = reverse(c1c2, 2)
+  c1c2 = reform(c1c2, 2 * npts, npoly + 4)
 
-  ii = lindgen(npts)*2
-  xmat = c1c2(ii,0:npoly-1)   ;; Split into terms multiplying Y and VY
-  vmat = c1c2(ii+1,0:npoly-1)
+  ii = lindgen(npts) * 2
+  xmat = c1c2[ii, 0 : npoly - 1] ; ; Split into terms multiplying Y and VY
+  vmat = c1c2[ii + 1, 0 : npoly - 1]
 
   return
 end
 
-;; Utility function: compute XMATRIX only, using only the constraint
-;; on the function values at the endpoints.
+; ; Utility function: compute XMATRIX only, using only the constraint
+; ; on the function values at the endpoints.
 pro chebpcmat_xonly, npts, npoly, xmat
+  compile_opt idl2
 
-  ;; n0 is the number of points in Cheb approx.
+  ; ; n0 is the number of points in Cheb approx.
   n0 = npts - 1
-  
+
   tmat = dblarr(npoly, npts)
 
   cj = dblarr(npoly)
-  xj = 1d - 2d*dindgen(npts)/n0
-  for i = 0, npoly-1 do begin
-      cj(*) = 0 & cj(i) = 1
-      tmat(i,*) = chebeval(xj, cj, deriv=v)
+  xj = 1d - 2d * dindgen(npts) / n0
+  for i = 0, npoly - 1 do begin
+    cj[*] = 0
+    cj[i] = 1
+    tmat[i, *] = chebeval(xj, cj, deriv = v)
   endfor
 
-  ;; Augment matrix T to get matrix C2
-  c2 = dblarr(npts,npoly+2)
-  c2(*,0:npoly-1) = transpose(tmat)
-  c2(0,npoly)     = 1
-  c2(npts-1,npoly+1) = 1
+  ; ; Augment matrix T to get matrix C2
+  c2 = dblarr(npts, npoly + 2)
+  c2[*, 0 : npoly - 1] = transpose(tmat)
+  c2[0, npoly] = 1
+  c2[npts - 1, npoly + 1] = 1
 
-  ;; Augment matrix T*WT to get the matrix C1
-  c1 = dblarr(npoly+2,npoly+2)
-  c1(0:npoly-1,0:npoly-1) = transpose(tmat) ## tmat
+  ; ; Augment matrix T*WT to get the matrix C1
+  c1 = dblarr(npoly + 2, npoly + 2)
+  c1[0 : npoly - 1, 0 : npoly - 1] = transpose(tmat) ## tmat
 
-  c1(0:npoly-1,npoly+0) = tmat(*,0)
-  c1(0:npoly-1,npoly+1) = tmat(*,npts-1)
+  c1[0 : npoly - 1, npoly + 0] = tmat[*, 0]
+  c1[0 : npoly - 1, npoly + 1] = tmat[*, npts - 1]
 
-  c1(npoly:*,0:npoly-1) = transpose(c1(0:npoly-1,npoly:*))
+  c1[npoly : *, 0 : npoly - 1] = transpose(c1[0 : npoly - 1, npoly : *])
 
-  ;; Compute matrix C1^(-1)
+  ; ; Compute matrix C1^(-1)
   c1inv = invert(c1)
-  ;; Compute matrix C1^(-1) C2
+  ; ; Compute matrix C1^(-1) C2
   c1c2 = c1inv ## c2
 
-  c1c2 = reform(c1c2, npts,npoly+2)
-  c1c2 = reverse(c1c2,1)
-  xmat = c1c2(*,0:npoly-1)
+  c1c2 = reform(c1c2, npts, npoly + 2)
+  c1c2 = reverse(c1c2, 1)
+  xmat = c1c2[*, 0 : npoly - 1]
 
   return
 end
 
-function chebgrid, t, x, dxdt, ngranule=ngran0, npoints=npts0, $
-                   npolynomial=npoly0, deriv_weight=dweight0, $
-                   rms=rms, drms=drms, residuals=resid, dresiduals=dresid, $
-                   xmatrix=xmatrix, dxmatrix=dxmatrix, reset=reset
+function chebgrid, t, x, dxdt, ngranule = ngran0, npoints = npts0, $
+  npolynomial = npoly0, deriv_weight = dweight0, $
+  rms = rms, drms = drms, residuals = resid, dresiduals = dresid, $
+  xmatrix = xmatrix, dxmatrix = dxmatrix, reset = reset
+  compile_opt idl2
 
-  ;; Default processing
-  if n_elements(ngran0) EQ 0 then ngran = 8 $
-  else ngran = round(ngran0(0)) > 2
+  ; ; Default processing
+  if n_elements(ngran0) eq 0 then ngran = 8 $
+  else ngran = round(ngran0[0]) > 2
 
-  if n_elements(npts0) EQ 0 then npts = ngran $
-  else npts = round(npts0(0)) > 2
+  if n_elements(npts0) eq 0 then npts = ngran $
+  else npts = round(npts0[0]) > 2
 
-  if n_elements(npoly0) EQ 0 then npoly = 7 $
-  else npoly = round(npoly0(0)) > 2
+  if n_elements(npoly0) eq 0 then npoly = 7 $
+  else npoly = round(npoly0[0]) > 2
 
-  ;; Error checking
-  if ngran LT npts then begin
-      message, 'ERROR: Granule size ('+strtrim(ngran,2)+') is too '+ $
-        'small for number of samples ('+strtrim(npts,2)+')'
-      return, !values.d_nan
+  ; ; Error checking
+  if ngran lt npts then begin
+    message, 'ERROR: Granule size (' + strtrim(ngran, 2) + ') is too ' + $
+      'small for number of samples (' + strtrim(npts, 2) + ')'
+    return, !values.d_nan
   endif
-  
-  ;; Be sure NGRAN is a multiple of NPTS - or not.  Instead, a warning
-  ;; message is printed in the loop.
-;  if abs(double(ngran)/npts - round(ngran/npts)) GT 1d-5 then begin
-;      message, 'ERROR: NPOINTS must be a multiple of NGRANULE'
-;      return, !values.d_nan
-;  endif
-  
-  ;; Be sure we are solving a least-squares problem.  If the number of
-  ;; polynomials is too great then it becomes underconstrained, not
-  ;; overconstrained.
-  if n_elements(dxdt) GT 0 then begin
-      if npoly GE 2*(npts+1) then $
-        message, 'ERROR: NPOLYNOMIAL must be less than 2*(NPOINTS+1)'
+
+  ; ; Be sure NGRAN is a multiple of NPTS - or not.  Instead, a warning
+  ; ; message is printed in the loop.
+  ; if abs(double(ngran)/npts - round(ngran/npts)) GT 1d-5 then begin
+  ; message, 'ERROR: NPOINTS must be a multiple of NGRANULE'
+  ; return, !values.d_nan
+  ; endif
+
+  ; ; Be sure we are solving a least-squares problem.  If the number of
+  ; ; polynomials is too great then it becomes underconstrained, not
+  ; ; overconstrained.
+  if n_elements(dxdt) gt 0 then begin
+    if npoly ge 2 * (npts + 1) then $
+      message, 'ERROR: NPOLYNOMIAL must be less than 2*(NPOINTS+1)'
   endif else begin
-      if npoly GE npts+1 then $
-        message, 'ERROR: NPOLYNOMIAL must be less than NPOINTS+1'
+    if npoly ge npts + 1 then $
+      message, 'ERROR: NPOLYNOMIAL must be less than NPOINTS+1'
   endelse
-  
-  ;; Begin size checking of input matrices - we may be able to use the
-  ;; previously computed version.
+
+  ; ; Begin size checking of input matrices - we may be able to use the
+  ; ; previously computed version.
   szx = size(xmatrix)
   szv = size(dxmatrix)
 
-  ;; Cases: recompute because existing X matrix is wrong size;
-  ;;        recompute because existing V matrix is wrong size;
-  ;;        recompute because a V matrix was passed, but no DXDT was
-  redo_x = (szx(0) NE 2 OR szx(1) NE npts+1 OR szx(2) NE npoly)
-  redo_v = (n_elements(dxdt) GT 0 AND $
-            (szv(0) NE 2 OR szv(1) NE npts+1 OR szv(2) NE npoly))
-  no_v = (n_elements(dxdt) EQ 0 AND n_elements(dxmatrix) GT 0)
+  ; ; Cases: recompute because existing X matrix is wrong size;
+  ; ;        recompute because existing V matrix is wrong size;
+  ; ;        recompute because a V matrix was passed, but no DXDT was
+  redo_x = (szx[0] ne 2 or szx[1] ne npts + 1 or szx[2] ne npoly)
+  redo_v = (n_elements(dxdt) gt 0 and $
+    (szv[0] ne 2 or szv[1] ne npts + 1 or szv[2] ne npoly))
+  no_v = (n_elements(dxdt) eq 0 and n_elements(dxmatrix) gt 0)
 
-  ;; Actual recomputation of matrices
-  if redo_x OR redo_v OR no_v OR keyword_set(reset) then begin
-      COMPUTE_CHEBMAT:
-      xmatrix = 0 & dummy = temporary(xmatrix)
-      dxmatrix = 0 & dummy = temporary(dxmatrix)
+  ; ; Actual recomputation of matrices
+  if redo_x or redo_v or no_v or keyword_set(reset) then begin
+    compute_chebmat:
+    xmatrix = 0
+    dummy = temporary(xmatrix)
+    dxmatrix = 0
+    dummy = temporary(dxmatrix)
 
-      if n_elements(dxdt) GT 0 then $
-        chebpcmat, npts+1, npoly, xmatrix, dxmatrix, dweight=dweight0 $
-      else $
-        chebpcmat_xonly, npts+1, npoly, xmatrix
+    if n_elements(dxdt) gt 0 then $
+      chebpcmat, npts + 1, npoly, xmatrix, dxmatrix, dweight = dweight0 $
+    else $
+      chebpcmat_xonly, npts + 1, npoly, xmatrix
   endif
 
-  rms = 0.*x(0)
+  rms = 0. * x[0]
   drms = rms
-  chebm = dblarr(npoly, (n_elements(x)-1)/ngran)
-  resid = x*0.
+  chebm = dblarr(npoly, (n_elements(x) - 1) / ngran)
+  resid = x * 0.
   dresid = resid
 
-  ispan = lindgen(npts+1)*(ngran/npts)
+  ispan = lindgen(npts + 1) * (ngran / npts)
   imax = max(ispan)
-  ng = 0L
-  for ibase = 0, n_elements(x)-1, ngran do begin
-      if ibase EQ n_elements(x)-1 then goto, DONE
-      if n_elements(x)-ibase LT ngran+1 then begin
-          nlost = n_elements(x)-ibase
-          message, 'WARNING: last '+strtrim(nlost,2)+' elements of X '+$
-            'were discarded because they formed only a fractional granule.', $
-            /info
-          goto, DONE
-      endif
+  ng = 0l
+  for ibase = 0, n_elements(x) - 1, ngran do begin
+    if ibase eq n_elements(x) - 1 then goto, done
+    if n_elements(x) - ibase lt ngran + 1 then begin
+      nlost = n_elements(x) - ibase
+      message, 'WARNING: last ' + strtrim(nlost, 2) + ' elements of X ' + $
+        'were discarded because they formed only a fractional granule.', $
+        /info
+      goto, done
+    endif
 
-      tspan  = [t(ibase), t(ibase+imax)]
-      tgran = t(ibase:ibase+imax-1)-t(ibase)
-      dt     = tspan(1) - tspan(0)
-      tspan  = tspan - tspan(0)
+    tspan = [t[ibase], t[ibase + imax]]
+    tgran = t[ibase : ibase + imax - 1] - t[ibase]
+    dt = tspan[1] - tspan[0]
+    tspan = tspan - tspan[0]
 
-      ;; Compute the X portion of the coefficients
-      xgran  = x(ibase+ispan)
-      chebi  = xmatrix ## xgran
+    ; ; Compute the X portion of the coefficients
+    xgran = x[ibase + ispan]
+    chebi = xmatrix ## xgran
 
-      ;; Compute the DXDT portion if it is available
-      if n_elements(dxdt) GT 0 then begin
-          dxgran = dxdt(ibase+ispan) * dt/2.
-          chebi = chebi + dxmatrix ## dxgran
+    ; ; Compute the DXDT portion if it is available
+    if n_elements(dxdt) gt 0 then begin
+      dxgran = dxdt[ibase + ispan] * dt / 2.
+      chebi = chebi + dxmatrix ## dxgran
 
-          ;; Statistics - V first, then X comes later
-          xmod = chebeval(tgran, chebi, interval=tspan, derivative=dxmod)
+      ; ; Statistics - V first, then X comes later
+      xmod = chebeval(tgran, chebi, interval = tspan, derivative = dxmod)
 
-          ;; DXDT portion of statistics
-          dresid(ibase:ibase+imax-1) = dxdt(ibase:ibase+imax-1) -  dxmod
-          diff_dx = (dxdt(ibase:ibase+imax-1) - dxmod)^2
-          drms = drms + total(diff_dx)
+      ; ; DXDT portion of statistics
+      dresid[ibase : ibase + imax - 1] = dxdt[ibase : ibase + imax - 1] - dxmod
+      diff_dx = (dxdt[ibase : ibase + imax - 1] - dxmod) ^ 2
+      drms = drms + total(diff_dx)
+    endif else begin
+      ; ; Statistics - X only
 
-      endif else begin
-          ;; Statistics - X only
+      xmod = chebeval(tgran, chebi, interval = tspan)
+    endelse
 
-          xmod = chebeval(tgran, chebi, interval=tspan)
-      endelse
+    ; ; Finish statistics with X portion
+    resid[ibase : ibase + imax - 1] = x[ibase : ibase + imax - 1] - xmod
+    diff_x = (x[ibase : ibase + imax - 1] - xmod) ^ 2
+    rms = rms + total(diff_x)
 
-      ;; Finish statistics with X portion
-      resid(ibase:ibase+imax-1) = x(ibase:ibase+imax-1) -  xmod
-      diff_x  = (   x(ibase:ibase+imax-1) -  xmod)^2
-      rms  =  rms + total(diff_x)
-
-      ;; Append to existing coefficient list
-      chebm(*,ng) = chebi(*)
-      ng = ng + 1L
+    ; ; Append to existing coefficient list
+    chebm[*, ng] = chebi[*]
+    ng = ng + 1l
   endfor
-  
-  DONE:
-  ;; Final adjustments to statistics
-  rms  = sqrt( rms / ngran)
-  if n_elements(dxdt) GT 0 then drms = sqrt(drms / ngran)
+
+  done:
+  ; ; Final adjustments to statistics
+  rms = sqrt(rms / ngran)
+  if n_elements(dxdt) gt 0 then drms = sqrt(drms / ngran)
 
   return, chebm
 end

@@ -1,4 +1,4 @@
-pro charis_rdiklip,pfname,refpath=refpath,prefname=prefname,suffname=suffname,nfwhm=nfwhm,drsub=drsub0,$
+pro charis_rdiklip,pfname,refpath=refpath,prefname=prefname,suffname=suffname,psfrefsuffname=psfrefsuffname,nfwhm=nfwhm,drsub=drsub0,$
 npca=npca,meansub=meansub,$
 rsubval=rsubval,$
 meanadd=meanadd,$
@@ -47,6 +47,8 @@ print,"*outfile - the name of the output file"
 
 goto,endofprogram
 endif
+
+starttime=systime(/seconds)
 
 if ~keyword_set(angoffset) then angoffset=charis_get_constant(name='angoffset') ;nominally 2.2 deg
 
@@ -114,7 +116,6 @@ endelse
 endif
 
 filenum=nbrlist(flist)
-;files=filelist(filenum,nfiles,prefix=prefname,suffix='_f',/gz)
 
 if ~keyword_set(fc) then begin
 files=filelist(filenum,nfiles,prefix=prefname,suffix=suffname)
@@ -133,7 +134,7 @@ endif
 filestmp=filelist(filenum,nfiles,prefix=prefname,suffix='_tmp',ext='.dat')
 
 ;**vestigal, keep in case you want to normalize by the radial profile (probably not)
-filesprof=filelist(filenum,nfiles,prefix=prefname,suffix='_prof',ext='.fits')
+;filesprof=filelist(filenum,nfiles,prefix=prefname,suffix='_prof',ext='.fits')
 ;**
 
 if ~keyword_set(fc) then begin
@@ -146,20 +147,48 @@ endif
 
 nlist=indgen(nfiles)
 
+if ~keyword_set(fwdmod) then begin
+;LOGGING
+;the command line call
+
+dpp_command=(recall_commands())[0]
+
+;setting up log file
+currenttime=systime()
+ct=strsplit(currenttime,/extract,' ')
+;format is month, day, hms, year
+currenttime_log=ct[1]+ct[2]+'_'+ct[4]+'_'+ct[3]
+trimmed_time_log=ct[1]+ct[2]+'_'+ct[4]
+logfilename=currenttime_log+'.log'
+logfilenametrimmed=trimmed_time_log
+
+;now, look to see if logfile exists
+checklog_list=file_search('./log/'+logfilenametrimmed+'*',count=count_checklog)
+checklog=checklog_list[n_elements(checklog_list)-1]
+
+if count_checklog eq 0 then begin
+logname='./log/'+logfilename
+openw,11,logname
+printf,11,ct[3],dpp_command,format='(a,x,a)'
+endif else begin
+logname='./'+checklog
+openw,11,logname,/append
+printf,11,ct[3],dpp_command,format='(a,x,a)'
+endelse
+;*****
+endif
+
 ;*************
 
-
+if ~keyword_set(psfrefsuffname) then psfrefsuffname=suffname
 ;********Reference Library*****
 if keyword_set(refpath) then begin
 if ~keyword_set(rsubval) then begin
-;reffilenames=file_search(refpath+'/reduc/reg/'+'*.fits')
-reffilenames=file_search(refpath+'/reduc/reg/'+'*'+suffname+'.fits')
+reffilenames=file_search(refpath+'/reduc/reg/'+'*'+psfrefsuffname+'.fits')
 endif else begin
-;reffilenames=file_search(refpath+'/reduc/rsub/'+'*.fits')
-reffilenames=file_search(refpath+'/reduc/rsub/'+'*'+suffname+'.fits')
+reffilenames=file_search(refpath+'/reduc/rsub/'+'*'+psfrefsuffname+'.fits')
 ;print,reffilenames
 endelse
-;reffilenames=file_search(refpath+'*.fits')
 
 endif else begin
 reffilenames=dialog_pickfile(title="Select Reference PSF library Files",/multiple)
@@ -222,18 +251,14 @@ if ~keyword_set(na) then begin
     if size(na,/type) eq 7 then na=float(strsplit(na,', ',/extract))
     if na[0] eq 0 then na=200.
 endif
-print,'files',files[0]
-;h=headfits(reducdir1+files[0])
 test=readfits(reducdir1+files[0],/exten,h1)
 h0=headfits(reducdir1+files[0],ext=0)
-;test=readfits(reducdir1+files[0],/exten)
+
 ;get north-up value
 northpa=sxpar(h0,'TOT_ROT',count=northcount)
 
 dim=sxpar(h1,'naxis1')
 xc=dim/2 & yc=dim/2
-print,dim,xc,yc
-print,size(test)
 
 ;Now Get the Wavelength Vector
 filter=sxpar(h0,'FILTNAME',count=filtcount)
@@ -314,7 +339,6 @@ coeffstouse=where(il_use eq il,ncoeffstouse)
 
 if ncoeffstouse gt 0 then begin
 c_use2=ck_use[coeffstouse]
-;il_use2=il_use[coeffstouse]
 eigenvect_use2=eigenvect_use[coeffstouse]
 ir_use2=ir_use[coeffstouse]
 nf_use2=nf_use[coeffstouse]
@@ -364,11 +388,6 @@ for nf=0,nfiles-1 do begin
     if keyword_set(fwdmod) then begin
     im_fwd=(readfits(reducdir1+filesfwd[nf],/exten,horig,/silent))[*,*,il]
     endif
-    ;print,'reading in file ',files[nf]
-
-    ;help,im
-    ;writefits,'im.fits',im
-    ;stop
 
     for ir=0,nrim-1 do begin
         ia=read_binary(tmpdir+'indices_a'+nbr2txt(ir,3)+'.dat',data_type=3)
@@ -383,7 +402,7 @@ for nf=0,nfiles-1 do begin
         free_lun,funit
         endif
 
-        ;calcule le bruit dans cet anneau
+        ;noise calculation - not used for now
         noise_im[ir,nf]=median(abs(im[ia]-median(im[ia])))/0.6745
     endfor
     el[nf]=sxpar(h0,'altitude')*!dtor
@@ -434,13 +453,6 @@ endif
         string(r,format='(f5.1)')+$
         ' [>='+string(ri,format='(f5.1)')+', <'+string(rf,format='(f5.1)')+']...'
 
-    ;print,' Annulus '+strtrim(ir+1,2)+'/'+strtrim(nrsub,2)+' at radius '+$
-    ;  string(r,format='(f5.1)')+$
-    ;  ' [>='+string(ri,format='(f5.1)')+', <'+string(rf,format='(f5.1)')+']...'
-
-    ;aire de region a ce rayon
-    ;area of this region has radius
-
     if n_elements(na) eq 1 then area=na*!pi*(fwhm/2.)^2 $
       else area=((0.5+atan((r-na[2])/na[3])/!pi)*(na[1]-na[0])+na[0])*!pi*(fwhm/2.)^2
 
@@ -464,7 +476,6 @@ endif
         r1opt=ri
         ;number of annulus section
         nt=round((2*!pi*(r1opt+dropt/2.)*dropt)/area)>1
-        ;print,'nt is',nt,r1opt,dropt,area
 
         ;dropt for annulus with sections of exact area
 
@@ -622,7 +633,6 @@ endif
        ;meanopt[nf]=median(annuli[isub,nf])
        meanopt[nf]=mean(annuli[isub,nf],/nan)
        annuli[isub,nf]-=meanopt[nf]
-       ;optreg[*,nf]-=mean(optreg[isub,nf],/nan)
  
        if keyword_set(fwdmod) then begin
          meanopt_fwd[nf]=mean(annuli_fwd[isub,nf],/nan)
@@ -638,7 +648,6 @@ endif
 
        endif
 
-        ;optreg=annuli[isub,*]
         optreg=annuliref[isub,*]
         optreg_sci=annuli[isub,*]
         if keyword_set(fwdmod) then optreg_fwd=annuli_fwd[isub,*]
@@ -650,20 +659,24 @@ endif
 ;        z<=(abs(optreg/noise_im[floor((distarr(ia[iopt])-rim[0])/drim)#replicate(1,nfiles)]) lt 15.)
 
         ;other way
-        z=optreg_sci
+        z=optreg
+        z2=optreg_sci
         z/=(replicate(1,n_elements(isub))#median(abs(z),dim=1))
         z/=(median(abs(z),dim=2)#replicate(1,nfiles))
-        z=(abs(z) lt 7 and finite(z) eq 1)
+        z2/=(replicate(1,n_elements(isub))#median(abs(z2),dim=1))
+        z2/=(median(abs(z2),dim=2)#replicate(1,nfiles))
+        z=(abs(z) lt 7 and finite(z) eq 1 and abs(z2) lt 7 and finite(z2) eq 1)
+        ;z=(abs(z) lt 7 and finite(z) eq 1)
 
 
         ;for a given pixel [i,*] look to see whether an image pixel that is deviant
 
         igoodf=where(min(z,dim=2),cgood)
         if cgood lt 1 then continue
-        ;optreg=optreg[igoodf,*]
-        ;optreg_sci=optreg_sci[igoodf,*]
+        optreg=optreg[igoodf,*]
+        optreg_sci=optreg_sci[igoodf,*]
         ;isub=isub[igoodf]
-        ;if keyword_set(fwdmod) then optreg_fwd=optreg_fwd[igoodf,*]
+        if keyword_set(fwdmod) then optreg_fwd=optreg_fwd[igoodf,*]
 
         ;loop on all images and made the last
         for nf=0,nfiles-1 do begin
@@ -700,12 +713,10 @@ if keyword_set(usecoeff) then begin
 coeffstouse=where(nf_use3 eq nf,ncoeffstouse)
 
 if ncoeffstouse gt 0 then begin
-;c=ck_use[coeffstouse]
 c=c_use3[coeffstouse]
 eigenvect=eigenvect_use3[coeffstouse]
 
 ;now, reform the eigenvectors and eigenvalues
-;help,eigenvect,c1,npca,data_mat_fwd
 eigenvect=reform(eigenvect,c1,npca)
 eigenval=(reform(c,c1,npca))[0,*]
 endif
@@ -757,8 +768,8 @@ endif
 ;diagnostic tests
              ;ref=ref+coeff*reform(pc[k,*])
 
-             ref=ref+coeff*reform(pc[k,*])
-             ;ref[igoodf]=ref[igoodf]+coeff*reform(pc[k,*])
+             ;ref=ref+coeff*reform(pc[k,*])
+             ref[igoodf]=ref[igoodf]+coeff*reform(pc[k,*])
 
               ;print,coeff
 
@@ -771,22 +782,22 @@ endif
 ;             coeff_selfsub2=total(reform(optreg[*,nf]*reform(pc[k,*])))    ;<N|KL>DKL
              ;coeff_selfsub1=total(reform(optreg_fwd[*,nf]*reform(dpc[k,*])))   ;<S|DKL>KL
              ;coeff_selfsub2=total(reform(optreg_fwd[*,nf]*reform(pc[k,*])))    ;<S|KL>DKL
-             ref_fwd=ref_fwd+coeff_oversub*reform(pc[k,*])
+             ;ref_fwd=ref_fwd+coeff_oversub*reform(pc[k,*])
+             ref_fwd[igoodf]=ref_fwd[igoodf]+coeff_oversub*reform(pc[k,*])
 
              endif
             endfor
 
-            reftot=0.
 
                 diff=annuli[isub,nf]-ref
+
+;diagnostic
                 ;diff=annuli[isub,nf]
                 ;diff=ref
 
 ;if you are forward-modeling, then output the annealed section of the synthetic signal, not the subtracted image section
                 if keyword_set(fwdmod) then difffwd=annuli_fwd[isub,nf]-ref_fwd
-                ;difffwd=annuli_fwd[isub,nf]
 
-                ;diff=annuli[isub,nf]
                 diff=float(diff)
                 if keyword_set(fwdmod) then difffwd=float(difffwd)
 
@@ -795,6 +806,7 @@ endif
 
                 ;if keyword_set(fwdmod) then difffwd=float(ref_fwd)
 ;test images - debugging
+
 goto,skipme
 if keyword_set(verbose) then begin
                 testimage=fltarr(dim,dim)
@@ -804,10 +816,6 @@ if keyword_set(verbose) then begin
                 testimage2=testimage*0
                 testimage2[ia[isub]]=ref
                 writefits,'test2.fits',testimage2
-
-                ;testc=testimage*0
-                ;testc[ia[isub]]=2
-                ;writefits,'testc.fits',testc
 
                 ;test
                 ;diff=annuli[isub,nf]
@@ -853,8 +861,8 @@ for nf=0,nfiles-1 do begin
 
     im=make_array(dim,dim,type=4,value=!values.f_nan)
 
-    ;diagnostic ;bah=read_binary(tmpdir+filestmp[nf],data_type=4)
-
+    ;diagnostic 
+    ;bah=read_binary(tmpdir+filestmp[nf],data_type=4)
     im[ind]=read_binary(tmpdir+filestmp[nf],data_type=4)
 
     ;delete temporary files
@@ -863,7 +871,6 @@ for nf=0,nfiles-1 do begin
     ;get header
     h1=headfits(reducdir1+files[nf],/exten,/silent)
     h0=headfits(reducdir1+files[nf],ext=0,/silent)
-    ;h=headfits(reducdir+files[nf])
 
 ; ;***removed a lot of legacy code here useful for Gemini/NIRI but otherwise not.
 ;;**** see older code versions   
@@ -890,8 +897,6 @@ for nf=0,nfiles-1 do begin
 ;throw this switch if you do not want to derotate the image to a common value (e.g., if you are doing SDI after this step)
 
 if ~keyword_set(norot) then begin
-;if ~keyword_set(nonorthup) then begin
-;northpa= sxpar(h0,'TOT_ROT',count=northcount)
 
 theta=-(allpa[nf]-allpa[0])
 
@@ -907,9 +912,6 @@ endelse
 
 ;register the difference
     if keyword_set(norot) then begin
-    ;if keyword_set(nonorthup) then begin
-    ;sxaddhist,'A rotation of '+string(theta,format='(f8.3)')+$
-    ;  ' degrees was applied to the image.',h1
     endif else begin
     sxaddhist,'A rotation of '+string(theta,format='(f8.3)')+$
       ' degrees was applied to the image.',h1
@@ -927,20 +929,16 @@ endelse
     sxaddpar,h1,'meanadd',meanadd
 
     suffix1='-klip'+strcompress(string(il),/REMOVE_ALL)
-    ;fname=tmpdir+prefix+nbr2txt(nlist[nf],4)+suffix1+'.fits'
 
     writefits,tmpdir+outfile+'_'+nbr2txt(nlist[nf],4)+suffix1+'.fits',0,h0
     writefits,tmpdir+outfile+'_'+nbr2txt(nlist[nf],4)+suffix1+'.fits',im,h1,/append
 
-;,/compress
-;    writefits,fname,subarr(im,400),h,/compress
 endfor
 endfor ;wav
 
 ;Okay, now combine the images together, construct datacubes, and then construct a combined datacube.
 
 imt=dblarr(dim,dim,n_elements(lambda))
-;imtot=dlbarr(dim,dim,n_elements(lambda),nfiles)
 suffix0='-klip'
 
 for nf=0,nfiles-1 do begin
@@ -951,6 +949,7 @@ for nf=0,nfiles-1 do begin
  endfor
 
 ;suffix=suffix0
+ sxaddpar,h0,'HISTORY',currenttime_log+' '+dpp_command
  writefits,reducdir+filesout[nf],0,h0
  writefits,reducdir+filesout[nf],imt,h1,/append
 endfor
@@ -983,10 +982,9 @@ h0_col=h0
 h1_col=h1
 
 if (meanadd gt 0) then begin
-resistant_mean,im,3,im_collapsed,numrej,dimension=3
+charis_resistant_mean,im,3,im_collapsed,numrej,dimension=3
 endif else begin
 im_collapsed=median(im[*,*,*],/even,dimension=3)
-;im_collapsed=median(im[*,*,4:35],/even,dimension=3)
 endelse
 
 ;rotate northup
@@ -1005,7 +1003,10 @@ file_delete,file_search(tmpdir,'*-klip*fits')
 
 if (keyword_set(fwdmod) or keyword_set(savecoeff) or keyword_set(usecoeff)) then free_lun,1
 
-;print,'ANGOFFSET WAS',angoffset
+print,'ANGOFFSET WAS',angoffset
+
+endtime=systime(/seconds)
+print,"elapsed time is ",endtime-starttime," seconds"
 
 endofprogram:
 end

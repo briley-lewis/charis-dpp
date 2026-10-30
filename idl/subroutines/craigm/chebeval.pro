@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -35,7 +35,7 @@
 ;   on the [a,b] interval.
 ;
 ;   The derivative of the function may be computed simultaneously
-;   using the DERIVATIVE keyword.  
+;   using the DERIVATIVE keyword.
 ;
 ;   The is some ambiguity about the definition of the first
 ;   coefficient, p_0, namely, the use of p_0 vs. the use of p_0/2.
@@ -96,74 +96,80 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
-function chebeval, x0, p, derivative=v, interval=interval0
+; -
+function chebeval, x0, p, derivative = v, interval = interval0
+  compile_opt idl2
 
-  if n_params() EQ 0 then begin
-      message, 'USAGE:', /info
-      message, 'F = CHEBEVAL(X, P, INTERVAL=[a,b], DERIVATIVE=DFDX)', /info
-      return, !values.d_nan
+  if n_params() eq 0 then begin
+    message, 'USAGE:', /info
+    message, 'F = CHEBEVAL(X, P, INTERVAL=[a,b], DERIVATIVE=DFDX)', /info
+    return, !values.d_nan
   endif
 
-  zero = x0(0)*0 + 0. & one = zero + 1
+  zero = x0[0] * 0 + 0.
+  one = zero + 1
   y = zero
   v = zero
 
-  if n_elements(interval0) LT 2 then begin
-      t = x0
-      a = -one & b = +one
+  if n_elements(interval0) lt 2 then begin
+    t = x0
+    a = -one
+    b = + one
   endif else begin
-      a = interval0(0)+0. & b = interval0(1)+0.
-      if a EQ b then return, t*0
-      t = (2*x0 - a - b)/(b-a)
+    a = interval0[0] + 0.
+    b = interval0[1] + 0.
+    if a eq b then return, t * 0
+    t = (2 * x0 - a - b) / (b - a)
   endelse
 
-  p0 = one + t*0
+  p0 = one + t * 0
   p1 = t
 
-  v0 = zero + t*0
-  v1 = one + t*0
-  v2 = 4.*t
+  v0 = zero + t * 0
+  v1 = one + t * 0
+  v2 = 4. * t
 
-  t = 2.*t
+  t = 2. * t
 
   n = n_elements(p)
   if arg_present(v) then begin
-      for i = 0L, n-1, 2 do begin
-          if i EQ n-1 then begin
-              p1 = zero
-              v1 = zero
-          endif
-          j = (i+1)<(n-1)
+    for i = 0l, n - 1, 2 do begin
+      if i eq n - 1 then begin
+        p1 = zero
+        v1 = zero
+      endif
+      j = (i + 1) < (n - 1)
 
-          y = temporary(y) + p(i)*p0 + p(j)*p1
-          v = temporary(v) + p(i)*v0 + p(j)*v1
+      y = temporary(y) + p[i] * p0 + p[j] * p1
+      v = temporary(v) + p[i] * v0 + p[j] * v1
 
-          ;; Advance to the next set of Chebyshev polynomials. For
-          ;; velocity we need to keep the next orders around
-          ;; momentarily.
-          p2 = t*p1 - p0
-          p3 = t*p2 - p1
-          v2 = t*v1 - v0 + 2*p1
-          v3 = t*v2 - v1 + 2*p2
-          
-          p0 = temporary(p2) & p1 = temporary(p3)
-          v0 = temporary(v2) & v1 = temporary(v3)
-      endfor
+      ; ; Advance to the next set of Chebyshev polynomials. For
+      ; ; velocity we need to keep the next orders around
+      ; ; momentarily.
+      p2 = t * p1 - p0
+      p3 = t * p2 - p1
+      v2 = t * v1 - v0 + 2 * p1
+      v3 = t * v2 - v1 + 2 * p2
+
+      p0 = temporary(p2)
+      p1 = temporary(p3)
+      v0 = temporary(v2)
+      v1 = temporary(v3)
+    endfor
   endif else begin
-      for i = 0L, n-1, 2 do begin
-          if i EQ n-1 then p1 = zero
-          j = (i+1)<(n-1)
+    for i = 0l, n - 1, 2 do begin
+      if i eq n - 1 then p1 = zero
+      j = (i + 1) < (n - 1)
 
-          y = temporary(y) + p(i)*p0 + p(j)*p1
+      y = temporary(y) + p[i] * p0 + p[j] * p1
 
-          ;; Advance to the next set of Chebyshev polynomials.  For no
-          ;; derivative, we can re-use old variables.
-          p0 = t*p1 - temporary(p0)
-          p1 = t*p0 - temporary(p1)
-      endfor
+      ; ; Advance to the next set of Chebyshev polynomials.  For no
+      ; ; derivative, we can re-use old variables.
+      p0 = t * p1 - temporary(p0)
+      p1 = t * p0 - temporary(p1)
+    endfor
   endelse
 
-  v = temporary(v)*2/(b-a)
+  v = temporary(v) * 2 / (b - a)
   return, y
 end

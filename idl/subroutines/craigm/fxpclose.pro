@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -41,22 +41,23 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-PRO FXPCLOSE, UNIT
+pro FXPCLOSE, UNIT
+  compile_opt idl2
 
-@fxfilter
-@fxpcommn
+  @fxfilter
+  @fxpcommn
 
-  ;; NOTE: Now the cache file is opened with the /DELETE keyword, so
-  ;; there should be no need to delete the file explicitly
+  ; ; NOTE: Now the cache file is opened with the /DELETE keyword, so
+  ; ; there should be no need to delete the file explicitly
 
-  ;; EXEC = [RM_COMMAND, '-f', CACHE_FILE(UNIT)]
-  ;; NOSHELL is for speed, and because there are guaranteed no wildcards.
-  ;; SPAWN, EXEC, /NOSHELL
+  ; ; EXEC = [RM_COMMAND, '-f', CACHE_FILE(UNIT)]
+  ; ; NOSHELL is for speed, and because there are guaranteed no wildcards.
+  ; ; SPAWN, EXEC, /NOSHELL
 
-  FREE_LUN, UNIT               ;; Close pipe (no need to kill)
-  FREE_LUN, CACHE_UNIT(UNIT)   ;; Close backing store (should delete-on-close)
+  free_lun, UNIT ; ; Close pipe (no need to kill)
+  free_lun, CACHE_UNIT(UNIT) ; ; Close backing store (should delete-on-close)
 
   RETURN
-END
+end

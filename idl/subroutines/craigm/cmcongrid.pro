@@ -104,59 +104,60 @@
 ;  $Id: cmcongrid.pro,v 1.3 2007/03/29 13:52:20 craigm Exp $
 ;-
 
-FUNCTION CMCONGRID, arr, x, y, z, Interp=int, Minus_One=m1, Cubic = cubic, $
-                    Half_Half=hh
+function CMCONGRID, arr, x, y, z, interp = int, minus_one = m1, cubic = cubic, $
+  half_half = hh
+  compile_opt idl2
 
-ON_ERROR, 2		;Return to caller if error
-s = Size(arr)
+  on_error, 2 ; Return to caller if error
+  s = size(arr)
 
-IF ((s(0) EQ 0) OR (s(0) GT 3)) THEN $
-   Message, 'Array must have 1, 2, or 3 dimensions.'
+  if ((s[0] eq 0) or (s[0] gt 3)) then $
+    message, 'Array must have 1, 2, or 3 dimensions.'
 
-;  Supply defaults = no interpolate, and no minus_one.
-if n_elements(int) le 0 then int = 0 else int = keyword_set(int)
-if n_elements(m1) le 0 then m1 = 0 else m1 = keyword_set(m1)
+  ; Supply defaults = no interpolate, and no minus_one.
+  if n_elements(int) le 0 then int = 0 else int = keyword_set(int)
+  if n_elements(m1) le 0 then m1 = 0 else m1 = keyword_set(m1)
 
-; Compute offsets pixel offsets for half_half
-halfx = 0.0 & halfy = 0.0 & halfz = 0.0
-if keyword_set(hh) then begin
-    if s(0) GE 1 then halfx = -0.5 + (float(s(1))/x)
-    if s(0) GE 2 then halfy = -0.5 + (float(s(2))/y)
-    if s(0) GE 3 then halfz = -0.5 + (float(s(3))/z)
-endif
-cub = KEYWORD_SET(cubic)
-if cub THEN int = 1	;Cubic implies interpolate
-	
+  ; Compute offsets pixel offsets for half_half
+  halfx = 0.0
+  halfy = 0.0
+  halfz = 0.0
+  if keyword_set(hh) then begin
+    if s[0] ge 1 then halfx = -0.5 + (float(s[1]) / x)
+    if s[0] ge 2 then halfy = -0.5 + (float(s[2]) / y)
+    if s[0] ge 3 then halfz = -0.5 + (float(s[3]) / z)
+  endif
+  cub = keyword_set(cubic)
+  if cub then int = 1 ; Cubic implies interpolate
 
-CASE s(0) OF
-   1: BEGIN				; *** ONE DIMENSIONAL ARRAY
-	srx = float(s(1) - m1)/(x-m1) * findgen(x) + halfx
-      IF int THEN $
-         RETURN, INTERPOLATE(arr, srx, CUBIC = cub) ELSE $
-         RETURN, arr(ROUND(srx))
-   ENDCASE
-   2: BEGIN ; *** TWO DIMENSIONAL ARRAY
-	IF int THEN BEGIN
-	  srx = float(s(1) - m1) / (x-m1) * findgen(x) + halfx
-	  sry = float(s(2) - m1) / (y-m1) * findgen(y) + halfy
-          RETURN, INTERPOLATE(arr, srx, sry, /GRID, CUBIC=cub)
-	ENDIF ELSE BEGIN
-          ;; match IDL's CONGRID function
-          expand = (x gt s[1])
-          xm1 = (m1 or expand) ? x-1 : x
-          RETURN, POLY_2D(arr, $
-               [[0,0],[(s(1)-m1)/float(xm1),0]], $ ;Use poly_2d
-               [[0,(s(2)-m1)/float(y-m1)],[0,0]],int,x,y)
-        ENDELSE
+  case s[0] of
+    1: begin ; *** ONE DIMENSIONAL ARRAY
+      srx = float(s[1] - m1) / (x - m1) * findgen(x) + halfx
+      if int then $
+        RETURN, interpolate(arr, srx, cubic = cub) else $
+        RETURN, arr[round(srx)]
+    endcase
+    2: begin ; *** TWO DIMENSIONAL ARRAY
+      if int then begin
+        srx = float(s[1] - m1) / (x - m1) * findgen(x) + halfx
+        sry = float(s[2] - m1) / (y - m1) * findgen(y) + halfy
+        RETURN, interpolate(arr, srx, sry, /grid, cubic = cub)
+      endif else begin
+        ; ; match IDL's CONGRID function
+        expand = (x gt s[1])
+        xm1 = (m1 or expand) ? x - 1 : x
+        RETURN, poly_2d(arr, $
+          [[0, 0], [(s[1] - m1) / float(xm1), 0]], $ ; Use poly_2d
+          [[0, (s[2] - m1) / float(y - m1)], [0, 0]], int, x, y)
+      endelse
+    endcase
+    3: begin ; *** THREE DIMENSIONAL ARRAY
+      srx = float(s[1] - m1) / (x - m1) * findgen(x) + halfx
+      sry = float(s[2] - m1) / (y - m1) * findgen(y) + halfy
+      srz = float(s[3] - m1) / (z - m1) * findgen(z) + halfz
+      RETURN, interpolate(arr, srx, sry, srz, /grid)
+    endcase
+  endcase
 
-   ENDCASE
-   3: BEGIN ; *** THREE DIMENSIONAL ARRAY
-	srx = float(s(1) - m1) / (x-m1) * findgen(x) + halfx
-	sry = float(s(2) - m1) / (y-m1) * findgen(y) + halfy
-	srz = float(s(3) - m1) / (z-m1) * findgen(z) + halfz
-	RETURN, interpolate(arr, srx, sry, srz, /grid)
-   ENDCASE
-ENDCASE
-
-RETURN, arr_r
-END
+  RETURN, arr_r
+end

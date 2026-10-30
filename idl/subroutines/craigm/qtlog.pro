@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -24,7 +24,7 @@
 ;   The logarithm of a quaternion is defined for any unit quaternion,
 ;   such that the expression
 ;
-;     QTLOG([VAXIS*SIN(PHI/2), COS(PHI/2)] 
+;     QTLOG([VAXIS*SIN(PHI/2), COS(PHI/2)]
 ;
 ;   becomes
 ;
@@ -103,29 +103,30 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 function qtlog, q
+  compile_opt idl2
 
-  if n_params() EQ 0 then begin
-      info = 1
-      USAGE:
-      message, 'USAGE:', /info
-      message, 'QNEW = QTLOG(Q)', info=info
-      return, 0
+  if n_params() eq 0 then begin
+    info = 1
+    usage:
+    message, 'USAGE:', /info
+    message, 'QNEW = QTLOG(Q)', info = info
+    return, 0
   endif
-  nq = n_elements(q)/4
-  if nq LT 1 then goto, USAGE
+  nq = n_elements(q) / 4
+  if nq lt 1 then goto, usage
 
-  v = q(0:2,*)
-  sinth = sqrt(total(v^2,1))
-  wh = where(sinth NE 0, ct)
-  if ct GT 0 then v(*,wh) = v(*,wh)/rebin(reform(sinth(wh),1,ct),3,ct)
-  costh = q(3,*)
+  v = q[0 : 2, *]
+  sinth = sqrt(total(v ^ 2, 1))
+  wh = where(sinth ne 0, ct)
+  if ct gt 0 then v[*, wh] = v[*, wh] / rebin(reform(sinth[wh], 1, ct), 3, ct)
+  costh = q[3, *]
 
   q1 = q
 
-  q1(3,*) = 0
-  q1(0,0) = rebin(reform(atan(sinth,costh),1,nq),3,nq) * v
+  q1[3, *] = 0
+  q1[0, 0] = rebin(reform(atan(sinth, costh), 1, nq), 3, nq) * v
 
   return, q1
 end

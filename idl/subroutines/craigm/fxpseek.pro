@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -51,19 +51,20 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-PRO FXPSEEK, UNIT, POSITION
+pro FXPSEEK, UNIT, POSITION
+  compile_opt idl2
 
-@fxpcommn
+  @fxpcommn
 
-  IF UNIT GT 0 THEN BEGIN
-      POINT_LUN, CACHE_UNIT(UNIT), POSITION
-      POINTER(UNIT) = POSITION
-  ENDIF ELSE BEGIN
-      POINT_LUN, -CACHE_UNIT(-UNIT), POSITION
-      POINTER(-UNIT) = POSITION
-  ENDELSE
+  if UNIT gt 0 then begin
+    point_lun, CACHE_UNIT(UNIT), POSITION
+    POINTER(UNIT) = POSITION
+  endif else begin
+    point_lun, -CACHE_UNIT(-UNIT), POSITION
+    POINTER(-UNIT) = POSITION
+  endelse
 
   RETURN
-END
+end

@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -16,8 +16,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   parms = MPFIT(MYFUNCT, start_parms, FUNCTARGS=fcnargs, NFEV=nfev,
-;                 MAXITER=maxiter, ERRMSG=errmsg, NPRINT=nprint, QUIET=quiet, 
-;                 FTOL=ftol, XTOL=xtol, GTOL=gtol, NITER=niter, 
+;                 MAXITER=maxiter, ERRMSG=errmsg, NPRINT=nprint, QUIET=quiet,
+;                 FTOL=ftol, XTOL=xtol, GTOL=gtol, NITER=niter,
 ;                 STATUS=status, ITERPROC=iterproc, ITERARGS=iterargs,
 ;                 COVAR=covar, PERROR=perror, BESTNORM=bestnorm,
 ;                 PARINFO=parinfo)
@@ -60,7 +60,7 @@
 ;  MPFITEXPR, which are driver functions that calculate the deviates
 ;  for you.  If ERR are the 1-sigma uncertainties in Y, then
 ;
-;    TOTAL( DEVIATES^2 ) 
+;    TOTAL( DEVIATES^2 )
 ;
 ;  will be the total chi-squared value.  MPFIT will minimize the
 ;  chi-square value.  The values of X, Y and ERR are passed through
@@ -95,7 +95,7 @@
 ;  MYFUNCT by using the FUNCTARGS keyword to MPFIT.  Use MPFITFUN and
 ;  MPFITEXPR if you need ideas on how to do that.  The function *must*
 ;  accept a parameter list, P.
-;  
+;
 ;  In general there are no restrictions on the number of dimensions in
 ;  X, Y or ERR.  However the deviates *must* be returned in a
 ;  one-dimensional array, and must have the same type (float or
@@ -135,7 +135,7 @@
 ;
 ;
 ; EXPLICIT DERIVATIVES
-; 
+;
 ;  In the search for the best-fit solution, MPFIT by default
 ;  calculates derivatives numerically via a finite difference
 ;  approximation.  The user-supplied function need not calculate the
@@ -151,7 +151,7 @@
 ;  There are two ways to enable explicit derivatives.  First, the user
 ;  can set the keyword AUTODERIVATIVE=0, which is a global switch for
 ;  all parameters.  In this case, MPFIT will request explicit
-;  derivatives for every free parameter.  
+;  derivatives for every free parameter.
 ;
 ;  Second, the user may request explicit derivatives for specifically
 ;  selected parameters using the PARINFO.MPSIDE=3 (see "CONSTRAINING
@@ -178,7 +178,7 @@
 ;    ; MYFUNCT - example user function
 ;    ;   P - input parameter values (N-element array)
 ;    ;   DP - upon input, an N-vector indicating which parameters
-;    ;          to compute derivatives for; 
+;    ;          to compute derivatives for;
 ;    ;        upon output, the user function must return
 ;    ;          an ARRAY(M,N) of derivatives in this keyword
 ;    ;   (keywords) - any other keywords specified by FUNCTARGS
@@ -187,7 +187,7 @@
 ;    FUNCTION MYFUNCT, p, dp, X=x, Y=y, ERR=err
 ;     model = F(x, p)         ;; Model function
 ;     resid = (y - model)/err ;; Residual calculation (for example)
-;     
+;
 ;     if n_params() GT 1 then begin
 ;       ; Create derivative and compute derivative array
 ;       requested = dp   ; Save original value of DP
@@ -197,7 +197,7 @@
 ;       for i = 0, n_elements(p)-1 do if requested(i) NE 0 then $
 ;         dp(*,i) = FGRAD(x, p, i) / err
 ;     endif
-;    
+;
 ;     return, resid
 ;    END
 ;
@@ -221,7 +221,7 @@
 ;  user function.  In those cases, the parameter DP is not passed.
 ;  Therefore functions can use N_PARAMS() to indicate whether they
 ;  must compute the derivatives or not.
-;  
+;
 ;  The derivatives with respect to fixed parameters are ignored; zero
 ;  is an appropriate value to insert for those derivatives.  Upon
 ;  input to the user function, DP is set to a vector with the same
@@ -262,7 +262,7 @@
 ;  derivative explicitly by requesting them from the user function.
 ;  Then, it computes the derivatives numerically via finite
 ;  differencing, and compares the two values.  If the difference
-;  exceeds a tolerance threshold, then the values are printed out to 
+;  exceeds a tolerance threshold, then the values are printed out to
 ;  alert the user.  The tolerance level threshold contains both a
 ;  relative and an absolute component, and is expressed as,
 ;
@@ -270,9 +270,9 @@
 ;
 ;  where DERIV_U and DERIV_N are the derivatives computed explicitly
 ;  and numerically, respectively.  Appropriate values
-;  for most users will be: 
+;  for most users will be:
 ;
-;      PARINFO[i].MPDERIV_RELTOL = 1d-3 ;; Suggested relative tolerance 
+;      PARINFO[i].MPDERIV_RELTOL = 1d-3 ;; Suggested relative tolerance
 ;      PARINFO[i].MPDERIV_ABSTOL = 1d-7 ;; Suggested absolute tolerance
 ;
 ;  although these thresholds may have to be adjusted for a particular
@@ -303,8 +303,8 @@
 ;  that the derivatives computed in two different ways have the same
 ;  numerical sign and the same order of magnitude, since these are the
 ;  most common programming mistakes.
-;    
-;  
+;
+;
 ; CONSTRAINING PARAMETER VALUES WITH THE PARINFO KEYWORD
 ;
 ;  The behavior of MPFIT can be modified with respect to each
@@ -320,31 +320,31 @@
 ;  Each parameter is associated with one element of the array, in
 ;  numerical order.  The structure can have the following entries
 ;  (none are required):
-;  
+;
 ;     .VALUE - the starting parameter value (but see the START_PARAMS
 ;              parameter for more information).
-;  
+;
 ;     .FIXED - a boolean value, whether the parameter is to be held
 ;              fixed or not.  Fixed parameters are not varied by
 ;              MPFIT, but are passed on to MYFUNCT for evaluation.
-;  
+;
 ;     .LIMITED - a two-element boolean array.  If the first/second
 ;                element is set, then the parameter is bounded on the
 ;                lower/upper side.  A parameter can be bounded on both
 ;                sides.  Both LIMITED and LIMITS must be given
 ;                together.
-;  
+;
 ;     .LIMITS - a two-element float or double array.  Gives the
 ;               parameter limits on the lower and upper sides,
 ;               respectively.  Zero, one or two of these values can be
 ;               set, depending on the values of LIMITED.  Both LIMITED
 ;               and LIMITS must be given together.
-;  
+;
 ;     .PARNAME - a string, giving the name of the parameter.  The
 ;                fitting code of MPFIT does not use this tag in any
 ;                way.  However, the default ITERPROC will print the
 ;                parameter name if available.
-;  
+;
 ;     .STEP - the step size to be used in calculating the numerical
 ;             derivatives.  If set to zero, then the step size is
 ;             computed automatically.  Ignored when AUTODERIVATIVE=0.
@@ -392,7 +392,7 @@
 ;              MPDERIV_ABSTOL and MPDERIV_RELTOL settings.
 ;              Default: 0 (no debugging)
 ;
-;     
+;
 ;     .MPDERIV_ABSTOL, .MPDERIV_RELTOL - tolerance settings for
 ;              print-out of debugging information, for each parameter
 ;              where debugging is enabled.  See "TESTING and
@@ -406,7 +406,7 @@
 ;                  one iteration.
 ;
 ;                  A value of 0 indicates no maximum.  Default: 0.
-;  
+;
 ;     .TIED - a string expression which "ties" the parameter to other
 ;             free or fixed parameters as an equality constraint.  Any
 ;             expression involving constants and the parameter array P
@@ -433,7 +433,7 @@
 ;  Therefore programmers are urged to avoid using tags starting with
 ;  "MP", but otherwise they are free to include their own fields
 ;  within the PARINFO structure, which will be ignored by MPFIT.
-;  
+;
 ;  PARINFO Example:
 ;  parinfo = replicate({value:0.D, fixed:0, limited:[0,0], $
 ;                       limits:[0.D,0]}, 5)
@@ -441,7 +441,7 @@
 ;  parinfo[4].limited[0] = 1
 ;  parinfo[4].limits[0]  = 50.D
 ;  parinfo[*].value = [5.7D, 2.2, 500., 1.5, 2000.]
-;  
+;
 ;  A total of 5 parameters, with starting values of 5.7,
 ;  2.2, 500, 1.5, and 2000 are given.  The first parameter
 ;  is fixed at a value of 5.7, and the last parameter is
@@ -451,7 +451,7 @@
 ; COMPATIBILITY
 ;
 ;  This function is designed to work with IDL 5.0 or greater.
-;  
+;
 ;  Because TIED parameters and the "(EXTERNAL)" user-model feature use
 ;  the EXECUTE() function, they cannot be used with the free version
 ;  of the IDL Virtual Machine.
@@ -521,7 +521,7 @@
 ;                  passed, then the starting *value* is taken from
 ;                  START_PARAMS, but the *constraints* are taken from
 ;                  PARINFO.
-; 
+;
 ; RETURNS:
 ;
 ;   Returns the array of best-fit parameters.
@@ -533,7 +533,7 @@
 ;                    be computed automatically via a finite
 ;                    differencing procedure.  If not set, then MYFUNCT
 ;                    must provide the explicit derivatives.
-;                    Default: set (=1) 
+;                    Default: set (=1)
 ;                    NOTE: to supply your own explicit derivatives,
 ;                      explicitly pass AUTODERIVATIVE=0
 ;
@@ -588,7 +588,7 @@
 ;              floating point overflows and underflows.  Thus, setting
 ;              this keyword may sacrifice some stability in the
 ;              fitting process.
-;              
+;
 ;   FTOL - a nonnegative input variable. Termination occurs when both
 ;          the actual and predicted relative reductions in the sum of
 ;          squares are at most FTOL (and STATUS is accordingly set to
@@ -635,8 +635,8 @@
 ;               unit (default should be UNIT=1, standard output).
 ;               These keywords are passed using the ITERARGS keyword
 ;               above.  The ITERPRINT procedure must accept the _EXTRA
-;               keyword.  
-;               NOTE: that much formatting can be handled with the 
+;               keyword.
+;               NOTE: that much formatting can be handled with the
 ;                     MPPRINT and MPFORMAT tags.
 ;               Default: 'MPFIT_DEFPRINT' (default internal formatter)
 ;
@@ -650,11 +650,11 @@
 ;                UNIT=unit, ...
 ;                ; perform custom iteration update
 ;              END
-;         
+;
 ;              ITERPROC must either accept all three keyword
 ;              parameters (FUNCTARGS, PARINFO and QUIET), or at least
 ;              accept them via the _EXTRA keyword.
-;          
+;
 ;              MYFUNCT is the user-supplied function to be minimized,
 ;              P is the current set of model parameters, ITER is the
 ;              iteration number, and FUNCTARGS are the arguments to be
@@ -691,7 +691,7 @@
 ;                 ITERSTOP is set and the default ITERPROC is used).
 ;                 ITERSTOPKEY may either be a one-character string
 ;                 with the desired key, or a scalar integer giving the
-;                 ASCII code of the desired key.  
+;                 ASCII code of the desired key.
 ;                 Default: 7b (control-g)
 ;
 ;                 NOTE: the default value of ASCI 7 (control-G) cannot
@@ -735,7 +735,7 @@
 ;             Provides a mechanism for more sophisticated constraints
 ;             to be placed on parameter values.  When PARINFO is not
 ;             passed, then it is assumed that all parameters are free
-;             and unconstrained.  Values in PARINFO are never 
+;             and unconstrained.  Values in PARINFO are never
 ;             modified during a call to MPFIT.
 ;
 ;             See description above for the structure of PARINFO.
@@ -750,7 +750,7 @@
 ;            If the fit is unweighted (i.e. no errors were given, or
 ;            the weights were uniformly set to unity), then PERROR
 ;            will probably not represent the true parameter
-;            uncertainties.  
+;            uncertainties.
 ;
 ;            *If* you can assume that the true reduced chi-squared
 ;            value is unity -- meaning that the fit is implicitly
@@ -788,7 +788,7 @@
 ;             numerical overflow in the user's model function, which
 ;             must be avoided.
 ;
-;        -15 to -1 
+;        -15 to -1
 ;             these are error codes that either MYFUNCT or ITERPROC
 ;             may return to terminate the fitting process (see
 ;             description of MPFIT_ERROR common below).  If either
@@ -798,27 +798,27 @@
 ;             clash with MPFIT.
 ;
 ;	   0  improper input parameters.
-;         
+;
 ;	   1  both actual and predicted relative reductions
 ;	      in the sum of squares are at most FTOL.
-;         
+;
 ;	   2  relative error between two consecutive iterates
 ;	      is at most XTOL
-;         
+;
 ;	   3  conditions for STATUS = 1 and STATUS = 2 both hold.
-;         
+;
 ;	   4  the cosine of the angle between fvec and any
 ;	      column of the jacobian is at most GTOL in
 ;	      absolute value.
-;         
+;
 ;	   5  the maximum number of iterations has been reached
-;         
+;
 ;	   6  FTOL is too small. no further reduction in
 ;	      the sum of squares is possible.
-;         
+;
 ;	   7  XTOL is too small. no further improvement in
 ;	      the approximate solution x is possible.
-;         
+;
 ;	   8  GTOL is too small. fvec is orthogonal to the
 ;	      columns of the jacobian to machine precision.
 ;
@@ -923,7 +923,7 @@
 ;   above.  This can be substituted back into eqn (2) after computing
 ;   the derivatives:
 ;
-;       f'  = 2 Sum(hi  hi')     
+;       f'  = 2 Sum(hi  hi')
 ;       f'' = 2 Sum(hi' hj') + 2 Sum(hi hi'')                (4)
 ;
 ;   If one assumes that the parameters are already close enough to a
@@ -958,7 +958,7 @@
 ;   Here, R, QT and h are known so this is a matter of solving for dx.
 ;   The routine MPFIT_QRFAC provides the QR factorization of h, with
 ;   pivoting, and MPFIT_QRSOL;V provides the solution for dx.
-;   
+;
 ; REFERENCES:
 ;
 ;   Markwardt, C. B. 2008, "Non-Linear Least Squares Fitting in IDL
@@ -971,11 +971,11 @@
 ;   MINPACK-1, Jorge More', available from netlib.
 ;     http://www.netlib.org/
 ;
-;   "Optimization Software Guide," Jorge More' and Stephen Wright, 
+;   "Optimization Software Guide," Jorge More' and Stephen Wright,
 ;     SIAM, *Frontiers in Applied Mathematics*, Number 14.
 ;
-;   More', J. 1977, ``The Levenberg-Marquardt Algorithm: 
-;     Implementation and Theory,'' in *Numerical Analysis*, 
+;   More', J. 1977, ``The Levenberg-Marquardt Algorithm:
+;     Implementation and Theory,'' in *Numerical Analysis*,
 ;     vol. 630, ed. G. A. Watson (Springer-Verlag: Berlin), 105
 ;
 ; MODIFICATION HISTORY:
@@ -1118,7 +1118,7 @@
 ;     derivatives, also thanks to Huib Intema, 07 Feb 2007
 ;   Clarify documentation on user-function, derivatives, and PARINFO,
 ;     27 May 2007
-;   Change the wording of "Analytic Derivatives" to "Explicit 
+;   Change the wording of "Analytic Derivatives" to "Explicit
 ;     Derivatives" in the documentation, CM, 03 Sep 2007
 ;   Further documentation tweaks, CM, 13 Dec 2007
 ;   Add COMPATIBILITY section and add credits to copyright, CM, 13 Dec
@@ -1151,330 +1151,324 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
 pro mpfit_dummy
-  ;; Enclose in a procedure so these are not defined in the main level
-  COMPILE_OPT strictarr
-  FORWARD_FUNCTION mpfit_fdjac2, mpfit_enorm, mpfit_lmpar, mpfit_covar, $
+  ; ; Enclose in a procedure so these are not defined in the main level
+  compile_opt strictarr
+  forward_function mpfit_fdjac2, mpfit_enorm, mpfit_lmpar, mpfit_covar, $
     mpfit, mpfit_call
 
-  COMMON mpfit_error, error_code  ;; For error passing to user function
-  COMMON mpfit_config, mpconfig   ;; For internal error configrations
+  common mpfit_error, error_code ; ; For error passing to user function
+  common mpfit_config, mpconfig ; ; For internal error configrations
 end
 
-;; Reset profiling registers for another run.  By default, and when
-;; uncommented, the profiling registers simply accumulate.
+; ; Reset profiling registers for another run.  By default, and when
+; ; uncommented, the profiling registers simply accumulate.
 
 pro mpfit_resetprof
-  COMPILE_OPT strictarr
+  compile_opt strictarr
   common mpfit_profile, mpfit_profile_vals
 
-  mpfit_profile_vals = { status: 1L, fdjac2: 0D, lmpar: 0D, mpfit: 0D, $
-                         qrfac: 0D,  qrsolv: 0D, enorm: 0D}
+  mpfit_profile_vals = {status: 1l, fdjac2: 0d, lmpar: 0d, mpfit: 0d, $
+    qrfac: 0d, qrsolv: 0d, enorm: 0d}
   return
 end
 
-;; Following are machine constants that can be loaded once.  I have
-;; found that bizarre underflow messages can be produced in each call
-;; to MACHAR(), so this structure minimizes the number of calls to
-;; one.
+; ; Following are machine constants that can be loaded once.  I have
+; ; found that bizarre underflow messages can be produced in each call
+; ; to MACHAR(), so this structure minimizes the number of calls to
+; ; one.
 
-pro mpfit_setmachar, double=isdouble
-  COMPILE_OPT strictarr
+pro mpfit_setmachar, double = isdouble
+  compile_opt strictarr
   common mpfit_profile, profvals
-  if n_elements(profvals) EQ 0 then mpfit_resetprof
+  if n_elements(profvals) eq 0 then mpfit_resetprof
 
   common mpfit_machar, mpfit_machar_vals
 
-  ;; In earlier versions of IDL, MACHAR itself could produce a load of
-  ;; error messages.  We try to mask some of that out here.
-  if (!version.release) LT 5 then dummy = check_math(1, 1)
+  ; ; In earlier versions of IDL, MACHAR itself could produce a load of
+  ; ; error messages.  We try to mask some of that out here.
+  if (!version.release) lt 5 then dummy = check_math(1, 1)
 
   mch = 0.
-  mch = machar(double=keyword_set(isdouble))
+  mch = machar(double = keyword_set(isdouble))
   dmachep = mch.eps
   dmaxnum = mch.xmax
   dminnum = mch.xmin
   dmaxlog = alog(mch.xmax)
   dminlog = alog(mch.xmin)
   if keyword_set(isdouble) then $
-    dmaxgam = 171.624376956302725D $
+    dmaxgam = 171.624376956302725d $
   else $
     dmaxgam = 171.624376956302725
-  drdwarf = sqrt(dminnum*1.5) * 10
+  drdwarf = sqrt(dminnum * 1.5) * 10
   drgiant = sqrt(dmaxnum) * 0.1
 
   mpfit_machar_vals = {machep: dmachep, maxnum: dmaxnum, minnum: dminnum, $
-                       maxlog: dmaxlog, minlog: dminlog, maxgam: dmaxgam, $
-                       rdwarf: drdwarf, rgiant: drgiant}
+    maxlog: dmaxlog, minlog: dminlog, maxgam: dmaxgam, $
+    rdwarf: drdwarf, rgiant: drgiant}
 
-  if (!version.release) LT 5 then dummy = check_math(0, 0)
+  if (!version.release) lt 5 then dummy = check_math(0, 0)
 
   return
 end
 
-
-
-;; Call user function or procedure, with _EXTRA or not, with
-;; derivatives or not.
-function mpfit_call, fcn, x, fjac, _EXTRA=extra
-
-  COMPILE_OPT strictarr
+; ; Call user function or procedure, with _EXTRA or not, with
+; ; derivatives or not.
+function mpfit_call, fcn, x, fjac, _extra = extra
+  compile_opt strictarr
   common mpfit_config, mpconfig
 
   if keyword_set(mpconfig.qanytied) then mpfit_tie, x, mpconfig.ptied
-    
-  ;; Decide whether we are calling a procedure or function
+
+  ; ; Decide whether we are calling a procedure or function
   if mpconfig.proc then proc = 1 else proc = 0
   mpconfig.nfev = mpconfig.nfev + 1
 
   if proc then begin
-      if n_params() EQ 3 then begin
-          if n_elements(extra) GT 0 then $
-            call_procedure, fcn, x, f, fjac, _EXTRA=extra $
-          else $
-            call_procedure, fcn, x, f, fjac
-      endif else begin
-          if n_elements(extra) GT 0 then $
-            call_procedure, fcn, x, f, _EXTRA=extra $
-          else $
-            call_procedure, fcn, x, f
-      endelse
+    if n_params() eq 3 then begin
+      if n_elements(extra) gt 0 then $
+        call_procedure, fcn, x, f, fjac, _extra = extra $
+      else $
+        call_procedure, fcn, x, f, fjac
+    endif else begin
+      if n_elements(extra) gt 0 then $
+        call_procedure, fcn, x, f, _extra = extra $
+      else $
+        call_procedure, fcn, x, f
+    endelse
   endif else begin
-      if n_params() EQ 3 then begin
-          if n_elements(extra) GT 0 then $
-            f = call_function(fcn, x, fjac, _EXTRA=extra) $
-          else $
-            f = call_function(fcn, x, fjac)
-      endif else begin
-          if n_elements(extra) GT 0 then $
-            f = call_function(fcn, x, _EXTRA=extra) $
-          else $
-            f = call_function(fcn, x)
-      endelse
-  endelse  
+    if n_params() eq 3 then begin
+      if n_elements(extra) gt 0 then $
+        f = call_function(fcn, x, fjac, _extra = extra) $
+      else $
+        f = call_function(fcn, x, fjac)
+    endif else begin
+      if n_elements(extra) gt 0 then $
+        f = call_function(fcn, x, _extra = extra) $
+      else $
+        f = call_function(fcn, x)
+    endelse
+  endelse
 
-  if n_params() EQ 2 AND mpconfig.damp GT 0 then begin
-      damp = mpconfig.damp[0]
-      
-      ;; Apply the damping if requested.  This replaces the residuals
-      ;; with their hyperbolic tangent.  Thus residuals larger than
-      ;; DAMP are essentially clipped.
-      f = tanh(f/damp)
+  if n_params() eq 2 and mpconfig.damp gt 0 then begin
+    damp = mpconfig.damp[0]
+
+    ; ; Apply the damping if requested.  This replaces the residuals
+    ; ; with their hyperbolic tangent.  Thus residuals larger than
+    ; ; DAMP are essentially clipped.
+    f = tanh(f / damp)
   endif
 
   return, f
 end
 
 function mpfit_fdjac2, fcn, x, fvec, step, ulimited, ulimit, dside, $
-                 iflag=iflag, epsfcn=epsfcn, autoderiv=autoderiv, $
-                 FUNCTARGS=fcnargs, xall=xall, ifree=ifree, dstep=dstep, $
-                 deriv_debug=ddebug, deriv_reltol=ddrtol, deriv_abstol=ddatol
-
-  COMPILE_OPT strictarr
+  iflag = iflag, epsfcn = epsfcn, autoderiv = autoderiv, $
+  functargs = fcnargs, xall = xall, ifree = ifree, dstep = dstep, $
+  deriv_debug = ddebug, deriv_reltol = ddrtol, deriv_abstol = ddatol
+  compile_opt strictarr
   common mpfit_machar, machvals
   common mpfit_profile, profvals
   common mpfit_error, mperr
 
-;  prof_start = systime(1)
+  ; prof_start = systime(1)
   MACHEP0 = machvals.machep
-  DWARF   = machvals.minnum
+  DWARF = machvals.minnum
 
-  if n_elements(epsfcn) EQ 0 then epsfcn = MACHEP0
-  if n_elements(xall)   EQ 0 then xall = x
-  if n_elements(ifree)  EQ 0 then ifree = lindgen(n_elements(xall))
-  if n_elements(step)   EQ 0 then step = x * 0.
-  if n_elements(ddebug) EQ 0 then ddebug = intarr(n_elements(xall))
-  if n_elements(ddrtol) EQ 0 then ddrtol = x * 0.
-  if n_elements(ddatol) EQ 0 then ddatol = x * 0.
+  if n_elements(epsfcn) eq 0 then epsfcn = MACHEP0
+  if n_elements(xall) eq 0 then xall = x
+  if n_elements(ifree) eq 0 then ifree = lindgen(n_elements(xall))
+  if n_elements(step) eq 0 then step = x * 0.
+  if n_elements(ddebug) eq 0 then ddebug = intarr(n_elements(xall))
+  if n_elements(ddrtol) eq 0 then ddrtol = x * 0.
+  if n_elements(ddatol) eq 0 then ddatol = x * 0.
   has_debug_deriv = max(ddebug)
 
   if keyword_set(has_debug_deriv) then begin
-      ;; Header for debugging
-      print, 'FJAC DEBUG BEGIN'
-      print, "IPNT", "FUNC", "DERIV_U", "DERIV_N", "DIFF_ABS", "DIFF_REL", $
-        format='("#  ",A10," ",A10," ",A10," ",A10," ",A10," ",A10)'
+    ; ; Header for debugging
+    print, 'FJAC DEBUG BEGIN'
+    print, 'IPNT', 'FUNC', 'DERIV_U', 'DERIV_N', 'DIFF_ABS', 'DIFF_REL', $
+      format = '("#  ",A10," ",A10," ",A10," ",A10," ",A10," ",A10)'
   endif
 
   nall = n_elements(xall)
 
-  eps = sqrt(max([epsfcn, MACHEP0]));
+  eps = sqrt(max([epsfcn, MACHEP0])) ;
   m = n_elements(fvec)
   n = n_elements(x)
 
-  ;; Compute analytical derivative if requested
-  ;; Two ways to enable computation of explicit derivatives:
-  ;;   1. AUTODERIVATIVE=0
-  ;;   2. AUTODERIVATIVE=1, but P[i].MPSIDE EQ 3
+  ; ; Compute analytical derivative if requested
+  ; ; Two ways to enable computation of explicit derivatives:
+  ; ;   1. AUTODERIVATIVE=0
+  ; ;   2. AUTODERIVATIVE=1, but P[i].MPSIDE EQ 3
 
-  if keyword_set(autoderiv) EQ 0 OR max(dside[ifree] EQ 3) EQ 1 then begin
-      fjac = intarr(nall)
-      ;; Specify which parameters need derivatives
-      ;;            ---- Case 2 ------     ----- Case 1 -----
-      fjac[ifree] = (dside[ifree] EQ 3) OR (keyword_set(autoderiv) EQ 0)
-      if has_debug_deriv then print, fjac, format='("# FJAC_MASK = ",100000(I0," ",:))'
+  if keyword_set(autoderiv) eq 0 or max(dside[ifree] eq 3) eq 1 then begin
+    fjac = intarr(nall)
+    ; ; Specify which parameters need derivatives
+    ; ;            ---- Case 2 ------     ----- Case 1 -----
+    fjac[ifree] = (dside[ifree] eq 3) or (keyword_set(autoderiv) eq 0)
+    if has_debug_deriv then print, fjac, format = '("# FJAC_MASK = ",100000(I0," ",:))'
 
-      mperr = 0
-      fp = mpfit_call(fcn, xall, fjac, _EXTRA=fcnargs)
-      iflag = mperr
+    mperr = 0
+    fp = mpfit_call(fcn, xall, fjac, _extra = fcnargs)
+    iflag = mperr
 
-      if n_elements(fjac) NE m*nall then begin
-          message, /cont, 'ERROR: Derivative matrix was not computed properly.'
-          iflag = 1
-;          profvals.fdjac2 = profvals.fdjac2 + (systime(1) - prof_start)
-          return, 0
-      endif
+    if n_elements(fjac) ne m * nall then begin
+      message, /cont, 'ERROR: Derivative matrix was not computed properly.'
+      iflag = 1
+      ; profvals.fdjac2 = profvals.fdjac2 + (systime(1) - prof_start)
+      return, 0
+    endif
 
-      ;; This definition is consistent with CURVEFIT (WRONG, see below)
-      ;; Sign error found (thanks Jesus Fernandez <fernande@irm.chu-caen.fr>)
+    ; ; This definition is consistent with CURVEFIT (WRONG, see below)
+    ; ; Sign error found (thanks Jesus Fernandez <fernande@irm.chu-caen.fr>)
 
-      ;; ... and now I regret doing this sign flip since it's not
-      ;; strictly correct.  The definition should be RESID =
-      ;; (Y-F)/SIGMA, so d(RESID)/dP should be -dF/dP.  My response to
-      ;; Fernandez was unfounded because he was trying to supply
-      ;; dF/dP.  Sigh. (CM 31 Aug 2007)
+    ; ; ... and now I regret doing this sign flip since it's not
+    ; ; strictly correct.  The definition should be RESID =
+    ; ; (Y-F)/SIGMA, so d(RESID)/dP should be -dF/dP.  My response to
+    ; ; Fernandez was unfounded because he was trying to supply
+    ; ; dF/dP.  Sigh. (CM 31 Aug 2007)
 
-      fjac = reform(-temporary(fjac), m, nall, /overwrite)
+    fjac = reform(-temporary(fjac), m, nall, /overwrite)
 
-      ;; Select only the free parameters
-      if n_elements(ifree) LT nall then $
-        fjac = reform(fjac[*,ifree], m, n, /overwrite)
+    ; ; Select only the free parameters
+    if n_elements(ifree) lt nall then $
+      fjac = reform(fjac[*, ifree], m, n, /overwrite)
 
-      ;; If there are no more free parameters to analyze, then
-      ;; return now, (but not if we are debugging the derivatives)
-      if ((keyword_set(autoderiv) EQ 0) OR $
-          (min(dside[ifree]) EQ 1) OR $
-          (has_debug_deriv EQ 0)) then return, fjac
+    ; ; If there are no more free parameters to analyze, then
+    ; ; return now, (but not if we are debugging the derivatives)
+    if ((keyword_set(autoderiv) eq 0) or $
+      (min(dside[ifree]) eq 1) or $
+      (has_debug_deriv eq 0)) then return, fjac
   endif
 
-  ;; Final output array, if it was not already created above
-  if n_elements(fjac) EQ 0 then begin
-      fjac = make_array(m, n, value=fvec[0]*0.)
-      fjac = reform(fjac, m, n, /overwrite)
+  ; ; Final output array, if it was not already created above
+  if n_elements(fjac) eq 0 then begin
+    fjac = make_array(m, n, value = fvec[0] * 0.)
+    fjac = reform(fjac, m, n, /overwrite)
   endif
 
   h = eps * abs(x)
 
-  ;; if STEP is given, use that
-  ;; STEP includes the fixed parameters
-  if n_elements(step) GT 0 then begin
-      stepi = step[ifree]
-      wh = where(stepi GT 0, ct)
-      if ct GT 0 then h[wh] = stepi[wh]
+  ; ; if STEP is given, use that
+  ; ; STEP includes the fixed parameters
+  if n_elements(step) gt 0 then begin
+    stepi = step[ifree]
+    wh = where(stepi gt 0, ct)
+    if ct gt 0 then h[wh] = stepi[wh]
   endif
 
-  ;; if relative step is given, use that
-  ;; DSTEP includes the fixed parameters
-  if n_elements(dstep) GT 0 then begin
-      dstepi = dstep[ifree]
-      wh = where(dstepi GT 0, ct)
-      if ct GT 0 then h[wh] = abs(dstepi[wh]*x[wh])
+  ; ; if relative step is given, use that
+  ; ; DSTEP includes the fixed parameters
+  if n_elements(dstep) gt 0 then begin
+    dstepi = dstep[ifree]
+    wh = where(dstepi gt 0, ct)
+    if ct gt 0 then h[wh] = abs(dstepi[wh] * x[wh])
   endif
 
-  ;; In case any of the step values are zero
-  wh = where(h EQ 0, ct)
-  if ct GT 0 then h[wh] = eps
+  ; ; In case any of the step values are zero
+  wh = where(h eq 0, ct)
+  if ct gt 0 then h[wh] = eps
 
-  ;; Reverse the sign of the step if we are up against the parameter
-  ;; limit, or if the user requested it.
-  ;; DSIDE includes the fixed parameters (ULIMITED/ULIMIT have only
-  ;; varying ones)
-  mask = dside[ifree] EQ -1
-  if n_elements(ulimited) GT 0 AND n_elements(ulimit) GT 0 then $
-    mask = mask OR (ulimited AND (x GT ulimit-h))
+  ; ; Reverse the sign of the step if we are up against the parameter
+  ; ; limit, or if the user requested it.
+  ; ; DSIDE includes the fixed parameters (ULIMITED/ULIMIT have only
+  ; ; varying ones)
+  mask = dside[ifree] eq -1
+  if n_elements(ulimited) gt 0 and n_elements(ulimit) gt 0 then $
+    mask = mask or (ulimited and (x gt ulimit - h))
   wh = where(mask, ct)
-  if ct GT 0 then h[wh] = -h[wh]
+  if ct gt 0 then h[wh] = -h[wh]
 
-  ;; Loop through parameters, computing the derivative for each
-  for j=0L, n-1 do begin
-      dsidej = dside[ifree[j]]
-      ddebugj = ddebug[ifree[j]]
+  ; ; Loop through parameters, computing the derivative for each
+  for j = 0l, n - 1 do begin
+    dsidej = dside[ifree[j]]
+    ddebugj = ddebug[ifree[j]]
 
-      ;; Skip this parameter if we already computed its derivative
-      ;; explicitly, and we are not debugging.
-      if (dsidej EQ 3) AND (ddebugj EQ 0) then continue
-      if (dsidej EQ 3) AND (ddebugj EQ 1) then $
-        print, ifree[j], format='("FJAC PARM ",I0)'
+    ; ; Skip this parameter if we already computed its derivative
+    ; ; explicitly, and we are not debugging.
+    if (dsidej eq 3) and (ddebugj eq 0) then continue
+    if (dsidej eq 3) and (ddebugj eq 1) then $
+      print, ifree[j], format = '("FJAC PARM ",I0)'
 
-      xp = xall
-      xp[ifree[j]] = xp[ifree[j]] + h[j]
-      
+    xp = xall
+    xp[ifree[j]] = xp[ifree[j]] + h[j]
+
+    mperr = 0
+    fp = mpfit_call(fcn, xp, _extra = fcnargs)
+
+    iflag = mperr
+    if iflag lt 0 then return, !values.d_nan
+
+    if ((dsidej ge -1) and (dsidej le 1)) or (dsidej eq 3) then begin
+      ; ; COMPUTE THE ONE-SIDED DERIVATIVE
+      ; ; Note optimization fjac(0:*,j)
+      fjacj = (fp - fvec) / h[j]
+    endif else begin
+      ; ; COMPUTE THE TWO-SIDED DERIVATIVE
+      xp[ifree[j]] = xall[ifree[j]] - h[j]
+
       mperr = 0
-      fp = mpfit_call(fcn, xp, _EXTRA=fcnargs)
-      
+      fm = mpfit_call(fcn, xp, _extra = fcnargs)
+
       iflag = mperr
-      if iflag LT 0 then return, !values.d_nan
+      if iflag lt 0 then return, !values.d_nan
 
-      if ((dsidej GE -1) AND (dsidej LE 1)) OR (dsidej EQ 3) then begin
-          ;; COMPUTE THE ONE-SIDED DERIVATIVE
-          ;; Note optimization fjac(0:*,j)
-          fjacj = (fp-fvec)/h[j]
+      ; ; Note optimization fjac(0:*,j)
+      fjacj = (fp - fm) / (2 * h[j])
+    endelse
 
-      endif else begin
-          ;; COMPUTE THE TWO-SIDED DERIVATIVE
-          xp[ifree[j]] = xall[ifree[j]] - h[j]
+    ; ; Debugging of explicit derivatives
+    if (dsidej eq 3) and (ddebugj eq 1) then begin
+      ; ; Relative and absolute tolerances
+      dr = ddrtol[ifree[j]]
+      da = ddatol[ifree[j]]
 
-          mperr = 0
-          fm = mpfit_call(fcn, xp, _EXTRA=fcnargs)
-          
-          iflag = mperr
-          if iflag LT 0 then return, !values.d_nan
-          
-          ;; Note optimization fjac(0:*,j)
-          fjacj = (fp-fm)/(2*h[j])
-      endelse          
-      
-      ;; Debugging of explicit derivatives
-      if (dsidej EQ 3) AND (ddebugj EQ 1) then begin
-          ;; Relative and absolute tolerances
-          dr = ddrtol[ifree[j]] & da = ddatol[ifree[j]]
+      ; ; Explicitly calculated
+      fjaco = fjac[*, j]
 
-          ;; Explicitly calculated
-          fjaco = fjac[*,j]
-          
-          ;; If tolerances are zero, then any value for deriv triggers print...
-          if (da EQ 0 AND dr EQ 0) then $
-            diffj = (fjaco NE 0 OR fjacj NE 0)
-          ;; ... otherwise the difference must be a greater than tolerance
-          if (da NE 0 OR dr NE 0) then $
-            diffj = (abs(fjaco-fjacj) GT (da+abs(fjaco)*dr))
+      ; ; If tolerances are zero, then any value for deriv triggers print...
+      if (da eq 0 and dr eq 0) then $
+        diffj = (fjaco ne 0 or fjacj ne 0)
+      ; ; ... otherwise the difference must be a greater than tolerance
+      if (da ne 0 or dr ne 0) then $
+        diffj = (abs(fjaco - fjacj) gt (da + abs(fjaco) * dr))
 
-          for k = 0L, m-1 do if diffj[k] then begin
-              print, k, fvec[k], fjaco[k], fjacj[k], fjaco[k]-fjacj[k], $
-                (fjaco[k] EQ 0)?(0):((fjaco[k]-fjacj[k])/fjaco[k]), $
-                format='("   ",I10," ",G10.4," ",G10.4," ",G10.4," ",G10.4," ",G10.4)'
-          endif
+      for k = 0l, m - 1 do if diffj[k] then begin
+        print, k, fvec[k], fjaco[k], fjacj[k], fjaco[k] - fjacj[k], $
+          (fjaco[k] eq 0) ? (0) : ((fjaco[k] - fjacj[k]) / fjaco[k]), $
+          format = '("   ",I10," ",G10.4," ",G10.4," ",G10.4," ",G10.4," ",G10.4)'
       endif
+    endif
 
-      ;; Store final results in output array
-      fjac[0,j] = fjacj
-          
+    ; ; Store final results in output array
+    fjac[0, j] = fjacj
   endfor
 
   if has_debug_deriv then print, 'FJAC DEBUG END'
 
-;  profvals.fdjac2 = profvals.fdjac2 + (systime(1) - prof_start)
+  ; profvals.fdjac2 = profvals.fdjac2 + (systime(1) - prof_start)
   return, fjac
 end
 
 function mpfit_enorm, vec
-
-  COMPILE_OPT strictarr
-  ;; NOTE: it turns out that, for systems that have a lot of data
-  ;; points, this routine is a big computing bottleneck.  The extended
-  ;; computations that need to be done cannot be effectively
-  ;; vectorized.  The introduction of the FASTNORM configuration
-  ;; parameter allows the user to select a faster routine, which is 
-  ;; based on TOTAL() alone.
+  compile_opt strictarr
+  ; ; NOTE: it turns out that, for systems that have a lot of data
+  ; ; points, this routine is a big computing bottleneck.  The extended
+  ; ; computations that need to be done cannot be effectively
+  ; ; vectorized.  The introduction of the FASTNORM configuration
+  ; ; parameter allows the user to select a faster routine, which is
+  ; ; based on TOTAL() alone.
   common mpfit_profile, profvals
-;  prof_start = systime(1)
+  ; prof_start = systime(1)
 
   common mpfit_config, mpconfig
-; Very simple-minded sum-of-squares
-  if n_elements(mpconfig) GT 0 then if mpconfig.fastnorm then begin
-      ans = sqrt(total(vec^2))
-      goto, TERMINATE
+  ; Very simple-minded sum-of-squares
+  if n_elements(mpconfig) gt 0 then if mpconfig.fastnorm then begin
+    ans = sqrt(total(vec ^ 2))
+    goto, terminate
   endif
 
   common mpfit_machar, machvals
@@ -1482,95 +1476,95 @@ function mpfit_enorm, vec
   agiant = machvals.rgiant / n_elements(vec)
   adwarf = machvals.rdwarf * n_elements(vec)
 
-  ;; This is hopefully a compromise between speed and robustness.
-  ;; Need to do this because of the possibility of over- or underflow.
-  mx = max(vec, min=mn)
-  mx = max(abs([mx,mn]))
-  if mx EQ 0 then return, vec[0]*0.
+  ; ; This is hopefully a compromise between speed and robustness.
+  ; ; Need to do this because of the possibility of over- or underflow.
+  mx = max(vec, min = mn)
+  mx = max(abs([mx, mn]))
+  if mx eq 0 then return, vec[0] * 0.
 
-  if mx GT agiant OR mx LT adwarf then ans = mx * sqrt(total((vec/mx)^2))$
-  else                                 ans = sqrt( total(vec^2) )
+  if mx gt agiant or mx lt adwarf then ans = mx * sqrt(total((vec / mx) ^ 2)) $
+  else ans = sqrt(total(vec ^ 2))
 
-  TERMINATE:
-;  profvals.enorm = profvals.enorm + (systime(1) - prof_start)
+  terminate:
+  ; profvals.enorm = profvals.enorm + (systime(1) - prof_start)
   return, ans
 end
 
-;     **********
+; **********
 ;
-;     subroutine qrfac
+; subroutine qrfac
 ;
-;     this subroutine uses householder transformations with column
-;     pivoting (optional) to compute a qr factorization of the
-;     m by n matrix a. that is, qrfac determines an orthogonal
-;     matrix q, a permutation matrix p, and an upper trapezoidal
-;     matrix r with diagonal elements of nonincreasing magnitude,
-;     such that a*p = q*r. the householder transformation for
-;     column k, k = 1,2,...,min(m,n), is of the form
+; this subroutine uses householder transformations with column
+; pivoting (optional) to compute a qr factorization of the
+; m by n matrix a. that is, qrfac determines an orthogonal
+; matrix q, a permutation matrix p, and an upper trapezoidal
+; matrix r with diagonal elements of nonincreasing magnitude,
+; such that a*p = q*r. the householder transformation for
+; column k, k = 1,2,...,min(m,n), is of the form
 ;
-;			    t
-;	    i - (1/u(k))*u*u
+; t
+; i - (1/u(k))*u*u
 ;
-;     where u has zeros in the first k-1 positions. the form of
-;     this transformation and the method of pivoting first
-;     appeared in the corresponding linpack subroutine.
+; where u has zeros in the first k-1 positions. the form of
+; this transformation and the method of pivoting first
+; appeared in the corresponding linpack subroutine.
 ;
-;     the subroutine statement is
+; the subroutine statement is
 ;
-;	subroutine qrfac(m,n,a,lda,pivot,ipvt,lipvt,rdiag,acnorm,wa)
+; subroutine qrfac(m,n,a,lda,pivot,ipvt,lipvt,rdiag,acnorm,wa)
 ;
-;     where
+; where
 ;
-;	m is a positive integer input variable set to the number
-;	  of rows of a.
+; m is a positive integer input variable set to the number
+; of rows of a.
 ;
-;	n is a positive integer input variable set to the number
-;	  of columns of a.
+; n is a positive integer input variable set to the number
+; of columns of a.
 ;
-;	a is an m by n array. on input a contains the matrix for
-;	  which the qr factorization is to be computed. on output
-;	  the strict upper trapezoidal part of a contains the strict
-;	  upper trapezoidal part of r, and the lower trapezoidal
-;	  part of a contains a factored form of q (the non-trivial
-;	  elements of the u vectors described above).
+; a is an m by n array. on input a contains the matrix for
+; which the qr factorization is to be computed. on output
+; the strict upper trapezoidal part of a contains the strict
+; upper trapezoidal part of r, and the lower trapezoidal
+; part of a contains a factored form of q (the non-trivial
+; elements of the u vectors described above).
 ;
-;	lda is a positive integer input variable not less than m
-;	  which specifies the leading dimension of the array a.
+; lda is a positive integer input variable not less than m
+; which specifies the leading dimension of the array a.
 ;
-;	pivot is a logical input variable. if pivot is set true,
-;	  then column pivoting is enforced. if pivot is set false,
-;	  then no column pivoting is done.
+; pivot is a logical input variable. if pivot is set true,
+; then column pivoting is enforced. if pivot is set false,
+; then no column pivoting is done.
 ;
-;	ipvt is an integer output array of length lipvt. ipvt
-;	  defines the permutation matrix p such that a*p = q*r.
-;	  column j of p is column ipvt(j) of the identity matrix.
-;	  if pivot is false, ipvt is not referenced.
+; ipvt is an integer output array of length lipvt. ipvt
+; defines the permutation matrix p such that a*p = q*r.
+; column j of p is column ipvt(j) of the identity matrix.
+; if pivot is false, ipvt is not referenced.
 ;
-;	lipvt is a positive integer input variable. if pivot is false,
-;	  then lipvt may be as small as 1. if pivot is true, then
-;	  lipvt must be at least n.
+; lipvt is a positive integer input variable. if pivot is false,
+; then lipvt may be as small as 1. if pivot is true, then
+; lipvt must be at least n.
 ;
-;	rdiag is an output array of length n which contains the
-;	  diagonal elements of r.
+; rdiag is an output array of length n which contains the
+; diagonal elements of r.
 ;
-;	acnorm is an output array of length n which contains the
-;	  norms of the corresponding columns of the input matrix a.
-;	  if this information is not needed, then acnorm can coincide
-;	  with rdiag.
+; acnorm is an output array of length n which contains the
+; norms of the corresponding columns of the input matrix a.
+; if this information is not needed, then acnorm can coincide
+; with rdiag.
 ;
-;	wa is a work array of length n. if pivot is false, then wa
-;	  can coincide with rdiag.
+; wa is a work array of length n. if pivot is false, then wa
+; can coincide with rdiag.
 ;
-;     subprograms called
+; subprograms called
 ;
-;	minpack-supplied ... dpmpar,enorm
+; minpack-supplied ... dpmpar,enorm
 ;
-;	fortran-supplied ... dmax1,dsqrt,min0
+; fortran-supplied ... dmax1,dsqrt,min0
 ;
-;     argonne national laboratory. minpack project. march 1980.
-;     burton s. garbow, kenneth e. hillstrom, jorge j. more
+; argonne national laboratory. minpack project. march 1980.
+; burton s. garbow, kenneth e. hillstrom, jorge j. more
 ;
-;     **********
+; **********
 ;
 ; PIVOTING / PERMUTING:
 ;
@@ -1582,7 +1576,7 @@ end
 ; ACNORM is in standard parameter order.
 ;
 ; NOTE: in IDL the factors appear slightly differently than described
-; above.  The matrix A is still m x n where m >= n.  
+; above.  The matrix A is still m x n where m >= n.
 ;
 ; The "upper" triangular matrix R is actually stored in the strict
 ; lower left triangle of A under the standard notation of IDL.
@@ -1590,1857 +1584,1832 @@ end
 ; The reflectors that generate Q are in the upper trapezoid of A upon
 ; output.
 ;
-;  EXAMPLE:  decompose the matrix [[9.,2.,6.],[4.,8.,7.]]
-;    aa = [[9.,2.,6.],[4.,8.,7.]]
-;    mpfit_qrfac, aa, aapvt, rdiag, aanorm
-;     IDL> print, aa
-;          1.81818*     0.181818*     0.545455*
-;         -8.54545+      1.90160*     0.432573*
-;     IDL> print, rdiag
-;         -11.0000+     -7.48166+
+; EXAMPLE:  decompose the matrix [[9.,2.,6.],[4.,8.,7.]]
+; aa = [[9.,2.,6.],[4.,8.,7.]]
+; mpfit_qrfac, aa, aapvt, rdiag, aanorm
+; IDL> print, aa
+; 1.81818*     0.181818*     0.545455*
+; -8.54545+      1.90160*     0.432573*
+; IDL> print, rdiag
+; -11.0000+     -7.48166+
 ;
 ; The components marked with a * are the components of the
 ; reflectors, and those marked with a + are components of R.
 ;
 ; To reconstruct Q and R we proceed as follows.  First R.
-;    r = fltarr(m, n)
-;    for i = 0, n-1 do r(0:i,i) = aa(0:i,i)  ; fill in lower diag
-;    r(lindgen(n)*(m+1)) = rdiag
+; r = fltarr(m, n)
+; for i = 0, n-1 do r(0:i,i) = aa(0:i,i)  ; fill in lower diag
+; r(lindgen(n)*(m+1)) = rdiag
 ;
 ; Next, Q, which are composed from the reflectors.  Each reflector v
 ; is taken from the upper trapezoid of aa, and converted to a matrix
 ; via (I - 2 vT . v / (v . vT)).
 ;
-;   hh = ident                                    ;; identity matrix
-;   for i = 0, n-1 do begin
-;    v = aa(*,i) & if i GT 0 then v(0:i-1) = 0    ;; extract reflector
-;    hh = hh ## (ident - 2*(v # v)/total(v * v))  ;; generate matrix
-;   endfor
+; hh = ident                                    ;; identity matrix
+; for i = 0, n-1 do begin
+; v = aa(*,i) & if i GT 0 then v(0:i-1) = 0    ;; extract reflector
+; hh = hh ## (ident - 2*(v # v)/total(v * v))  ;; generate matrix
+; endfor
 ;
 ; Test the result:
-;    IDL> print, hh ## transpose(r)
-;          9.00000      4.00000
-;          2.00000      8.00000
-;          6.00000      7.00000
+; IDL> print, hh ## transpose(r)
+; 9.00000      4.00000
+; 2.00000      8.00000
+; 6.00000      7.00000
 ;
 ; Note that it is usually never necessary to form the Q matrix
 ; explicitly, and MPFIT does not.
 
-pro mpfit_qrfac, a, ipvt, rdiag, acnorm, pivot=pivot
-
-  COMPILE_OPT strictarr
+pro mpfit_qrfac, a, ipvt, rdiag, acnorm, pivot = pivot
+  compile_opt strictarr
   sz = size(a)
   m = sz[1]
   n = sz[2]
 
   common mpfit_machar, machvals
   common mpfit_profile, profvals
-;  prof_start = systime(1)
+  ; prof_start = systime(1)
 
   MACHEP0 = machvals.machep
-  DWARF   = machvals.minnum
-  
-  ;; Compute the initial column norms and initialize arrays
-  acnorm = make_array(n, value=a[0]*0.)
-  for j = 0L, n-1 do $
-    acnorm[j] = mpfit_enorm(a[*,j])
+  DWARF = machvals.minnum
+
+  ; ; Compute the initial column norms and initialize arrays
+  acnorm = make_array(n, value = a[0] * 0.)
+  for j = 0l, n - 1 do $
+    acnorm[j] = mpfit_enorm(a[*, j])
   rdiag = acnorm
   wa = rdiag
   ipvt = lindgen(n)
 
-  ;; Reduce a to r with householder transformations
-  minmn = min([m,n])
-  for j = 0L, minmn-1 do begin
-      if NOT keyword_set(pivot) then goto, HOUSE1
-      
-      ;; Bring the column of largest norm into the pivot position
-      rmax = max(rdiag[j:*])
-      kmax = where(rdiag[j:*] EQ rmax, ct) + j
-      if ct LE 0 then goto, HOUSE1
-      kmax = kmax[0]
-      
-      ;; Exchange rows via the pivot only.  Avoid actually exchanging
-      ;; the rows, in case there is lots of memory transfer.  The
-      ;; exchange occurs later, within the body of MPFIT, after the
-      ;; extraneous columns of the matrix have been shed.
-      if kmax NE j then begin
-          temp     = ipvt[j]   & ipvt[j]    = ipvt[kmax] & ipvt[kmax]  = temp
-          rdiag[kmax] = rdiag[j]
-          wa[kmax]    = wa[j]
-      endif
-      
-      HOUSE1:
+  ; ; Reduce a to r with householder transformations
+  minmn = min([m, n])
+  for j = 0l, minmn - 1 do begin
+    if not keyword_set(pivot) then goto, house1
 
-      ;; Compute the householder transformation to reduce the jth
-      ;; column of A to a multiple of the jth unit vector
-      lj     = ipvt[j]
-      ajj    = a[j:*,lj]
-      ajnorm = mpfit_enorm(ajj)
-      if ajnorm EQ 0 then goto, NEXT_ROW
-      if a[j,lj] LT 0 then ajnorm = -ajnorm
-      
-      ajj     = ajj / ajnorm
-      ajj[0]  = ajj[0] + 1
-      ;; *** Note optimization a(j:*,j)
-      a[j,lj] = ajj
-      
-      ;; Apply the transformation to the remaining columns
-      ;; and update the norms
+    ; ; Bring the column of largest norm into the pivot position
+    rmax = max(rdiag[j : *])
+    kmax = where(rdiag[j : *] eq rmax, ct) + j
+    if ct le 0 then goto, house1
+    kmax = kmax[0]
 
-      ;; NOTE to SELF: tried to optimize this by removing the loop,
-      ;; but it actually got slower.  Reverted to "for" loop to keep
-      ;; it simple.
-      if j+1 LT n then begin
-          for k=j+1, n-1 do begin
-              lk = ipvt[k]
-              ajk = a[j:*,lk]
-              ;; *** Note optimization a(j:*,lk) 
-              ;; (corrected 20 Jul 2000)
-              if a[j,lj] NE 0 then $
-                a[j,lk] = ajk - ajj * total(ajk*ajj)/a[j,lj]
+    ; ; Exchange rows via the pivot only.  Avoid actually exchanging
+    ; ; the rows, in case there is lots of memory transfer.  The
+    ; ; exchange occurs later, within the body of MPFIT, after the
+    ; ; extraneous columns of the matrix have been shed.
+    if kmax ne j then begin
+      temp = ipvt[j]
+      ipvt[j] = ipvt[kmax]
+      ipvt[kmax] = temp
+      rdiag[kmax] = rdiag[j]
+      wa[kmax] = wa[j]
+    endif
 
-              if keyword_set(pivot) AND rdiag[k] NE 0 then begin
-                  temp = a[j,lk]/rdiag[k]
-                  rdiag[k] = rdiag[k] * sqrt((1.-temp^2) > 0)
-                  temp = rdiag[k]/wa[k]
-                  if 0.05D*temp*temp LE MACHEP0 then begin
-                      rdiag[k] = mpfit_enorm(a[j+1:*,lk])
-                      wa[k] = rdiag[k]
-                  endif
-              endif
-          endfor
-      endif
+    house1:
 
-      NEXT_ROW:
-      rdiag[j] = -ajnorm
+    ; ; Compute the householder transformation to reduce the jth
+    ; ; column of A to a multiple of the jth unit vector
+    lj = ipvt[j]
+    ajj = a[j : *, lj]
+    ajnorm = mpfit_enorm(ajj)
+    if ajnorm eq 0 then goto, next_row
+    if a[j, lj] lt 0 then ajnorm = -ajnorm
+
+    ajj = ajj / ajnorm
+    ajj[0] = ajj[0] + 1
+    ; ; *** Note optimization a(j:*,j)
+    a[j, lj] = ajj
+
+    ; ; Apply the transformation to the remaining columns
+    ; ; and update the norms
+
+    ; ; NOTE to SELF: tried to optimize this by removing the loop,
+    ; ; but it actually got slower.  Reverted to "for" loop to keep
+    ; ; it simple.
+    if j + 1 lt n then begin
+      for k = j + 1, n - 1 do begin
+        lk = ipvt[k]
+        ajk = a[j : *, lk]
+        ; ; *** Note optimization a(j:*,lk)
+        ; ; (corrected 20 Jul 2000)
+        if a[j, lj] ne 0 then $
+          a[j, lk] = ajk - ajj * total(ajk * ajj) / a[j, lj]
+
+        if keyword_set(pivot) and rdiag[k] ne 0 then begin
+          temp = a[j, lk] / rdiag[k]
+          rdiag[k] = rdiag[k] * sqrt((1. - temp ^ 2) > 0)
+          temp = rdiag[k] / wa[k]
+          if 0.05d * temp * temp le MACHEP0 then begin
+            rdiag[k] = mpfit_enorm(a[j + 1 : *, lk])
+            wa[k] = rdiag[k]
+          endif
+        endif
+      endfor
+    endif
+
+    next_row:
+    rdiag[j] = -ajnorm
   endfor
 
-;  profvals.qrfac = profvals.qrfac + (systime(1) - prof_start)
+  ; profvals.qrfac = profvals.qrfac + (systime(1) - prof_start)
   return
 end
 
-;     **********
+; **********
 ;
-;     subroutine qrsolv
+; subroutine qrsolv
 ;
-;     given an m by n matrix a, an n by n diagonal matrix d,
-;     and an m-vector b, the problem is to determine an x which
-;     solves the system
+; given an m by n matrix a, an n by n diagonal matrix d,
+; and an m-vector b, the problem is to determine an x which
+; solves the system
 ;
-;           a*x = b ,     d*x = 0 ,
+; a*x = b ,     d*x = 0 ,
 ;
-;     in the least squares sense.
+; in the least squares sense.
 ;
-;     this subroutine completes the solution of the problem
-;     if it is provided with the necessary information from the
-;     qr factorization, with column pivoting, of a. that is, if
-;     a*p = q*r, where p is a permutation matrix, q has orthogonal
-;     columns, and r is an upper triangular matrix with diagonal
-;     elements of nonincreasing magnitude, then qrsolv expects
-;     the full upper triangle of r, the permutation matrix p,
-;     and the first n components of (q transpose)*b. the system
-;     a*x = b, d*x = 0, is then equivalent to
+; this subroutine completes the solution of the problem
+; if it is provided with the necessary information from the
+; qr factorization, with column pivoting, of a. that is, if
+; a*p = q*r, where p is a permutation matrix, q has orthogonal
+; columns, and r is an upper triangular matrix with diagonal
+; elements of nonincreasing magnitude, then qrsolv expects
+; the full upper triangle of r, the permutation matrix p,
+; and the first n components of (q transpose)*b. the system
+; a*x = b, d*x = 0, is then equivalent to
 ;
-;                  t       t
-;           r*z = q *b ,  p *d*p*z = 0 ,
+; t       t
+; r*z = q *b ,  p *d*p*z = 0 ,
 ;
-;     where x = p*z. if this system does not have full rank,
-;     then a least squares solution is obtained. on output qrsolv
-;     also provides an upper triangular matrix s such that
+; where x = p*z. if this system does not have full rank,
+; then a least squares solution is obtained. on output qrsolv
+; also provides an upper triangular matrix s such that
 ;
-;            t   t               t
-;           p *(a *a + d*d)*p = s *s .
+; t   t               t
+; p *(a *a + d*d)*p = s *s .
 ;
-;     s is computed within qrsolv and may be of separate interest.
+; s is computed within qrsolv and may be of separate interest.
 ;
-;     the subroutine statement is
+; the subroutine statement is
 ;
-;       subroutine qrsolv(n,r,ldr,ipvt,diag,qtb,x,sdiag,wa)
+; subroutine qrsolv(n,r,ldr,ipvt,diag,qtb,x,sdiag,wa)
 ;
-;     where
+; where
 ;
-;       n is a positive integer input variable set to the order of r.
+; n is a positive integer input variable set to the order of r.
 ;
-;       r is an n by n array. on input the full upper triangle
-;         must contain the full upper triangle of the matrix r.
-;         on output the full upper triangle is unaltered, and the
-;         strict lower triangle contains the strict upper triangle
-;         (transposed) of the upper triangular matrix s.
+; r is an n by n array. on input the full upper triangle
+; must contain the full upper triangle of the matrix r.
+; on output the full upper triangle is unaltered, and the
+; strict lower triangle contains the strict upper triangle
+; (transposed) of the upper triangular matrix s.
 ;
-;       ldr is a positive integer input variable not less than n
-;         which specifies the leading dimension of the array r.
+; ldr is a positive integer input variable not less than n
+; which specifies the leading dimension of the array r.
 ;
-;       ipvt is an integer input array of length n which defines the
-;         permutation matrix p such that a*p = q*r. column j of p
-;         is column ipvt(j) of the identity matrix.
+; ipvt is an integer input array of length n which defines the
+; permutation matrix p such that a*p = q*r. column j of p
+; is column ipvt(j) of the identity matrix.
 ;
-;       diag is an input array of length n which must contain the
-;         diagonal elements of the matrix d.
+; diag is an input array of length n which must contain the
+; diagonal elements of the matrix d.
 ;
-;       qtb is an input array of length n which must contain the first
-;         n elements of the vector (q transpose)*b.
+; qtb is an input array of length n which must contain the first
+; n elements of the vector (q transpose)*b.
 ;
-;       x is an output array of length n which contains the least
-;         squares solution of the system a*x = b, d*x = 0.
+; x is an output array of length n which contains the least
+; squares solution of the system a*x = b, d*x = 0.
 ;
-;       sdiag is an output array of length n which contains the
-;         diagonal elements of the upper triangular matrix s.
+; sdiag is an output array of length n which contains the
+; diagonal elements of the upper triangular matrix s.
 ;
-;       wa is a work array of length n.
+; wa is a work array of length n.
 ;
-;     subprograms called
+; subprograms called
 ;
-;       fortran-supplied ... dabs,dsqrt
+; fortran-supplied ... dabs,dsqrt
 ;
-;     argonne national laboratory. minpack project. march 1980.
-;     burton s. garbow, kenneth e. hillstrom, jorge j. more
+; argonne national laboratory. minpack project. march 1980.
+; burton s. garbow, kenneth e. hillstrom, jorge j. more
 ;
 pro mpfit_qrsolv, r, ipvt, diag, qtb, x, sdiag
-
-  COMPILE_OPT strictarr
+  compile_opt strictarr
   sz = size(r)
   m = sz[1]
   n = sz[2]
-  delm = lindgen(n) * (m+1) ;; Diagonal elements of r
+  delm = lindgen(n) * (m + 1) ; ; Diagonal elements of r
 
   common mpfit_profile, profvals
-;  prof_start = systime(1)
+  ; prof_start = systime(1)
 
-  ;; copy r and (q transpose)*b to preserve input and initialize s.
-  ;; in particular, save the diagonal elements of r in x.
+  ; ; copy r and (q transpose)*b to preserve input and initialize s.
+  ; ; in particular, save the diagonal elements of r in x.
 
-  for j = 0L, n-1 do $
-    r[j:n-1,j] = r[j,j:n-1]
+  for j = 0l, n - 1 do $
+    r[j : n - 1, j] = r[j, j : n - 1]
   x = r[delm]
   wa = qtb
-  ;; Below may look strange, but it's so we can keep the right precision
-  zero = qtb[0]*0.
+  ; ; Below may look strange, but it's so we can keep the right precision
+  zero = qtb[0] * 0.
   half = zero + 0.5
   quart = zero + 0.25
 
-  ;; Eliminate the diagonal matrix d using a givens rotation
-  for j = 0L, n-1 do begin
-      l = ipvt[j]
-      if diag[l] EQ 0 then goto, STORE_RESTORE
-      sdiag[j:*] = 0
-      sdiag[j] = diag[l]
+  ; ; Eliminate the diagonal matrix d using a givens rotation
+  for j = 0l, n - 1 do begin
+    l = ipvt[j]
+    if diag[l] eq 0 then goto, store_restore
+    sdiag[j : *] = 0
+    sdiag[j] = diag[l]
 
-      ;; The transformations to eliminate the row of d modify only a
-      ;; single element of (q transpose)*b beyond the first n, which
-      ;; is initially zero.
+    ; ; The transformations to eliminate the row of d modify only a
+    ; ; single element of (q transpose)*b beyond the first n, which
+    ; ; is initially zero.
 
-      qtbpj = zero
-      for k = j, n-1 do begin
-          if sdiag[k] EQ 0 then goto, ELIM_NEXT_LOOP
-          if abs(r[k,k]) LT abs(sdiag[k]) then begin
-              cotan  = r[k,k]/sdiag[k]
-              sine   = half/sqrt(quart + quart*cotan*cotan)
-              cosine = sine*cotan
-          endif else begin
-              tang   = sdiag[k]/r[k,k]
-              cosine = half/sqrt(quart + quart*tang*tang)
-              sine   = cosine*tang
-          endelse
-          
-          ;; Compute the modified diagonal element of r and the
-          ;; modified element of ((q transpose)*b,0).
-          r[k,k] = cosine*r[k,k] + sine*sdiag[k]
-          temp = cosine*wa[k] + sine*qtbpj
-          qtbpj = -sine*wa[k] + cosine*qtbpj
-          wa[k] = temp
+    qtbpj = zero
+    for k = j, n - 1 do begin
+      if sdiag[k] eq 0 then goto, elim_next_loop
+      if abs(r[k, k]) lt abs(sdiag[k]) then begin
+        cotan = r[k, k] / sdiag[k]
+        sine = half / sqrt(quart + quart * cotan * cotan)
+        cosine = sine * cotan
+      endif else begin
+        tang = sdiag[k] / r[k, k]
+        cosine = half / sqrt(quart + quart * tang * tang)
+        sine = cosine * tang
+      endelse
 
-          ;; Accumulate the transformation in the row of s
-          if n GT k+1 then begin
-              temp = cosine*r[k+1:n-1,k] + sine*sdiag[k+1:n-1]
-              sdiag[k+1:n-1] = -sine*r[k+1:n-1,k] + cosine*sdiag[k+1:n-1]
-              r[k+1:n-1,k] = temp
-          endif
-ELIM_NEXT_LOOP:
-      endfor
+      ; ; Compute the modified diagonal element of r and the
+      ; ; modified element of ((q transpose)*b,0).
+      r[k, k] = cosine * r[k, k] + sine * sdiag[k]
+      temp = cosine * wa[k] + sine * qtbpj
+      qtbpj = -sine * wa[k] + cosine * qtbpj
+      wa[k] = temp
 
-STORE_RESTORE:
-      sdiag[j] = r[j,j]
-      r[j,j] = x[j]
+      ; ; Accumulate the transformation in the row of s
+      if n gt k + 1 then begin
+        temp = cosine * r[k + 1 : n - 1, k] + sine * sdiag[k + 1 : n - 1]
+        sdiag[k + 1 : n - 1] = -sine * r[k + 1 : n - 1, k] + cosine * sdiag[k + 1 : n - 1]
+        r[k + 1 : n - 1, k] = temp
+      endif
+      elim_next_loop:
+    endfor
+
+    store_restore:
+    sdiag[j] = r[j, j]
+    r[j, j] = x[j]
   endfor
 
-  ;; Solve the triangular system for z.  If the system is singular
-  ;; then obtain a least squares solution
+  ; ; Solve the triangular system for z.  If the system is singular
+  ; ; then obtain a least squares solution
   nsing = n
-  wh = where(sdiag EQ 0, ct)
-  if ct GT 0 then begin
-      nsing = wh[0]
-      wa[nsing:*] = 0
+  wh = where(sdiag eq 0, ct)
+  if ct gt 0 then begin
+    nsing = wh[0]
+    wa[nsing : *] = 0
   endif
 
-  if nsing GE 1 then begin
-      wa[nsing-1] = wa[nsing-1]/sdiag[nsing-1] ;; Degenerate case
-      ;; *** Reverse loop ***
-      for j=nsing-2,0,-1 do begin  
-          sum = total(r[j+1:nsing-1,j]*wa[j+1:nsing-1])
-          wa[j] = (wa[j]-sum)/sdiag[j]
-      endfor
+  if nsing ge 1 then begin
+    wa[nsing - 1] = wa[nsing - 1] / sdiag[nsing - 1] ; ; Degenerate case
+    ; ; *** Reverse loop ***
+    for j = nsing - 2, 0, -1 do begin
+      sum = total(r[j + 1 : nsing - 1, j] * wa[j + 1 : nsing - 1])
+      wa[j] = (wa[j] - sum) / sdiag[j]
+    endfor
   endif
 
-  ;; Permute the components of z back to components of x
+  ; ; Permute the components of z back to components of x
   x[ipvt] = wa
 
-;  profvals.qrsolv = profvals.qrsolv + (systime(1) - prof_start)
+  ; profvals.qrsolv = profvals.qrsolv + (systime(1) - prof_start)
   return
 end
-      
-  
-;
-;     subroutine lmpar
-;
-;     given an m by n matrix a, an n by n nonsingular diagonal
-;     matrix d, an m-vector b, and a positive number delta,
-;     the problem is to determine a value for the parameter
-;     par such that if x solves the system
-;
-;	    a*x = b ,	  sqrt(par)*d*x = 0 ,
-;
-;     in the least squares sense, and dxnorm is the euclidean
-;     norm of d*x, then either par is zero and
-;
-;	    (dxnorm-delta) .le. 0.1*delta ,
-;
-;     or par is positive and
-;
-;	    abs(dxnorm-delta) .le. 0.1*delta .
-;
-;     this subroutine completes the solution of the problem
-;     if it is provided with the necessary information from the
-;     qr factorization, with column pivoting, of a. that is, if
-;     a*p = q*r, where p is a permutation matrix, q has orthogonal
-;     columns, and r is an upper triangular matrix with diagonal
-;     elements of nonincreasing magnitude, then lmpar expects
-;     the full upper triangle of r, the permutation matrix p,
-;     and the first n components of (q transpose)*b. on output
-;     lmpar also provides an upper triangular matrix s such that
-;
-;	     t	 t		     t
-;	    p *(a *a + par*d*d)*p = s *s .
-;
-;     s is employed within lmpar and may be of separate interest.
-;
-;     only a few iterations are generally needed for convergence
-;     of the algorithm. if, however, the limit of 10 iterations
-;     is reached, then the output par will contain the best
-;     value obtained so far.
-;
-;     the subroutine statement is
-;
-;	subroutine lmpar(n,r,ldr,ipvt,diag,qtb,delta,par,x,sdiag,
-;			 wa1,wa2)
-;
-;     where
-;
-;	n is a positive integer input variable set to the order of r.
-;
-;	r is an n by n array. on input the full upper triangle
-;	  must contain the full upper triangle of the matrix r.
-;	  on output the full upper triangle is unaltered, and the
-;	  strict lower triangle contains the strict upper triangle
-;	  (transposed) of the upper triangular matrix s.
-;
-;	ldr is a positive integer input variable not less than n
-;	  which specifies the leading dimension of the array r.
-;
-;	ipvt is an integer input array of length n which defines the
-;	  permutation matrix p such that a*p = q*r. column j of p
-;	  is column ipvt(j) of the identity matrix.
-;
-;	diag is an input array of length n which must contain the
-;	  diagonal elements of the matrix d.
-;
-;	qtb is an input array of length n which must contain the first
-;	  n elements of the vector (q transpose)*b.
-;
-;	delta is a positive input variable which specifies an upper
-;	  bound on the euclidean norm of d*x.
-;
-;	par is a nonnegative variable. on input par contains an
-;	  initial estimate of the levenberg-marquardt parameter.
-;	  on output par contains the final estimate.
-;
-;	x is an output array of length n which contains the least
-;	  squares solution of the system a*x = b, sqrt(par)*d*x = 0,
-;	  for the output par.
-;
-;	sdiag is an output array of length n which contains the
-;	  diagonal elements of the upper triangular matrix s.
-;
-;	wa1 and wa2 are work arrays of length n.
-;
-;     subprograms called
-;
-;	minpack-supplied ... dpmpar,enorm,qrsolv
-;
-;	fortran-supplied ... dabs,dmax1,dmin1,dsqrt
-;
-;     argonne national laboratory. minpack project. march 1980.
-;     burton s. garbow, kenneth e. hillstrom, jorge j. more
-;
-function mpfit_lmpar, r, ipvt, diag, qtb, delta, x, sdiag, par=par
 
-  COMPILE_OPT strictarr
+;
+; subroutine lmpar
+;
+; given an m by n matrix a, an n by n nonsingular diagonal
+; matrix d, an m-vector b, and a positive number delta,
+; the problem is to determine a value for the parameter
+; par such that if x solves the system
+;
+; a*x = b ,	  sqrt(par)*d*x = 0 ,
+;
+; in the least squares sense, and dxnorm is the euclidean
+; norm of d*x, then either par is zero and
+;
+; (dxnorm-delta) .le. 0.1*delta ,
+;
+; or par is positive and
+;
+; abs(dxnorm-delta) .le. 0.1*delta .
+;
+; this subroutine completes the solution of the problem
+; if it is provided with the necessary information from the
+; qr factorization, with column pivoting, of a. that is, if
+; a*p = q*r, where p is a permutation matrix, q has orthogonal
+; columns, and r is an upper triangular matrix with diagonal
+; elements of nonincreasing magnitude, then lmpar expects
+; the full upper triangle of r, the permutation matrix p,
+; and the first n components of (q transpose)*b. on output
+; lmpar also provides an upper triangular matrix s such that
+;
+; t	 t		     t
+; p *(a *a + par*d*d)*p = s *s .
+;
+; s is employed within lmpar and may be of separate interest.
+;
+; only a few iterations are generally needed for convergence
+; of the algorithm. if, however, the limit of 10 iterations
+; is reached, then the output par will contain the best
+; value obtained so far.
+;
+; the subroutine statement is
+;
+; subroutine lmpar(n,r,ldr,ipvt,diag,qtb,delta,par,x,sdiag,
+; wa1,wa2)
+;
+; where
+;
+; n is a positive integer input variable set to the order of r.
+;
+; r is an n by n array. on input the full upper triangle
+; must contain the full upper triangle of the matrix r.
+; on output the full upper triangle is unaltered, and the
+; strict lower triangle contains the strict upper triangle
+; (transposed) of the upper triangular matrix s.
+;
+; ldr is a positive integer input variable not less than n
+; which specifies the leading dimension of the array r.
+;
+; ipvt is an integer input array of length n which defines the
+; permutation matrix p such that a*p = q*r. column j of p
+; is column ipvt(j) of the identity matrix.
+;
+; diag is an input array of length n which must contain the
+; diagonal elements of the matrix d.
+;
+; qtb is an input array of length n which must contain the first
+; n elements of the vector (q transpose)*b.
+;
+; delta is a positive input variable which specifies an upper
+; bound on the euclidean norm of d*x.
+;
+; par is a nonnegative variable. on input par contains an
+; initial estimate of the levenberg-marquardt parameter.
+; on output par contains the final estimate.
+;
+; x is an output array of length n which contains the least
+; squares solution of the system a*x = b, sqrt(par)*d*x = 0,
+; for the output par.
+;
+; sdiag is an output array of length n which contains the
+; diagonal elements of the upper triangular matrix s.
+;
+; wa1 and wa2 are work arrays of length n.
+;
+; subprograms called
+;
+; minpack-supplied ... dpmpar,enorm,qrsolv
+;
+; fortran-supplied ... dabs,dmax1,dmin1,dsqrt
+;
+; argonne national laboratory. minpack project. march 1980.
+; burton s. garbow, kenneth e. hillstrom, jorge j. more
+;
+function mpfit_lmpar, r, ipvt, diag, qtb, delta, x, sdiag, par = par
+  compile_opt strictarr
   common mpfit_machar, machvals
   common mpfit_profile, profvals
-;  prof_start = systime(1)
+  ; prof_start = systime(1)
 
   MACHEP0 = machvals.machep
-  DWARF   = machvals.minnum
+  DWARF = machvals.minnum
 
   sz = size(r)
   m = sz[1]
   n = sz[2]
-  delm = lindgen(n) * (m+1) ;; Diagonal elements of r
+  delm = lindgen(n) * (m + 1) ; ; Diagonal elements of r
 
-  ;; Compute and store in x the gauss-newton direction.  If the
-  ;; jacobian is rank-deficient, obtain a least-squares solution
+  ; ; Compute and store in x the gauss-newton direction.  If the
+  ; ; jacobian is rank-deficient, obtain a least-squares solution
   nsing = n
   wa1 = qtb
-  rthresh = max(abs(r[delm]))*MACHEP0
-  wh = where(abs(r[delm]) LT rthresh, ct)
-  if ct GT 0 then begin
-      nsing = wh[0]
-      wa1[wh[0]:*] = 0
+  rthresh = max(abs(r[delm])) * MACHEP0
+  wh = where(abs(r[delm]) lt rthresh, ct)
+  if ct gt 0 then begin
+    nsing = wh[0]
+    wa1[wh[0] : *] = 0
   endif
 
-  if nsing GE 1 then begin
-      ;; *** Reverse loop ***
-      for j=nsing-1,0,-1 do begin  
-          wa1[j] = wa1[j]/r[j,j]
-          if (j-1 GE 0) then $
-            wa1[0:(j-1)] = wa1[0:(j-1)] - r[0:(j-1),j]*wa1[j]
-      endfor
+  if nsing ge 1 then begin
+    ; ; *** Reverse loop ***
+    for j = nsing - 1, 0, -1 do begin
+      wa1[j] = wa1[j] / r[j, j]
+      if (j - 1 ge 0) then $
+        wa1[0 : (j - 1)] = wa1[0 : (j - 1)] - r[0 : (j - 1), j] * wa1[j]
+    endfor
   endif
 
-  ;; Note: ipvt here is a permutation array
+  ; ; Note: ipvt here is a permutation array
   x[ipvt] = wa1
 
-  ;; Initialize the iteration counter.  Evaluate the function at the
-  ;; origin, and test for acceptance of the gauss-newton direction
-  iter = 0L
+  ; ; Initialize the iteration counter.  Evaluate the function at the
+  ; ; origin, and test for acceptance of the gauss-newton direction
+  iter = 0l
   wa2 = diag * x
   dxnorm = mpfit_enorm(wa2)
   fp = dxnorm - delta
-  if fp LE 0.1*delta then goto, TERMINATE
+  if fp le 0.1 * delta then goto, terminate
 
-  ;; If the jacobian is not rank deficient, the newton step provides a
-  ;; lower bound, parl, for the zero of the function.  Otherwise set
-  ;; this bound to zero.
-  
-  zero = wa2[0]*0.
+  ; ; If the jacobian is not rank deficient, the newton step provides a
+  ; ; lower bound, parl, for the zero of the function.  Otherwise set
+  ; ; this bound to zero.
+
+  zero = wa2[0] * 0.
   parl = zero
-  if nsing GE n then begin
-      wa1 = diag[ipvt]*wa2[ipvt]/dxnorm
+  if nsing ge n then begin
+    wa1 = diag[ipvt] * wa2[ipvt] / dxnorm
 
-      wa1[0] = wa1[0] / r[0,0] ;; Degenerate case 
-      for j=1L, n-1 do begin   ;; Note "1" here, not zero
-          sum = total(r[0:(j-1),j]*wa1[0:(j-1)])
-          wa1[j] = (wa1[j] - sum)/r[j,j]
-      endfor
+    wa1[0] = wa1[0] / r[0, 0] ; ; Degenerate case
+    for j = 1l, n - 1 do begin ; ; Note "1" here, not zero
+      sum = total(r[0 : (j - 1), j] * wa1[0 : (j - 1)])
+      wa1[j] = (wa1[j] - sum) / r[j, j]
+    endfor
 
-      temp = mpfit_enorm(wa1)
-      parl = ((fp/delta)/temp)/temp
+    temp = mpfit_enorm(wa1)
+    parl = ((fp / delta) / temp) / temp
   endif
 
-  ;; Calculate an upper bound, paru, for the zero of the function
-  for j=0L, n-1 do begin
-      sum = total(r[0:j,j]*qtb[0:j])
-      wa1[j] = sum/diag[ipvt[j]]
+  ; ; Calculate an upper bound, paru, for the zero of the function
+  for j = 0l, n - 1 do begin
+    sum = total(r[0 : j, j] * qtb[0 : j])
+    wa1[j] = sum / diag[ipvt[j]]
   endfor
   gnorm = mpfit_enorm(wa1)
-  paru  = gnorm/delta
-  if paru EQ 0 then paru = DWARF/min([delta,0.1])
+  paru = gnorm / delta
+  if paru eq 0 then paru = DWARF / min([delta, 0.1])
 
-  ;; If the input par lies outside of the interval (parl,paru), set
-  ;; par to the closer endpoint
+  ; ; If the input par lies outside of the interval (parl,paru), set
+  ; ; par to the closer endpoint
 
-  par = max([par,parl])
-  par = min([par,paru])
-  if par EQ 0 then par = gnorm/dxnorm
+  par = max([par, parl])
+  par = min([par, paru])
+  if par eq 0 then par = gnorm / dxnorm
 
-  ;; Beginning of an interation
-  ITERATION:
+  ; ; Beginning of an interation
+  iteration:
   iter = iter + 1
-  
-  ;; Evaluate the function at the current value of par
-  if par EQ 0 then par = max([DWARF, paru*0.001])
+
+  ; ; Evaluate the function at the current value of par
+  if par eq 0 then par = max([DWARF, paru * 0.001])
   temp = sqrt(par)
   wa1 = temp * diag
   mpfit_qrsolv, r, ipvt, wa1, qtb, x, sdiag
-  wa2 = diag*x
+  wa2 = diag * x
   dxnorm = mpfit_enorm(wa2)
   temp = fp
   fp = dxnorm - delta
 
-  if (abs(fp) LE 0.1D*delta) $
-    OR ((parl EQ 0) AND (fp LE temp) AND (temp LT 0)) $
-    OR (iter EQ 10) then goto, TERMINATE
+  if (abs(fp) le 0.1d * delta) $
+    or ((parl eq 0) and (fp le temp) and (temp lt 0)) $
+    or (iter eq 10) then goto, terminate
 
-  ;; Compute the newton correction
-  wa1 = diag[ipvt]*wa2[ipvt]/dxnorm
+  ; ; Compute the newton correction
+  wa1 = diag[ipvt] * wa2[ipvt] / dxnorm
 
-  for j=0L,n-2 do begin
-      wa1[j] = wa1[j]/sdiag[j]
-      wa1[j+1:n-1] = wa1[j+1:n-1] - r[j+1:n-1,j]*wa1[j]
+  for j = 0l, n - 2 do begin
+    wa1[j] = wa1[j] / sdiag[j]
+    wa1[j + 1 : n - 1] = wa1[j + 1 : n - 1] - r[j + 1 : n - 1, j] * wa1[j]
   endfor
-  wa1[n-1] = wa1[n-1]/sdiag[n-1] ;; Degenerate case
+  wa1[n - 1] = wa1[n - 1] / sdiag[n - 1] ; ; Degenerate case
 
   temp = mpfit_enorm(wa1)
-  parc = ((fp/delta)/temp)/temp
+  parc = ((fp / delta) / temp) / temp
 
-  ;; Depending on the sign of the function, update parl or paru
-  if fp GT 0 then parl = max([parl,par])
-  if fp LT 0 then paru = min([paru,par])
+  ; ; Depending on the sign of the function, update parl or paru
+  if fp gt 0 then parl = max([parl, par])
+  if fp lt 0 then paru = min([paru, par])
 
-  ;; Compute an improved estimate for par
-  par = max([parl, par+parc])
+  ; ; Compute an improved estimate for par
+  par = max([parl, par + parc])
 
-  ;; End of an iteration
-  goto, ITERATION
-  
-TERMINATE:
-  ;; Termination
-;  profvals.lmpar = profvals.lmpar + (systime(1) - prof_start)
-  if iter EQ 0 then return, par[0]*0.
+  ; ; End of an iteration
+  goto, iteration
+
+  terminate:
+  ; ; Termination
+  ; profvals.lmpar = profvals.lmpar + (systime(1) - prof_start)
+  if iter eq 0 then return, par[0] * 0.
   return, par
 end
 
-;; Procedure to tie one parameter to another.
+; ; Procedure to tie one parameter to another.
 pro mpfit_tie, p, _ptied
-  COMPILE_OPT strictarr
-  if n_elements(_ptied) EQ 0 then return
-  if n_elements(_ptied) EQ 1 then if _ptied[0] EQ '' then return
-  for _i = 0L, n_elements(_ptied)-1 do begin
-      if _ptied[_i] EQ '' then goto, NEXT_TIE
-      _cmd = 'p['+strtrim(_i,2)+'] = '+_ptied[_i]
-      _err = execute(_cmd)
-      if _err EQ 0 then begin
-          message, 'ERROR: Tied expression "'+_cmd+'" failed.'
-          return
-      endif
-      NEXT_TIE:
+  compile_opt strictarr
+  if n_elements(_ptied) eq 0 then return
+  if n_elements(_ptied) eq 1 then if _ptied[0] eq '' then return
+  for _i = 0l, n_elements(_ptied) - 1 do begin
+    if _ptied[_i] eq '' then goto, next_tie
+    _cmd = 'p[' + strtrim(_i, 2) + '] = ' + _ptied[_i]
+    _err = execute(_cmd)
+    if _err eq 0 then begin
+      message, 'ERROR: Tied expression "' + _cmd + '" failed.'
+      return
+    endif
+    next_tie:
   endfor
 end
 
-;; Default print procedure
+; ; Default print procedure
 pro mpfit_defprint, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, $
-                    p11, p12, p13, p14, p15, p16, p17, p18, $
-                    format=format, unit=unit0, _EXTRA=extra
-
-  COMPILE_OPT strictarr
-  if n_elements(unit0) EQ 0 then unit = -1 else unit = round(unit0[0])
-  if n_params() EQ 0 then printf, unit, '' $
-  else if n_params() EQ 1 then printf, unit, p1, format=format $
-  else if n_params() EQ 2 then printf, unit, p1, p2, format=format $
-  else if n_params() EQ 3 then printf, unit, p1, p2, p3, format=format $
-  else if n_params() EQ 4 then printf, unit, p1, p2, p4, format=format 
+  p11, p12, p13, p14, p15, p16, p17, p18, $
+  format = format, unit = unit0, _extra = extra
+  compile_opt strictarr
+  if n_elements(unit0) eq 0 then unit = -1 else unit = round(unit0[0])
+  if n_params() eq 0 then printf, unit, '' $
+  else if n_params() eq 1 then printf, unit, p1, format = format $
+  else if n_params() eq 2 then printf, unit, p1, p2, format = format $
+  else if n_params() eq 3 then printf, unit, p1, p2, p3, format = format $
+  else if n_params() eq 4 then printf, unit, p1, p2, p4, format = format
 
   return
 end
 
-
-;; Default procedure to be called every iteration.  It simply prints
-;; the parameter values.
-pro mpfit_defiter, fcn, x, iter, fnorm, FUNCTARGS=fcnargs, $
-                   quiet=quiet, iterstop=iterstop, iterkeybyte=iterkeybyte, $
-                   parinfo=parinfo, iterprint=iterprint0, $
-                   format=fmt, pformat=pformat, dof=dof0, _EXTRA=iterargs
-
-  COMPILE_OPT strictarr
+; ; Default procedure to be called every iteration.  It simply prints
+; ; the parameter values.
+pro mpfit_defiter, fcn, x, iter, fnorm, functargs = fcnargs, $
+  quiet = quiet, iterstop = iterstop, iterkeybyte = iterkeybyte, $
+  parinfo = parinfo, iterprint = iterprint0, $
+  format = fmt, pformat = pformat, dof = dof0, _extra = iterargs
+  compile_opt strictarr
   common mpfit_error, mperr
   mperr = 0
 
-  if keyword_set(quiet) then goto, DO_ITERSTOP
-  if n_params() EQ 3 then begin
-      fvec = mpfit_call(fcn, x, _EXTRA=fcnargs)
-      fnorm = mpfit_enorm(fvec)^2
+  if keyword_set(quiet) then goto, do_iterstop
+  if n_params() eq 3 then begin
+    fvec = mpfit_call(fcn, x, _extra = fcnargs)
+    fnorm = mpfit_enorm(fvec) ^ 2
   endif
 
-  ;; Determine which parameters to print
+  ; ; Determine which parameters to print
   nprint = n_elements(x)
   iprint = lindgen(nprint)
 
-  if n_elements(iterprint0) EQ 0 then iterprint = 'MPFIT_DEFPRINT' $
-  else iterprint = strtrim(iterprint0[0],2)
+  if n_elements(iterprint0) eq 0 then iterprint = 'MPFIT_DEFPRINT' $
+  else iterprint = strtrim(iterprint0[0], 2)
 
-  if n_elements(dof0) EQ 0 then dof = 1L else dof = floor(dof0[0])
+  if n_elements(dof0) eq 0 then dof = 1l else dof = floor(dof0[0])
   call_procedure, iterprint, iter, fnorm, dof, $
-    format='("Iter ",I6,"   CHI-SQUARE = ",G15.8,"          DOF = ",I0)', $
-    _EXTRA=iterargs
-  if n_elements(fmt) GT 0 then begin
-      call_procedure, iterprint, x, format=fmt, _EXTRA=iterargs
+    format = '("Iter ",I6,"   CHI-SQUARE = ",G15.8,"          DOF = ",I0)', $
+    _extra = iterargs
+  if n_elements(fmt) gt 0 then begin
+    call_procedure, iterprint, x, format = fmt, _extra = iterargs
   endif else begin
-      if n_elements(pformat) EQ 0 then pformat = '(G20.6)'
-      parname = 'P('+strtrim(iprint,2)+')'
-      pformats = strarr(nprint) + pformat
+    if n_elements(pformat) eq 0 then pformat = '(G20.6)'
+    parname = 'P(' + strtrim(iprint, 2) + ')'
+    pformats = strarr(nprint) + pformat
 
-      if n_elements(parinfo) GT 0 then begin
-          parinfo_tags = tag_names(parinfo)
-          wh = where(parinfo_tags EQ 'PARNAME', ct)
-          if ct EQ 1 then begin
-              wh = where(parinfo.parname NE '', ct)
-              if ct GT 0 then $
-                parname[wh] = strmid(parinfo[wh].parname,0,25)
-          endif
-          wh = where(parinfo_tags EQ 'MPPRINT', ct)
-          if ct EQ 1 then begin
-              iprint = where(parinfo.mpprint EQ 1, nprint)
-              if nprint EQ 0 then goto, DO_ITERSTOP
-          endif
-          wh = where(parinfo_tags EQ 'MPFORMAT', ct)
-          if ct EQ 1 then begin
-              wh = where(parinfo.mpformat NE '', ct)
-              if ct GT 0 then pformats[wh] = parinfo[wh].mpformat
-          endif
+    if n_elements(parinfo) gt 0 then begin
+      parinfo_tags = tag_names(parinfo)
+      wh = where(parinfo_tags eq 'PARNAME', ct)
+      if ct eq 1 then begin
+        wh = where(parinfo.parname ne '', ct)
+        if ct gt 0 then $
+          parname[wh] = strmid(parinfo[wh].parname, 0, 25)
       endif
+      wh = where(parinfo_tags eq 'MPPRINT', ct)
+      if ct eq 1 then begin
+        iprint = where(parinfo.mpprint eq 1, nprint)
+        if nprint eq 0 then goto, do_iterstop
+      endif
+      wh = where(parinfo_tags eq 'MPFORMAT', ct)
+      if ct eq 1 then begin
+        wh = where(parinfo.mpformat ne '', ct)
+        if ct gt 0 then pformats[wh] = parinfo[wh].mpformat
+      endif
+    endif
 
-      for i = 0L, nprint-1 do begin
-          call_procedure, iterprint, parname[iprint[i]], x[iprint[i]], $
-            format='("    ",A0," = ",'+pformats[iprint[i]]+')', $
-            _EXTRA=iterargs
-      endfor
+    for i = 0l, nprint - 1 do begin
+      call_procedure, iterprint, parname[iprint[i]], x[iprint[i]], $
+        format = '("    ",A0," = ",' + pformats[iprint[i]] + ')', $
+        _extra = iterargs
+    endfor
   endelse
 
-  DO_ITERSTOP:
-  if n_elements(iterkeybyte) EQ 0 then iterkeybyte = 7b
+  do_iterstop:
+  if n_elements(iterkeybyte) eq 0 then iterkeybyte = 7b
   if keyword_set(iterstop) then begin
-      k = get_kbrd(0)
-      if k EQ string(iterkeybyte[0]) then begin
-          message, 'WARNING: minimization not complete', /info
-          print, 'Do you want to terminate this procedure? (y/n)', $
-            format='(A,$)'
-          k = ''
-          read, k
-          if strupcase(strmid(k,0,1)) EQ 'Y' then begin
-              message, 'WARNING: Procedure is terminating.', /info
-              mperr = -1
-          endif
+    k = get_kbrd(0)
+    if k eq string(iterkeybyte[0]) then begin
+      message, 'WARNING: minimization not complete', /info
+      print, 'Do you want to terminate this procedure? (y/n)', $
+        format = '(A,$)'
+      k = ''
+      read, k
+      if strupcase(strmid(k, 0, 1)) eq 'Y' then begin
+        message, 'WARNING: Procedure is terminating.', /info
+        mperr = -1
       endif
+    endif
   endif
 
   return
 end
 
-;; Procedure to parse the parameter values in PARINFO
-pro mpfit_parinfo, parinfo, tnames, tag, values, default=def, status=status, $
-                   n_param=n
-
-  COMPILE_OPT strictarr
+; ; Procedure to parse the parameter values in PARINFO
+pro mpfit_parinfo, parinfo, tnames, tag, values, default = def, status = status, $
+  n_param = n
+  compile_opt strictarr
   status = 0
-  if n_elements(n) EQ 0 then n = n_elements(parinfo)
+  if n_elements(n) eq 0 then n = n_elements(parinfo)
 
-  if n EQ 0 then begin
-      if n_elements(def) EQ 0 then return
-      values = def
-      status = 1
-      return
+  if n eq 0 then begin
+    if n_elements(def) eq 0 then return
+    values = def
+    status = 1
+    return
   endif
 
-  if n_elements(parinfo) EQ 0 then goto, DO_DEFAULT
-  if n_elements(tnames) EQ 0 then tnames = tag_names(parinfo)
-  wh = where(tnames EQ tag, ct)
+  if n_elements(parinfo) eq 0 then goto, do_default
+  if n_elements(tnames) eq 0 then tnames = tag_names(parinfo)
+  wh = where(tnames eq tag, ct)
 
-  if ct EQ 0 then begin
-      DO_DEFAULT:
-      if n_elements(def) EQ 0 then return
-      values = make_array(n, value=def[0])
-      values[0] = def
+  if ct eq 0 then begin
+    do_default:
+    if n_elements(def) eq 0 then return
+    values = make_array(n, value = def[0])
+    values[0] = def
   endif else begin
-      values = parinfo.(wh[0])
-      np = n_elements(parinfo)
-      nv = n_elements(values)
-      values = reform(values[*], nv/np, np)
+    values = parinfo.(wh[0])
+    np = n_elements(parinfo)
+    nv = n_elements(values)
+    values = reform(values[*], nv / np, np)
   endelse
 
   status = 1
   return
 end
 
-
-;     **********
+; **********
 ;
-;     subroutine covar
+; subroutine covar
 ;
-;     given an m by n matrix a, the problem is to determine
-;     the covariance matrix corresponding to a, defined as
+; given an m by n matrix a, the problem is to determine
+; the covariance matrix corresponding to a, defined as
 ;
-;                    t
-;           inverse(a *a) .
+; t
+; inverse(a *a) .
 ;
-;     this subroutine completes the solution of the problem
-;     if it is provided with the necessary information from the
-;     qr factorization, with column pivoting, of a. that is, if
-;     a*p = q*r, where p is a permutation matrix, q has orthogonal
-;     columns, and r is an upper triangular matrix with diagonal
-;     elements of nonincreasing magnitude, then covar expects
-;     the full upper triangle of r and the permutation matrix p.
-;     the covariance matrix is then computed as
+; this subroutine completes the solution of the problem
+; if it is provided with the necessary information from the
+; qr factorization, with column pivoting, of a. that is, if
+; a*p = q*r, where p is a permutation matrix, q has orthogonal
+; columns, and r is an upper triangular matrix with diagonal
+; elements of nonincreasing magnitude, then covar expects
+; the full upper triangle of r and the permutation matrix p.
+; the covariance matrix is then computed as
 ;
-;                      t     t
-;           p*inverse(r *r)*p  .
+; t     t
+; p*inverse(r *r)*p  .
 ;
-;     if a is nearly rank deficient, it may be desirable to compute
-;     the covariance matrix corresponding to the linearly independent
-;     columns of a. to define the numerical rank of a, covar uses
-;     the tolerance tol. if l is the largest integer such that
+; if a is nearly rank deficient, it may be desirable to compute
+; the covariance matrix corresponding to the linearly independent
+; columns of a. to define the numerical rank of a, covar uses
+; the tolerance tol. if l is the largest integer such that
 ;
-;           abs(r(l,l)) .gt. tol*abs(r(1,1)) ,
+; abs(r(l,l)) .gt. tol*abs(r(1,1)) ,
 ;
-;     then covar computes the covariance matrix corresponding to
-;     the first l columns of r. for k greater than l, column
-;     and row ipvt(k) of the covariance matrix are set to zero.
+; then covar computes the covariance matrix corresponding to
+; the first l columns of r. for k greater than l, column
+; and row ipvt(k) of the covariance matrix are set to zero.
 ;
-;     the subroutine statement is
+; the subroutine statement is
 ;
-;       subroutine covar(n,r,ldr,ipvt,tol,wa)
+; subroutine covar(n,r,ldr,ipvt,tol,wa)
 ;
-;     where
+; where
 ;
-;       n is a positive integer input variable set to the order of r.
+; n is a positive integer input variable set to the order of r.
 ;
-;       r is an n by n array. on input the full upper triangle must
-;         contain the full upper triangle of the matrix r. on output
-;         r contains the square symmetric covariance matrix.
+; r is an n by n array. on input the full upper triangle must
+; contain the full upper triangle of the matrix r. on output
+; r contains the square symmetric covariance matrix.
 ;
-;       ldr is a positive integer input variable not less than n
-;         which specifies the leading dimension of the array r.
+; ldr is a positive integer input variable not less than n
+; which specifies the leading dimension of the array r.
 ;
-;       ipvt is an integer input array of length n which defines the
-;         permutation matrix p such that a*p = q*r. column j of p
-;         is column ipvt(j) of the identity matrix.
+; ipvt is an integer input array of length n which defines the
+; permutation matrix p such that a*p = q*r. column j of p
+; is column ipvt(j) of the identity matrix.
 ;
-;       tol is a nonnegative input variable used to define the
-;         numerical rank of a in the manner described above.
+; tol is a nonnegative input variable used to define the
+; numerical rank of a in the manner described above.
 ;
-;       wa is a work array of length n.
+; wa is a work array of length n.
 ;
-;     subprograms called
+; subprograms called
 ;
-;       fortran-supplied ... dabs
+; fortran-supplied ... dabs
 ;
-;     argonne national laboratory. minpack project. august 1980.
-;     burton s. garbow, kenneth e. hillstrom, jorge j. more
+; argonne national laboratory. minpack project. august 1980.
+; burton s. garbow, kenneth e. hillstrom, jorge j. more
 ;
-;     **********
-function mpfit_covar, rr, ipvt, tol=tol
-
-  COMPILE_OPT strictarr
+; **********
+function mpfit_covar, rr, ipvt, tol = tol
+  compile_opt strictarr
   sz = size(rr)
-  if sz[0] NE 2 then begin
-      message, 'ERROR: r must be a two-dimensional matrix'
-      return, -1L
+  if sz[0] ne 2 then begin
+    message, 'ERROR: r must be a two-dimensional matrix'
+    return, -1l
   endif
   n = sz[1]
-  if n NE sz[2] then begin
-      message, 'ERROR: r must be a square matrix'
-      return, -1L
+  if n ne sz[2] then begin
+    message, 'ERROR: r must be a square matrix'
+    return, -1l
   endif
 
   zero = rr[0] * 0.
-  one  = zero  + 1.
-  if n_elements(ipvt) EQ 0 then ipvt = lindgen(n)
+  one = zero + 1.
+  if n_elements(ipvt) eq 0 then ipvt = lindgen(n)
   r = rr
   r = reform(rr, n, n, /overwrite)
-  
-  ;; Form the inverse of r in the full upper triangle of r
-  l = -1L
-  if n_elements(tol) EQ 0 then tol = one*1.E-14
-  tolr = tol * abs(r[0,0])
-  for k = 0L, n-1 do begin
-      if abs(r[k,k]) LE tolr then goto, INV_END_LOOP
-      r[k,k] = one/r[k,k]
-      for j = 0L, k-1 do begin
-          temp = r[k,k] * r[j,k]
-          r[j,k] = zero
-          r[0,k] = r[0:j,k] - temp*r[0:j,j]
-      endfor
-      l = k
-  endfor
-  INV_END_LOOP:
 
-  ;; Form the full upper triangle of the inverse of (r transpose)*r
-  ;; in the full upper triangle of r
-  if l GE 0 then $
-    for k = 0L, l do begin
-      for j = 0L, k-1 do begin
-          temp = r[j,k]
-          r[0,j] = r[0:j,j] + temp*r[0:j,k]
+  ; ; Form the inverse of r in the full upper triangle of r
+  l = -1l
+  if n_elements(tol) eq 0 then tol = one * 1.e-14
+  tolr = tol * abs(r[0, 0])
+  for k = 0l, n - 1 do begin
+    if abs(r[k, k]) le tolr then goto, inv_end_loop
+    r[k, k] = one / r[k, k]
+    for j = 0l, k - 1 do begin
+      temp = r[k, k] * r[j, k]
+      r[j, k] = zero
+      r[0, k] = r[0 : j, k] - temp * r[0 : j, j]
+    endfor
+    l = k
+  endfor
+  inv_end_loop:
+
+  ; ; Form the full upper triangle of the inverse of (r transpose)*r
+  ; ; in the full upper triangle of r
+  if l ge 0 then $
+    for k = 0l, l do begin
+      for j = 0l, k - 1 do begin
+        temp = r[j, k]
+        r[0, j] = r[0 : j, j] + temp * r[0 : j, k]
       endfor
-      temp = r[k,k]
-      r[0,k] = temp * r[0:k,k]
+      temp = r[k, k]
+      r[0, k] = temp * r[0 : k, k]
+    endfor
+
+  ; ; Form the full lower triangle of the covariance matrix
+  ; ; in the strict lower triangle of r and in wa
+  wa = replicate(r[0, 0], n)
+  for j = 0l, n - 1 do begin
+    jj = ipvt[j]
+    sing = j gt l
+    for i = 0l, j do begin
+      if sing then r[i, j] = zero
+      ii = ipvt[i]
+      if ii gt jj then r[ii, jj] = r[i, j]
+      if ii lt jj then r[jj, ii] = r[i, j]
+    endfor
+    wa[jj] = r[j, j]
   endfor
 
-  ;; Form the full lower triangle of the covariance matrix
-  ;; in the strict lower triangle of r and in wa
-  wa = replicate(r[0,0], n)
-  for j = 0L, n-1 do begin
-      jj = ipvt[j]
-      sing = j GT l
-      for i = 0L, j do begin
-          if sing then r[i,j] = zero
-          ii = ipvt[i]
-          if ii GT jj then r[ii,jj] = r[i,j]
-          if ii LT jj then r[jj,ii] = r[i,j]
-      endfor
-      wa[jj] = r[j,j]
-  endfor
-
-  ;; Symmetrize the covariance matrix in r
-  for j = 0L, n-1 do begin
-      r[0:j,j] = r[j,0:j]
-      r[j,j] = wa[j]
+  ; ; Symmetrize the covariance matrix in r
+  for j = 0l, n - 1 do begin
+    r[0 : j, j] = r[j, 0 : j]
+    r[j, j] = wa[j]
   endfor
 
   return, r
 end
 
-;     **********
+; **********
 ;
-;     subroutine lmdif
+; subroutine lmdif
 ;
-;     the purpose of lmdif is to minimize the sum of the squares of
-;     m nonlinear functions in n variables by a modification of
-;     the levenberg-marquardt algorithm. the user must provide a
-;     subroutine which calculates the functions. the jacobian is
-;     then calculated by a forward-difference approximation.
+; the purpose of lmdif is to minimize the sum of the squares of
+; m nonlinear functions in n variables by a modification of
+; the levenberg-marquardt algorithm. the user must provide a
+; subroutine which calculates the functions. the jacobian is
+; then calculated by a forward-difference approximation.
 ;
-;     the subroutine statement is
+; the subroutine statement is
 ;
-;	subroutine lmdif(fcn,m,n,x,fvec,ftol,xtol,gtol,maxfev,epsfcn,
-;			 diag,mode,factor,nprint,info,nfev,fjac,
-;			 ldfjac,ipvt,qtf,wa1,wa2,wa3,wa4)
+; subroutine lmdif(fcn,m,n,x,fvec,ftol,xtol,gtol,maxfev,epsfcn,
+; diag,mode,factor,nprint,info,nfev,fjac,
+; ldfjac,ipvt,qtf,wa1,wa2,wa3,wa4)
 ;
-;     where
+; where
 ;
-;	fcn is the name of the user-supplied subroutine which
-;	  calculates the functions. fcn must be declared
-;	  in an external statement in the user calling
-;	  program, and should be written as follows.
+; fcn is the name of the user-supplied subroutine which
+; calculates the functions. fcn must be declared
+; in an external statement in the user calling
+; program, and should be written as follows.
 ;
-;	  subroutine fcn(m,n,x,fvec,iflag)
-;	  integer m,n,iflag
-;	  double precision x(n),fvec(m)
-;	  ----------
-;	  calculate the functions at x and
-;	  return this vector in fvec.
-;	  ----------
-;	  return
-;	  end
+; subroutine fcn(m,n,x,fvec,iflag)
+; integer m,n,iflag
+; double precision x(n),fvec(m)
+; ----------
+; calculate the functions at x and
+; return this vector in fvec.
+; ----------
+; return
+; end
 ;
-;	  the value of iflag should not be changed by fcn unless
-;	  the user wants to terminate execution of lmdif.
-;	  in this case set iflag to a negative integer.
+; the value of iflag should not be changed by fcn unless
+; the user wants to terminate execution of lmdif.
+; in this case set iflag to a negative integer.
 ;
-;	m is a positive integer input variable set to the number
-;	  of functions.
+; m is a positive integer input variable set to the number
+; of functions.
 ;
-;	n is a positive integer input variable set to the number
-;	  of variables. n must not exceed m.
+; n is a positive integer input variable set to the number
+; of variables. n must not exceed m.
 ;
-;	x is an array of length n. on input x must contain
-;	  an initial estimate of the solution vector. on output x
-;	  contains the final estimate of the solution vector.
+; x is an array of length n. on input x must contain
+; an initial estimate of the solution vector. on output x
+; contains the final estimate of the solution vector.
 ;
-;	fvec is an output array of length m which contains
-;	  the functions evaluated at the output x.
+; fvec is an output array of length m which contains
+; the functions evaluated at the output x.
 ;
-;	ftol is a nonnegative input variable. termination
-;	  occurs when both the actual and predicted relative
-;	  reductions in the sum of squares are at most ftol.
-;	  therefore, ftol measures the relative error desired
-;	  in the sum of squares.
+; ftol is a nonnegative input variable. termination
+; occurs when both the actual and predicted relative
+; reductions in the sum of squares are at most ftol.
+; therefore, ftol measures the relative error desired
+; in the sum of squares.
 ;
-;	xtol is a nonnegative input variable. termination
-;	  occurs when the relative error between two consecutive
-;	  iterates is at most xtol. therefore, xtol measures the
-;	  relative error desired in the approximate solution.
+; xtol is a nonnegative input variable. termination
+; occurs when the relative error between two consecutive
+; iterates is at most xtol. therefore, xtol measures the
+; relative error desired in the approximate solution.
 ;
-;	gtol is a nonnegative input variable. termination
-;	  occurs when the cosine of the angle between fvec and
-;	  any column of the jacobian is at most gtol in absolute
-;	  value. therefore, gtol measures the orthogonality
-;	  desired between the function vector and the columns
-;	  of the jacobian.
+; gtol is a nonnegative input variable. termination
+; occurs when the cosine of the angle between fvec and
+; any column of the jacobian is at most gtol in absolute
+; value. therefore, gtol measures the orthogonality
+; desired between the function vector and the columns
+; of the jacobian.
 ;
-;	maxfev is a positive integer input variable. termination
-;	  occurs when the number of calls to fcn is at least
-;	  maxfev by the end of an iteration.
+; maxfev is a positive integer input variable. termination
+; occurs when the number of calls to fcn is at least
+; maxfev by the end of an iteration.
 ;
-;	epsfcn is an input variable used in determining a suitable
-;	  step length for the forward-difference approximation. this
-;	  approximation assumes that the relative errors in the
-;	  functions are of the order of epsfcn. if epsfcn is less
-;	  than the machine precision, it is assumed that the relative
-;	  errors in the functions are of the order of the machine
-;	  precision.
+; epsfcn is an input variable used in determining a suitable
+; step length for the forward-difference approximation. this
+; approximation assumes that the relative errors in the
+; functions are of the order of epsfcn. if epsfcn is less
+; than the machine precision, it is assumed that the relative
+; errors in the functions are of the order of the machine
+; precision.
 ;
-;	diag is an array of length n. if mode = 1 (see
-;	  below), diag is internally set. if mode = 2, diag
-;	  must contain positive entries that serve as
-;	  multiplicative scale factors for the variables.
+; diag is an array of length n. if mode = 1 (see
+; below), diag is internally set. if mode = 2, diag
+; must contain positive entries that serve as
+; multiplicative scale factors for the variables.
 ;
-;	mode is an integer input variable. if mode = 1, the
-;	  variables will be scaled internally. if mode = 2,
-;	  the scaling is specified by the input diag. other
-;	  values of mode are equivalent to mode = 1.
+; mode is an integer input variable. if mode = 1, the
+; variables will be scaled internally. if mode = 2,
+; the scaling is specified by the input diag. other
+; values of mode are equivalent to mode = 1.
 ;
-;	factor is a positive input variable used in determining the
-;	  initial step bound. this bound is set to the product of
-;	  factor and the euclidean norm of diag*x if nonzero, or else
-;	  to factor itself. in most cases factor should lie in the
-;	  interval (.1,100.). 100. is a generally recommended value.
+; factor is a positive input variable used in determining the
+; initial step bound. this bound is set to the product of
+; factor and the euclidean norm of diag*x if nonzero, or else
+; to factor itself. in most cases factor should lie in the
+; interval (.1,100.). 100. is a generally recommended value.
 ;
-;	nprint is an integer input variable that enables controlled
-;	  printing of iterates if it is positive. in this case,
-;	  fcn is called with iflag = 0 at the beginning of the first
-;	  iteration and every nprint iterations thereafter and
-;	  immediately prior to return, with x and fvec available
-;	  for printing. if nprint is not positive, no special calls
-;	  of fcn with iflag = 0 are made.
+; nprint is an integer input variable that enables controlled
+; printing of iterates if it is positive. in this case,
+; fcn is called with iflag = 0 at the beginning of the first
+; iteration and every nprint iterations thereafter and
+; immediately prior to return, with x and fvec available
+; for printing. if nprint is not positive, no special calls
+; of fcn with iflag = 0 are made.
 ;
-;	info is an integer output variable. if the user has
-;	  terminated execution, info is set to the (negative)
-;	  value of iflag. see description of fcn. otherwise,
-;	  info is set as follows.
+; info is an integer output variable. if the user has
+; terminated execution, info is set to the (negative)
+; value of iflag. see description of fcn. otherwise,
+; info is set as follows.
 ;
-;	  info = 0  improper input parameters.
+; info = 0  improper input parameters.
 ;
-;	  info = 1  both actual and predicted relative reductions
-;		    in the sum of squares are at most ftol.
+; info = 1  both actual and predicted relative reductions
+; in the sum of squares are at most ftol.
 ;
-;	  info = 2  relative error between two consecutive iterates
-;		    is at most xtol.
+; info = 2  relative error between two consecutive iterates
+; is at most xtol.
 ;
-;	  info = 3  conditions for info = 1 and info = 2 both hold.
+; info = 3  conditions for info = 1 and info = 2 both hold.
 ;
-;	  info = 4  the cosine of the angle between fvec and any
-;		    column of the jacobian is at most gtol in
-;		    absolute value.
+; info = 4  the cosine of the angle between fvec and any
+; column of the jacobian is at most gtol in
+; absolute value.
 ;
-;	  info = 5  number of calls to fcn has reached or
-;		    exceeded maxfev.
+; info = 5  number of calls to fcn has reached or
+; exceeded maxfev.
 ;
-;	  info = 6  ftol is too small. no further reduction in
-;		    the sum of squares is possible.
+; info = 6  ftol is too small. no further reduction in
+; the sum of squares is possible.
 ;
-;	  info = 7  xtol is too small. no further improvement in
-;		    the approximate solution x is possible.
+; info = 7  xtol is too small. no further improvement in
+; the approximate solution x is possible.
 ;
-;	  info = 8  gtol is too small. fvec is orthogonal to the
-;		    columns of the jacobian to machine precision.
+; info = 8  gtol is too small. fvec is orthogonal to the
+; columns of the jacobian to machine precision.
 ;
-;	nfev is an integer output variable set to the number of
-;	  calls to fcn.
+; nfev is an integer output variable set to the number of
+; calls to fcn.
 ;
-;	fjac is an output m by n array. the upper n by n submatrix
-;	  of fjac contains an upper triangular matrix r with
-;	  diagonal elements of nonincreasing magnitude such that
+; fjac is an output m by n array. the upper n by n submatrix
+; of fjac contains an upper triangular matrix r with
+; diagonal elements of nonincreasing magnitude such that
 ;
-;		 t     t	   t
-;		p *(jac *jac)*p = r *r,
+; t     t	   t
+; p *(jac *jac)*p = r *r,
 ;
-;	  where p is a permutation matrix and jac is the final
-;	  calculated jacobian. column j of p is column ipvt(j)
-;	  (see below) of the identity matrix. the lower trapezoidal
-;	  part of fjac contains information generated during
-;	  the computation of r.
+; where p is a permutation matrix and jac is the final
+; calculated jacobian. column j of p is column ipvt(j)
+; (see below) of the identity matrix. the lower trapezoidal
+; part of fjac contains information generated during
+; the computation of r.
 ;
-;	ldfjac is a positive integer input variable not less than m
-;	  which specifies the leading dimension of the array fjac.
+; ldfjac is a positive integer input variable not less than m
+; which specifies the leading dimension of the array fjac.
 ;
-;	ipvt is an integer output array of length n. ipvt
-;	  defines a permutation matrix p such that jac*p = q*r,
-;	  where jac is the final calculated jacobian, q is
-;	  orthogonal (not stored), and r is upper triangular
-;	  with diagonal elements of nonincreasing magnitude.
-;	  column j of p is column ipvt(j) of the identity matrix.
+; ipvt is an integer output array of length n. ipvt
+; defines a permutation matrix p such that jac*p = q*r,
+; where jac is the final calculated jacobian, q is
+; orthogonal (not stored), and r is upper triangular
+; with diagonal elements of nonincreasing magnitude.
+; column j of p is column ipvt(j) of the identity matrix.
 ;
-;	qtf is an output array of length n which contains
-;	  the first n elements of the vector (q transpose)*fvec.
+; qtf is an output array of length n which contains
+; the first n elements of the vector (q transpose)*fvec.
 ;
-;	wa1, wa2, and wa3 are work arrays of length n.
+; wa1, wa2, and wa3 are work arrays of length n.
 ;
-;	wa4 is a work array of length m.
+; wa4 is a work array of length m.
 ;
-;     subprograms called
+; subprograms called
 ;
-;	user-supplied ...... fcn
+; user-supplied ...... fcn
 ;
-;	minpack-supplied ... dpmpar,enorm,fdjac2,lmpar,qrfac
+; minpack-supplied ... dpmpar,enorm,fdjac2,lmpar,qrfac
 ;
-;	fortran-supplied ... dabs,dmax1,dmin1,dsqrt,mod
+; fortran-supplied ... dabs,dmax1,dmin1,dsqrt,mod
 ;
-;     argonne national laboratory. minpack project. march 1980.
-;     burton s. garbow, kenneth e. hillstrom, jorge j. more
+; argonne national laboratory. minpack project. march 1980.
+; burton s. garbow, kenneth e. hillstrom, jorge j. more
 ;
-;     **********
-function mpfit, fcn, xall, FUNCTARGS=fcnargs, SCALE_FCN=scalfcn, $
-                ftol=ftol, xtol=xtol, gtol=gtol, epsfcn=epsfcn, resdamp=damp, $
-                nfev=nfev, maxiter=maxiter, errmsg=errmsg, $
-                factor=factor, nprint=nprint, STATUS=info, $
-                iterproc=iterproc, iterargs=iterargs, iterstop=ss,$
-                iterkeystop=iterkeystop, $
-                niter=iter, nfree=nfree, npegged=npegged, dof=dof, $
-                diag=diag, rescale=rescale, autoderivative=autoderiv, $
-                perror=perror, covar=covar, nocovar=nocovar, bestnorm=fnorm, $
-                parinfo=parinfo, quiet=quiet, nocatch=nocatch, $
-                fastnorm=fastnorm, proc=proc, query=query, $
-                external_state=state, external_init=extinit, $
-                external_fvec=efvec, external_fjac=efjac
-
-  COMPILE_OPT strictarr
-  info = 0L
+; **********
+function mpfit, fcn, xall, functargs = fcnargs, scale_fcn = scalfcn, $
+  ftol = ftol, xtol = xtol, gtol = gtol, epsfcn = epsfcn, resdamp = damp, $
+  nfev = nfev, maxiter = maxiter, errmsg = errmsg, $
+  factor = factor, nprint = nprint, status = info, $
+  iterproc = iterproc, iterargs = iterargs, iterstop = ss, $
+  iterkeystop = iterkeystop, $
+  niter = iter, nfree = nfree, npegged = npegged, dof = dof, $
+  diag = diag, rescale = rescale, autoderivative = autoderiv, $
+  perror = perror, covar = covar, nocovar = nocovar, bestnorm = fnorm, $
+  parinfo = parinfo, quiet = quiet, nocatch = nocatch, $
+  fastnorm = fastnorm, proc = proc, query = query, $
+  external_state = state, external_init = extinit, $
+  external_fvec = efvec, external_fjac = efjac
+  compile_opt strictarr
+  info = 0l
   errmsg = ''
 
   if keyword_set(query) then return, 1
 
-  if n_params() EQ 0 then begin
-      message, "USAGE: PARMS = MPFIT('MYFUNCT', START_PARAMS, ... )", /info
-      return, !values.d_nan
+  if n_params() eq 0 then begin
+    message, 'USAGE: PARMS = MPFIT(''MYFUNCT'', START_PARAMS, ... )', /info
+    return, !values.d_nan
   endif
-  
-  ;; Use of double here not a problem since f/x/gtol are all only used
-  ;; in comparisons
-  if n_elements(ftol) EQ 0 then ftol = 1.D-10
-  if n_elements(xtol) EQ 0 then xtol = 1.D-10
-  if n_elements(gtol) EQ 0 then gtol = 1.D-10
-  if n_elements(factor) EQ 0 then factor = 100.
-  if n_elements(nprint) EQ 0 then nprint = 1
-  if n_elements(iterproc) EQ 0 then iterproc = 'MPFIT_DEFITER'
-  if n_elements(autoderiv) EQ 0 then autoderiv = 1
-  if n_elements(fastnorm) EQ 0 then fastnorm = 0
-  if n_elements(damp) EQ 0 then damp = 0 else damp = damp[0]
 
-  ;; These are special configuration parameters that can't be easily
-  ;; passed by MPFIT directly.
-  ;;  FASTNORM - decide on which sum-of-squares technique to use (1)
-  ;;             is fast, (0) is slower
-  ;;  PROC - user routine is a procedure (1) or function (0)
-  ;;  QANYTIED - set to 1 if any parameters are TIED, zero if none
-  ;;  PTIED - array of strings, one for each parameter
+  ; ; Use of double here not a problem since f/x/gtol are all only used
+  ; ; in comparisons
+  if n_elements(ftol) eq 0 then ftol = 1.d-10
+  if n_elements(xtol) eq 0 then xtol = 1.d-10
+  if n_elements(gtol) eq 0 then gtol = 1.d-10
+  if n_elements(factor) eq 0 then factor = 100.
+  if n_elements(nprint) eq 0 then nprint = 1
+  if n_elements(iterproc) eq 0 then iterproc = 'MPFIT_DEFITER'
+  if n_elements(autoderiv) eq 0 then autoderiv = 1
+  if n_elements(fastnorm) eq 0 then fastnorm = 0
+  if n_elements(damp) eq 0 then damp = 0 else damp = damp[0]
+
+  ; ; These are special configuration parameters that can't be easily
+  ; ; passed by MPFIT directly.
+  ; ;  FASTNORM - decide on which sum-of-squares technique to use (1)
+  ; ;             is fast, (0) is slower
+  ; ;  PROC - user routine is a procedure (1) or function (0)
+  ; ;  QANYTIED - set to 1 if any parameters are TIED, zero if none
+  ; ;  PTIED - array of strings, one for each parameter
   common mpfit_config, mpconfig
-  mpconfig = {fastnorm: keyword_set(fastnorm), proc: 0, nfev: 0L, damp: damp}
+  mpconfig = {fastnorm: keyword_set(fastnorm), proc: 0, nfev: 0l, damp: damp}
   common mpfit_machar, machvals
 
-  iflag = 0L
+  iflag = 0l
   catch_msg = 'in MPFIT'
-  nfree = 0L
-  npegged = 0L
-  dof = 0L
+  nfree = 0l
+  npegged = 0l
+  dof = 0l
 
-  ;; Parameter damping doesn't work when user is providing their own
-  ;; gradients.
-  if damp NE 0 AND NOT keyword_set(autoderiv) then begin
-      errmsg = 'ERROR: keywords DAMP and AUTODERIV are mutually exclusive'
-      goto, TERMINATE
-  endif      
-  
-  ;; Process the ITERSTOP and ITERKEYSTOP keywords, and turn this into
-  ;; a set of keywords to pass to MPFIT_DEFITER.
-  if strupcase(iterproc) EQ 'MPFIT_DEFITER' AND n_elements(iterargs) EQ 0 $
-    AND keyword_set(ss) then begin
-      if n_elements(iterkeystop) GT 0 then begin
-          sz = size(iterkeystop)
-          tp = sz[sz[0]+1]
-          if tp EQ 7 then begin
-              ;; String - convert first char to byte
-              iterkeybyte = (byte(iterkeystop[0]))[0]
-          endif
-          if (tp GE 1 AND tp LE 3) OR (tp GE 12 AND tp LE 15) then begin
-              ;; Integer - convert to byte
-              iterkeybyte = byte(iterkeystop[0])
-          endif
-          if n_elements(iterkeybyte) EQ 0 then begin
-              errmsg = 'ERROR: ITERKEYSTOP must be either a BYTE or STRING'
-              goto, TERMINATE
-          endif
-
-          iterargs = {iterstop: 1, iterkeybyte: iterkeybyte}
-      endif else begin
-          iterargs = {iterstop: 1, iterkeybyte: 7b}
-      endelse
+  ; ; Parameter damping doesn't work when user is providing their own
+  ; ; gradients.
+  if damp ne 0 and not keyword_set(autoderiv) then begin
+    errmsg = 'ERROR: keywords DAMP and AUTODERIV are mutually exclusive'
+    goto, terminate
   endif
 
-
-  ;; Handle error conditions gracefully
-  if NOT keyword_set(nocatch) then begin
-      catch, catcherror
-      if catcherror NE 0 then begin
-          catch, /cancel
-          err_string = ''+!error_state.msg
-          message, /cont, 'Error detected while '+catch_msg+':'
-          message, /cont,    err_string
-          message, /cont, 'Error condition detected. Returning to MAIN level.'
-          if errmsg EQ '' then $
-            errmsg = 'Error detected while '+catch_msg+': '+err_string
-          if info EQ 0 then info = -18
-          return, !values.d_nan
+  ; ; Process the ITERSTOP and ITERKEYSTOP keywords, and turn this into
+  ; ; a set of keywords to pass to MPFIT_DEFITER.
+  if strupcase(iterproc) eq 'MPFIT_DEFITER' and n_elements(iterargs) eq 0 $
+    and keyword_set(ss) then begin
+    if n_elements(iterkeystop) gt 0 then begin
+      sz = size(iterkeystop)
+      tp = sz[sz[0] + 1]
+      if tp eq 7 then begin
+        ; ; String - convert first char to byte
+        iterkeybyte = (byte(iterkeystop[0]))[0]
       endif
+      if (tp ge 1 and tp le 3) or (tp ge 12 and tp le 15) then begin
+        ; ; Integer - convert to byte
+        iterkeybyte = byte(iterkeystop[0])
+      endif
+      if n_elements(iterkeybyte) eq 0 then begin
+        errmsg = 'ERROR: ITERKEYSTOP must be either a BYTE or STRING'
+        goto, terminate
+      endif
+
+      iterargs = {iterstop: 1, iterkeybyte: iterkeybyte}
+    endif else begin
+      iterargs = {iterstop: 1, iterkeybyte: 7b}
+    endelse
+  endif
+
+  ; ; Handle error conditions gracefully
+  if not keyword_set(nocatch) then begin
+    catch, catcherror
+    if catcherror ne 0 then begin
+      catch, /cancel
+      err_string = '' + !error_state.msg
+      message, /cont, 'Error detected while ' + catch_msg + ':'
+      message, /cont, err_string
+      message, /cont, 'Error condition detected. Returning to MAIN level.'
+      if errmsg eq '' then $
+        errmsg = 'Error detected while ' + catch_msg + ': ' + err_string
+      if info eq 0 then info = -18
+      return, !values.d_nan
+    endif
   endif
   mpconfig = create_struct(mpconfig, 'NOCATCH', keyword_set(nocatch))
 
-  ;; Parse FCN function name - be sure it is a scalar string
+  ; ; Parse FCN function name - be sure it is a scalar string
   sz = size(fcn)
-  if sz[0] NE 0 then begin
-      FCN_NAME:
-      errmsg = 'ERROR: MYFUNCT must be a scalar string'
-      goto, TERMINATE
+  if sz[0] ne 0 then begin
+    fcn_name:
+    errmsg = 'ERROR: MYFUNCT must be a scalar string'
+    goto, terminate
   endif
-  if sz[sz[0]+1] NE 7 then goto, FCN_NAME
+  if sz[sz[0] + 1] ne 7 then goto, fcn_name
 
   isext = 0
-  if fcn EQ '(EXTERNAL)' then begin
-      if n_elements(efvec) EQ 0 OR n_elements(efjac) EQ 0 then begin
-          errmsg = 'ERROR: when using EXTERNAL function, EXTERNAL_FVEC '+$
-            'and EXTERNAL_FJAC must be defined'
-          goto, TERMINATE
-      endif
-      nv = n_elements(efvec)
-      nj = n_elements(efjac)
-      if (nj MOD nv) NE 0 then begin
-          errmsg = 'ERROR: the number of values in EXTERNAL_FJAC must be '+ $
-            'a multiple of the number of values in EXTERNAL_FVEC'
-          goto, TERMINATE
-      endif
-      isext = 1
+  if fcn eq '(EXTERNAL)' then begin
+    if n_elements(efvec) eq 0 or n_elements(efjac) eq 0 then begin
+      errmsg = 'ERROR: when using EXTERNAL function, EXTERNAL_FVEC ' + $
+        'and EXTERNAL_FJAC must be defined'
+      goto, terminate
+    endif
+    nv = n_elements(efvec)
+    nj = n_elements(efjac)
+    if (nj mod nv) ne 0 then begin
+      errmsg = 'ERROR: the number of values in EXTERNAL_FJAC must be ' + $
+        'a multiple of the number of values in EXTERNAL_FVEC'
+      goto, terminate
+    endif
+    isext = 1
   endif
 
-  ;; Parinfo:
-  ;; --------------- STARTING/CONFIG INFO (passed in to routine, not changed)
-  ;; .value   - starting value for parameter
-  ;; .fixed   - parameter is fixed
-  ;; .limited - a two-element array, if parameter is bounded on
-  ;;            lower/upper side
-  ;; .limits - a two-element array, lower/upper parameter bounds, if
-  ;;           limited vale is set
-  ;; .step   - step size in Jacobian calc, if greater than zero
+  ; ; Parinfo:
+  ; ; --------------- STARTING/CONFIG INFO (passed in to routine, not changed)
+  ; ; .value   - starting value for parameter
+  ; ; .fixed   - parameter is fixed
+  ; ; .limited - a two-element array, if parameter is bounded on
+  ; ;            lower/upper side
+  ; ; .limits - a two-element array, lower/upper parameter bounds, if
+  ; ;           limited vale is set
+  ; ; .step   - step size in Jacobian calc, if greater than zero
 
   catch_msg = 'parsing input parameters'
-  ;; Parameters can either be stored in parinfo, or x.  Parinfo takes
-  ;; precedence if it exists.
-  if n_elements(xall) EQ 0 AND n_elements(parinfo) EQ 0 then begin
-      errmsg = 'ERROR: must pass parameters in P or PARINFO'
-      goto, TERMINATE
+  ; ; Parameters can either be stored in parinfo, or x.  Parinfo takes
+  ; ; precedence if it exists.
+  if n_elements(xall) eq 0 and n_elements(parinfo) eq 0 then begin
+    errmsg = 'ERROR: must pass parameters in P or PARINFO'
+    goto, terminate
   endif
 
-  ;; Be sure that PARINFO is of the right type
-  if n_elements(parinfo) GT 0 then begin
-      ;; Make sure the array is 1-D
-      parinfo = parinfo[*]
-      parinfo_size = size(parinfo)
-      if parinfo_size[parinfo_size[0]+1] NE 8 then begin
-          errmsg = 'ERROR: PARINFO must be a structure.'
-          goto, TERMINATE
-      endif
-      if n_elements(xall) GT 0 AND n_elements(xall) NE n_elements(parinfo) $
-        then begin
-          errmsg = 'ERROR: number of elements in PARINFO and P must agree'
-          goto, TERMINATE
-      endif
+  ; ; Be sure that PARINFO is of the right type
+  if n_elements(parinfo) gt 0 then begin
+    ; ; Make sure the array is 1-D
+    parinfo = parinfo[*]
+    parinfo_size = size(parinfo)
+    if parinfo_size[parinfo_size[0] + 1] ne 8 then begin
+      errmsg = 'ERROR: PARINFO must be a structure.'
+      goto, terminate
+    endif
+    if n_elements(xall) gt 0 and n_elements(xall) ne n_elements(parinfo) $
+    then begin
+      errmsg = 'ERROR: number of elements in PARINFO and P must agree'
+      goto, terminate
+    endif
   endif
 
-  ;; If the parameters were not specified at the command line, then
-  ;; extract them from PARINFO
-  if n_elements(xall) EQ 0 then begin
-      mpfit_parinfo, parinfo, tagnames, 'VALUE', xall, status=status
-      if status EQ 0 then begin
-          errmsg = 'ERROR: either P or PARINFO[*].VALUE must be supplied.'
-          goto, TERMINATE
-      endif
+  ; ; If the parameters were not specified at the command line, then
+  ; ; extract them from PARINFO
+  if n_elements(xall) eq 0 then begin
+    mpfit_parinfo, parinfo, tagnames, 'VALUE', xall, status = status
+    if status eq 0 then begin
+      errmsg = 'ERROR: either P or PARINFO[*].VALUE must be supplied.'
+      goto, terminate
+    endif
 
-      sz = size(xall)
-      ;; Convert to double if parameters are not float or double
-      if sz[sz[0]+1] NE 4 AND sz[sz[0]+1] NE 5 then $
-        xall = double(xall)
+    sz = size(xall)
+    ; ; Convert to double if parameters are not float or double
+    if sz[sz[0] + 1] ne 4 and sz[sz[0] + 1] ne 5 then $
+      xall = double(xall)
   endif
-  xall = xall[*]   ;; Make sure the array is 1-D
+  xall = xall[*] ; ; Make sure the array is 1-D
   npar = n_elements(xall)
   zero = xall[0] * 0.
-  one  = zero    + 1.
-  fnorm  = -one
+  one = zero + 1.
+  fnorm = -one
   fnorm1 = -one
 
-  ;; TIED parameters?
-  mpfit_parinfo, parinfo, tagnames, 'TIED', ptied, default='', n=npar
+  ; ; TIED parameters?
+  mpfit_parinfo, parinfo, tagnames, 'TIED', ptied, default = '', n = npar
   ptied = strtrim(ptied, 2)
-  wh = where(ptied NE '', qanytied) 
-  qanytied = qanytied GT 0
+  wh = where(ptied ne '', qanytied)
+  qanytied = qanytied gt 0
   mpconfig = create_struct(mpconfig, 'QANYTIED', qanytied, 'PTIED', ptied)
 
-  ;; FIXED parameters ?
-  mpfit_parinfo, parinfo, tagnames, 'FIXED', pfixed, default=0, n=npar
-  pfixed = pfixed EQ 1
-  pfixed = pfixed OR (ptied NE '');; Tied parameters are also effectively fixed
-  
-  ;; Finite differencing step, absolute and relative, and sidedness of deriv.
-  mpfit_parinfo, parinfo, tagnames, 'STEP',     step, default=zero, n=npar
-  mpfit_parinfo, parinfo, tagnames, 'RELSTEP', dstep, default=zero, n=npar
-  mpfit_parinfo, parinfo, tagnames, 'MPSIDE',  dside, default=0,    n=npar
-  ;; Debugging parameters
-  mpfit_parinfo, parinfo, tagnames, 'MPDERIV_DEBUG',  ddebug, default=0, n=npar
-  mpfit_parinfo, parinfo, tagnames, 'MPDERIV_RELTOL', ddrtol, default=zero, n=npar
-  mpfit_parinfo, parinfo, tagnames, 'MPDERIV_ABSTOL', ddatol, default=zero, n=npar
+  ; ; FIXED parameters ?
+  mpfit_parinfo, parinfo, tagnames, 'FIXED', pfixed, default = 0, n = npar
+  pfixed = pfixed eq 1
+  pfixed = pfixed or (ptied ne '') ; ; Tied parameters are also effectively fixed
 
-  ;; Maximum and minimum steps allowed to be taken in one iteration
-  mpfit_parinfo, parinfo, tagnames, 'MPMAXSTEP', maxstep, default=zero, n=npar
-  mpfit_parinfo, parinfo, tagnames, 'MPMINSTEP', minstep, default=zero, n=npar
-  qmin = minstep *  0  ;; Remove minstep for now!!
-  qmax = maxstep NE 0
-  wh = where(qmin AND qmax AND maxstep LT minstep, ct)
-  if ct GT 0 then begin
-      errmsg = 'ERROR: MPMINSTEP is greater than MPMAXSTEP'
-      goto, TERMINATE
+  ; ; Finite differencing step, absolute and relative, and sidedness of deriv.
+  mpfit_parinfo, parinfo, tagnames, 'STEP', step, default = zero, n = npar
+  mpfit_parinfo, parinfo, tagnames, 'RELSTEP', dstep, default = zero, n = npar
+  mpfit_parinfo, parinfo, tagnames, 'MPSIDE', dside, default = 0, n = npar
+  ; ; Debugging parameters
+  mpfit_parinfo, parinfo, tagnames, 'MPDERIV_DEBUG', ddebug, default = 0, n = npar
+  mpfit_parinfo, parinfo, tagnames, 'MPDERIV_RELTOL', ddrtol, default = zero, n = npar
+  mpfit_parinfo, parinfo, tagnames, 'MPDERIV_ABSTOL', ddatol, default = zero, n = npar
+
+  ; ; Maximum and minimum steps allowed to be taken in one iteration
+  mpfit_parinfo, parinfo, tagnames, 'MPMAXSTEP', maxstep, default = zero, n = npar
+  mpfit_parinfo, parinfo, tagnames, 'MPMINSTEP', minstep, default = zero, n = npar
+  qmin = minstep * 0 ; ; Remove minstep for now!!
+  qmax = maxstep ne 0
+  wh = where(qmin and qmax and maxstep lt minstep, ct)
+  if ct gt 0 then begin
+    errmsg = 'ERROR: MPMINSTEP is greater than MPMAXSTEP'
+    goto, terminate
   endif
-  wh = where(qmin OR qmax, ct)
-  qminmax = ct GT 0
+  wh = where(qmin or qmax, ct)
+  qminmax = ct gt 0
 
-  ;; Finish up the free parameters
-  ifree = where(pfixed NE 1, nfree)
-  if nfree EQ 0 then begin
-      errmsg = 'ERROR: no free parameters'
-      goto, TERMINATE
+  ; ; Finish up the free parameters
+  ifree = where(pfixed ne 1, nfree)
+  if nfree eq 0 then begin
+    errmsg = 'ERROR: no free parameters'
+    goto, terminate
   endif
 
-  ;; An external Jacobian must be checked against the number of
-  ;; parameters
+  ; ; An external Jacobian must be checked against the number of
+  ; ; parameters
   if isext then begin
-      if (nj/nv) NE nfree then begin
-          errmsg = string(nv, nfree, nfree, $
-           format=('("ERROR: EXTERNAL_FJAC must be a ",I0," x ",I0,' + $
-                   '" array, where ",I0," is the number of free parameters")'))
-          goto, TERMINATE
-      endif
+    if (nj / nv) ne nfree then begin
+      errmsg = string(nv, nfree, nfree, $
+        format = ('("ERROR: EXTERNAL_FJAC must be a ",I0," x ",I0,' + $
+          '" array, where ",I0," is the number of free parameters")'))
+      goto, terminate
+    endif
   endif
 
-  ;; Compose only VARYING parameters
-  xnew = xall      ;; xnew is the set of parameters to be returned
-  x = xnew[ifree]  ;; x is the set of free parameters
+  ; ; Compose only VARYING parameters
+  xnew = xall ; ; xnew is the set of parameters to be returned
+  x = xnew[ifree] ; ; x is the set of free parameters
 
-  ;; LIMITED parameters ?
-  mpfit_parinfo, parinfo, tagnames, 'LIMITED', limited, status=st1
-  mpfit_parinfo, parinfo, tagnames, 'LIMITS',  limits,  status=st2
-  if st1 EQ 1 AND st2 EQ 1 then begin
+  ; ; LIMITED parameters ?
+  mpfit_parinfo, parinfo, tagnames, 'LIMITED', limited, status = st1
+  mpfit_parinfo, parinfo, tagnames, 'LIMITS', limits, status = st2
+  if st1 eq 1 and st2 eq 1 then begin
+    ; ; Error checking on limits in parinfo
+    wh = where((limited[0, *] and xall lt limits[0, *]) or $
+      (limited[1, *] and xall gt limits[1, *]), ct)
+    if ct gt 0 then begin
+      errmsg = 'ERROR: parameters are not within PARINFO limits'
+      goto, terminate
+    endif
+    wh = where(limited[0, *] and limited[1, *] and $
+      limits[0, *] ge limits[1, *] and $
+      pfixed eq 0, ct)
+    if ct gt 0 then begin
+      errmsg = 'ERROR: PARINFO parameter limits are not consistent'
+      goto, terminate
+    endif
 
-      ;; Error checking on limits in parinfo
-      wh = where((limited[0,*] AND xall LT limits[0,*]) OR $
-                 (limited[1,*] AND xall GT limits[1,*]), ct)
-      if ct GT 0 then begin
-          errmsg = 'ERROR: parameters are not within PARINFO limits'
-          goto, TERMINATE
-      endif
-      wh = where(limited[0,*] AND limited[1,*] AND $
-                 limits[0,*] GE limits[1,*] AND $
-                 pfixed EQ 0, ct)
-      if ct GT 0 then begin
-          errmsg = 'ERROR: PARINFO parameter limits are not consistent'
-          goto, TERMINATE
-      endif
-      
+    ; ; Transfer structure values to local variables
+    qulim = limited[1, ifree]
+    ulim = limits[1, ifree]
+    qllim = limited[0, ifree]
+    llim = limits[0, ifree]
 
-      ;; Transfer structure values to local variables
-      qulim = limited[1, ifree]
-      ulim  = limits [1, ifree]
-      qllim = limited[0, ifree]
-      llim  = limits [0, ifree]
-
-      wh = where(qulim OR qllim, ct)
-      if ct GT 0 then qanylim = 1 else qanylim = 0
-
+    wh = where(qulim or qllim, ct)
+    if ct gt 0 then qanylim = 1 else qanylim = 0
   endif else begin
-
-      ;; Fill in local variables with dummy values
-      qulim = lonarr(nfree)
-      ulim  = x * 0.
-      qllim = qulim
-      llim  = x * 0.
-      qanylim = 0
-
+    ; ; Fill in local variables with dummy values
+    qulim = lonarr(nfree)
+    ulim = x * 0.
+    qllim = qulim
+    llim = x * 0.
+    qanylim = 0
   endelse
 
-  ;; Initialize the number of parameters pegged at a hard limit value
-  wh = where((qulim AND (x EQ ulim)) OR (qllim AND (x EQ llim)), npegged)
+  ; ; Initialize the number of parameters pegged at a hard limit value
+  wh = where((qulim and (x eq ulim)) or (qllim and (x eq llim)), npegged)
 
   n = n_elements(x)
-  if n_elements(maxiter) EQ 0 then maxiter = 200L
+  if n_elements(maxiter) eq 0 then maxiter = 200l
 
-  ;; Check input parameters for errors
-  if (n LE 0) OR (ftol LE 0) OR (xtol LE 0) OR (gtol LE 0) $
-    OR (maxiter LT 0) OR (factor LE 0) then begin
-      errmsg = 'ERROR: input keywords are inconsistent'
-      goto, TERMINATE
+  ; ; Check input parameters for errors
+  if (n le 0) or (ftol le 0) or (xtol le 0) or (gtol le 0) $
+  or (maxiter lt 0) or (factor le 0) then begin
+    errmsg = 'ERROR: input keywords are inconsistent'
+    goto, terminate
   endif
 
   if keyword_set(rescale) then begin
-      errmsg = 'ERROR: DIAG parameter scales are inconsistent'
-      if n_elements(diag) LT n then goto, TERMINATE
-      wh = where(diag LE 0, ct)
-      if ct GT 0 then goto, TERMINATE
-      errmsg = ''
+    errmsg = 'ERROR: DIAG parameter scales are inconsistent'
+    if n_elements(diag) lt n then goto, terminate
+    wh = where(diag le 0, ct)
+    if ct gt 0 then goto, terminate
+    errmsg = ''
   endif
 
-  if n_elements(state) NE 0 AND NOT keyword_set(extinit) then begin
-      szst = size(state)
-      if szst[szst[0]+1] NE 8  then begin
-          errmsg = 'EXTERNAL_STATE keyword was not preserved'
-          status = 0
-          goto, TERMINATE
-      endif
-      if nfree NE n_elements(state.ifree) then begin
-          BAD_IFREE:
-          errmsg = 'Number of free parameters must not change from one '+$
-            'external iteration to the next'
-          status = 0
-          goto, TERMINATE
-      endif
-      wh = where(ifree NE state.ifree, ct)
-      if ct GT 0 then goto, BAD_IFREE
+  if n_elements(state) ne 0 and not keyword_set(extinit) then begin
+    szst = size(state)
+    if szst[szst[0] + 1] ne 8 then begin
+      errmsg = 'EXTERNAL_STATE keyword was not preserved'
+      status = 0
+      goto, terminate
+    endif
+    if nfree ne n_elements(state.ifree) then begin
+      bad_ifree:
+      errmsg = 'Number of free parameters must not change from one ' + $
+        'external iteration to the next'
+      status = 0
+      goto, terminate
+    endif
+    wh = where(ifree ne state.ifree, ct)
+    if ct gt 0 then goto, bad_ifree
 
-      tnames = tag_names(state)
-      for i = 0L, n_elements(tnames)-1 do begin
-          dummy = execute(tnames[i]+' = state.'+tnames[i])
-      endfor
-      wa4 = reform(efvec, n_elements(efvec))
+    tnames = tag_names(state)
+    for i = 0l, n_elements(tnames) - 1 do begin
+      dummy = execute(tnames[i] + ' = state.' + tnames[i])
+    endfor
+    wa4 = reform(efvec, n_elements(efvec))
 
-      goto, RESUME_FIT
+    goto, resume_fit
   endif
 
   common mpfit_error, mperr
 
-  if NOT isext then begin
-      mperr = 0
-      catch_msg = 'calling '+fcn
-      fvec = mpfit_call(fcn, xnew, _EXTRA=fcnargs)
-      iflag = mperr
-      if iflag LT 0 then begin
-          errmsg = 'ERROR: first call to "'+fcn+'" failed'
-          goto, TERMINATE
-      endif
+  if not isext then begin
+    mperr = 0
+    catch_msg = 'calling ' + fcn
+    fvec = mpfit_call(fcn, xnew, _extra = fcnargs)
+    iflag = mperr
+    if iflag lt 0 then begin
+      errmsg = 'ERROR: first call to "' + fcn + '" failed'
+      goto, terminate
+    endif
   endif else begin
-      fvec = reform(efvec, n_elements(efvec))
+    fvec = reform(efvec, n_elements(efvec))
   endelse
 
   catch_msg = 'calling MPFIT_SETMACHAR'
   sz = size(fvec[0])
-  isdouble = (sz[sz[0]+1] EQ 5)
-  
-  mpfit_setmachar, double=isdouble
+  isdouble = (sz[sz[0] + 1] eq 5)
+
+  mpfit_setmachar, double = isdouble
 
   common mpfit_profile, profvals
-;  prof_start = systime(1)
+  ; prof_start = systime(1)
 
   MACHEP0 = machvals.machep
-  DWARF   = machvals.minnum
+  DWARF = machvals.minnum
 
   szx = size(x)
-  ;; The parameters and the squared deviations should have the same
-  ;; type.  Otherwise the MACHAR-based evaluation will fail.
+  ; ; The parameters and the squared deviations should have the same
+  ; ; type.  Otherwise the MACHAR-based evaluation will fail.
   catch_msg = 'checking parameter data'
-  tp = szx[szx[0]+1]
-  if tp NE 4 AND tp NE 5 then begin
-      if NOT keyword_set(quiet) then begin
-          message, 'WARNING: input parameters must be at least FLOAT', /info
-          message, '         (converting parameters to FLOAT)', /info
-      endif
-      x = float(x)
-      xnew = float(x)
-      szx = size(x)
+  tp = szx[szx[0] + 1]
+  if tp ne 4 and tp ne 5 then begin
+    if not keyword_set(quiet) then begin
+      message, 'WARNING: input parameters must be at least FLOAT', /info
+      message, '         (converting parameters to FLOAT)', /info
+    endif
+    x = float(x)
+    xnew = float(x)
+    szx = size(x)
   endif
-  if isdouble AND tp NE 5 then begin
-      if NOT keyword_set(quiet) then begin
-          message, 'WARNING: data is DOUBLE but parameters are FLOAT', /info
-          message, '         (converting parameters to DOUBLE)', /info
-      endif
-      x = double(x)
-      xnew = double(xnew)
+  if isdouble and tp ne 5 then begin
+    if not keyword_set(quiet) then begin
+      message, 'WARNING: data is DOUBLE but parameters are FLOAT', /info
+      message, '         (converting parameters to DOUBLE)', /info
+    endif
+    x = double(x)
+    xnew = double(xnew)
   endif
 
   m = n_elements(fvec)
-  if (m LT n) then begin
-      errmsg = 'ERROR: number of parameters must not exceed data'
-      goto, TERMINATE
+  if (m lt n) then begin
+    errmsg = 'ERROR: number of parameters must not exceed data'
+    goto, terminate
   endif
 
   fnorm = mpfit_enorm(fvec)
 
-  ;; Initialize Levelberg-Marquardt parameter and iteration counter
+  ; ; Initialize Levelberg-Marquardt parameter and iteration counter
 
   par = zero
-  iter = 1L
+  iter = 1l
   qtf = x * 0.
 
-  ;; Beginning of the outer loop
-  
-  OUTER_LOOP:
+  ; ; Beginning of the outer loop
 
-  ;; If requested, call fcn to enable printing of iterates
+  outer_loop:
+
+  ; ; If requested, call fcn to enable printing of iterates
   xnew[ifree] = x
   if qanytied then mpfit_tie, xnew, ptied
-  dof = (n_elements(fvec) - nfree) > 1L
+  dof = (n_elements(fvec) - nfree) > 1l
 
-  if nprint GT 0 AND iterproc NE '' then begin
-      catch_msg = 'calling '+iterproc
-      iflag = 0L
-      if (iter-1) MOD nprint EQ 0 then begin
-          mperr = 0
-          xnew0 = xnew
+  if nprint gt 0 and iterproc ne '' then begin
+    catch_msg = 'calling ' + iterproc
+    iflag = 0l
+    if (iter - 1) mod nprint eq 0 then begin
+      mperr = 0
+      xnew0 = xnew
 
-          call_procedure, iterproc, fcn, xnew, iter, fnorm^2, $
-            FUNCTARGS=fcnargs, parinfo=parinfo, quiet=quiet, $
-            dof=dof, _EXTRA=iterargs
-          iflag = mperr
+      call_procedure, iterproc, fcn, xnew, iter, fnorm ^ 2, $
+        functargs = fcnargs, parinfo = parinfo, quiet = quiet, $
+        dof = dof, _extra = iterargs
+      iflag = mperr
 
-          ;; Check for user termination
-          if iflag LT 0 then begin  
-              errmsg = 'WARNING: premature termination by "'+iterproc+'"'
-              goto, TERMINATE
-          endif
-
-          ;; If parameters were changed (grrr..) then re-tie
-          if max(abs(xnew0-xnew)) GT 0 then begin
-              if qanytied then mpfit_tie, xnew, ptied
-              x = xnew[ifree]
-          endif
-
+      ; ; Check for user termination
+      if iflag lt 0 then begin
+        errmsg = 'WARNING: premature termination by "' + iterproc + '"'
+        goto, terminate
       endif
+
+      ; ; If parameters were changed (grrr..) then re-tie
+      if max(abs(xnew0 - xnew)) gt 0 then begin
+        if qanytied then mpfit_tie, xnew, ptied
+        x = xnew[ifree]
+      endif
+    endif
   endif
 
-  ;; Calculate the jacobian matrix
+  ; ; Calculate the jacobian matrix
   iflag = 2
-  if NOT isext then begin
-      catch_msg = 'calling MPFIT_FDJAC2'
-      fjac = mpfit_fdjac2(fcn, x, fvec, step, qulim, ulim, dside, $
-                          iflag=iflag, epsfcn=epsfcn, $
-                          autoderiv=autoderiv, dstep=dstep, $
-                          FUNCTARGS=fcnargs, ifree=ifree, xall=xnew, $
-                          deriv_debug=ddebug, deriv_reltol=ddrtol, deriv_abstol=ddatol)
-      if iflag LT 0 then begin
-          errmsg = 'WARNING: premature termination by FDJAC2'
-          goto, TERMINATE
-      endif
+  if not isext then begin
+    catch_msg = 'calling MPFIT_FDJAC2'
+    fjac = mpfit_fdjac2(fcn, x, fvec, step, qulim, ulim, dside, $
+      iflag = iflag, epsfcn = epsfcn, $
+      autoderiv = autoderiv, dstep = dstep, $
+      functargs = fcnargs, ifree = ifree, xall = xnew, $
+      deriv_debug = ddebug, deriv_reltol = ddrtol, deriv_abstol = ddatol)
+    if iflag lt 0 then begin
+      errmsg = 'WARNING: premature termination by FDJAC2'
+      goto, terminate
+    endif
   endif else begin
-      fjac = reform(efjac,n_elements(fvec),npar, /overwrite)
+    fjac = reform(efjac, n_elements(fvec), npar, /overwrite)
   endelse
 
-  ;; Rescale the residuals and gradient, for use with "alternative"
-  ;; statistics such as the Cash statistic.
+  ; ; Rescale the residuals and gradient, for use with "alternative"
+  ; ; statistics such as the Cash statistic.
   catch_msg = 'prescaling residuals and gradient'
-  if n_elements(scalfcn) GT 0 then begin
-      call_procedure, strtrim(scalfcn[0],2), fvec, fjac
+  if n_elements(scalfcn) gt 0 then begin
+    call_procedure, strtrim(scalfcn[0], 2), fvec, fjac
   endif
 
-  ;; Determine if any of the parameters are pegged at the limits
-  npegged = 0L
+  ; ; Determine if any of the parameters are pegged at the limits
+  npegged = 0l
   if qanylim then begin
-      catch_msg = 'zeroing derivatives of pegged parameters'
-      whlpeg = where(qllim AND (x EQ llim), nlpeg)
-      whupeg = where(qulim AND (x EQ ulim), nupeg)
-      npegged = nlpeg + nupeg
-      
-      ;; See if any "pegged" values should keep their derivatives
-      if (nlpeg GT 0) then begin
-          ;; Total derivative of sum wrt lower pegged parameters
-          for i = 0L, nlpeg-1 do begin
-              sum = total(fvec * fjac[*,whlpeg[i]])
-              if sum GT 0 then fjac[*,whlpeg[i]] = 0
-          endfor
-      endif
-      if (nupeg GT 0) then begin
-          ;; Total derivative of sum wrt upper pegged parameters
-          for i = 0L, nupeg-1 do begin
-              sum = total(fvec * fjac[*,whupeg[i]])
-              if sum LT 0 then fjac[*,whupeg[i]] = 0
-          endfor
-      endif
+    catch_msg = 'zeroing derivatives of pegged parameters'
+    whlpeg = where(qllim and (x eq llim), nlpeg)
+    whupeg = where(qulim and (x eq ulim), nupeg)
+    npegged = nlpeg + nupeg
+
+    ; ; See if any "pegged" values should keep their derivatives
+    if (nlpeg gt 0) then begin
+      ; ; Total derivative of sum wrt lower pegged parameters
+      for i = 0l, nlpeg - 1 do begin
+        sum = total(fvec * fjac[*, whlpeg[i]])
+        if sum gt 0 then fjac[*, whlpeg[i]] = 0
+      endfor
+    endif
+    if (nupeg gt 0) then begin
+      ; ; Total derivative of sum wrt upper pegged parameters
+      for i = 0l, nupeg - 1 do begin
+        sum = total(fvec * fjac[*, whupeg[i]])
+        if sum lt 0 then fjac[*, whupeg[i]] = 0
+      endfor
+    endif
   endif
 
-  ;; Compute the QR factorization of the jacobian
+  ; ; Compute the QR factorization of the jacobian
   catch_msg = 'calling MPFIT_QRFAC'
   mpfit_qrfac, fjac, ipvt, wa1, wa2, /pivot
 
-  ;; On the first iteration if "diag" is unspecified, scale
-  ;; according to the norms of the columns of the initial jacobian
+  ; ; On the first iteration if "diag" is unspecified, scale
+  ; ; according to the norms of the columns of the initial jacobian
   catch_msg = 'rescaling diagonal elements'
-  if (iter EQ 1) then begin
+  if (iter eq 1) then begin
+    if not keyword_set(rescale) or (n_elements(diag) lt n) then begin
+      diag = wa2
+      wh = where(diag eq 0, ct)
+      if ct gt 0 then diag[wh] = one
+    endif
 
-      if NOT keyword_set(rescale) OR (n_elements(diag) LT n) then begin
-          diag = wa2
-          wh = where (diag EQ 0, ct)
-          if ct GT 0 then diag[wh] = one
-      endif
-      
-      ;; On the first iteration, calculate the norm of the scaled x
-      ;; and initialize the step bound delta 
-      wa3 = diag * x
-      xnorm = mpfit_enorm(wa3)
-      delta = factor*xnorm
-      if delta EQ zero then delta = zero + factor
+    ; ; On the first iteration, calculate the norm of the scaled x
+    ; ; and initialize the step bound delta
+    wa3 = diag * x
+    xnorm = mpfit_enorm(wa3)
+    delta = factor * xnorm
+    if delta eq zero then delta = zero + factor
   endif
 
-  ;; Form (q transpose)*fvec and store the first n components in qtf
+  ; ; Form (q transpose)*fvec and store the first n components in qtf
   catch_msg = 'forming (q transpose)*fvec'
   wa4 = fvec
-  for j=0L, n-1 do begin
-      lj = ipvt[j]
-      temp3 = fjac[j,lj]
-      if temp3 NE 0 then begin
-          fj = fjac[j:*,lj]
-          wj = wa4[j:*]
-          ;; *** optimization wa4(j:*)
-          wa4[j] = wj - fj * total(fj*wj) / temp3  
-      endif
-      fjac[j,lj] = wa1[j]
-      qtf[j] = wa4[j]
+  for j = 0l, n - 1 do begin
+    lj = ipvt[j]
+    temp3 = fjac[j, lj]
+    if temp3 ne 0 then begin
+      fj = fjac[j : *, lj]
+      wj = wa4[j : *]
+      ; ; *** optimization wa4(j:*)
+      wa4[j] = wj - fj * total(fj * wj) / temp3
+    endif
+    fjac[j, lj] = wa1[j]
+    qtf[j] = wa4[j]
   endfor
-  ;; From this point on, only the square matrix, consisting of the
-  ;; triangle of R, is needed.
-  fjac = fjac[0:n-1, 0:n-1]
+  ; ; From this point on, only the square matrix, consisting of the
+  ; ; triangle of R, is needed.
+  fjac = fjac[0 : n - 1, 0 : n - 1]
   fjac = reform(fjac, n, n, /overwrite)
-  fjac = fjac[*, ipvt]                    ;; Convert to permuted order
+  fjac = fjac[*, ipvt] ; ; Convert to permuted order
   fjac = reform(fjac, n, n, /overwrite)
 
-  ;; Check for overflow.  This should be a cheap test here since FJAC
-  ;; has been reduced to a (small) square matrix, and the test is
-  ;; O(N^2).
-  wh = where(finite(fjac) EQ 0, ct)
-  if ct GT 0 then goto, FAIL_OVERFLOW
+  ; ; Check for overflow.  This should be a cheap test here since FJAC
+  ; ; has been reduced to a (small) square matrix, and the test is
+  ; ; O(N^2).
+  wh = where(finite(fjac) eq 0, ct)
+  if ct gt 0 then goto, fail_overflow
 
-  ;; Compute the norm of the scaled gradient
+  ; ; Compute the norm of the scaled gradient
   catch_msg = 'computing the scaled gradient'
   gnorm = zero
-  if fnorm NE 0 then begin
-      for j=0L, n-1 do begin
-          l = ipvt[j]
-          if wa2[l] NE 0 then begin
-              sum = total(fjac[0:j,j]*qtf[0:j])/fnorm
-              gnorm = max([gnorm,abs(sum/wa2[l])])
-          endif
-      endfor
+  if fnorm ne 0 then begin
+    for j = 0l, n - 1 do begin
+      l = ipvt[j]
+      if wa2[l] ne 0 then begin
+        sum = total(fjac[0 : j, j] * qtf[0 : j]) / fnorm
+        gnorm = max([gnorm, abs(sum / wa2[l])])
+      endif
+    endfor
   endif
 
-  ;; Test for convergence of the gradient norm
-  if gnorm LE gtol then info = 4
-  if info NE 0 then goto, TERMINATE
-  if maxiter EQ 0 then begin
-     info = 5
-     goto, TERMINATE
+  ; ; Test for convergence of the gradient norm
+  if gnorm le gtol then info = 4
+  if info ne 0 then goto, terminate
+  if maxiter eq 0 then begin
+    info = 5
+    goto, terminate
   endif
 
-  ;; Rescale if necessary
-  if NOT keyword_set(rescale) then $
+  ; ; Rescale if necessary
+  if not keyword_set(rescale) then $
     diag = diag > wa2
 
-  ;; Beginning of the inner loop
-  INNER_LOOP:
-  
-  ;; Determine the levenberg-marquardt parameter
-  catch_msg = 'calculating LM parameter (MPFIT_LMPAR)'
-  par = mpfit_lmpar(fjac, ipvt, diag, qtf, delta, wa1, wa2, par=par)
+  ; ; Beginning of the inner loop
+  inner_loop:
 
-  ;; Store the direction p and x+p. Calculate the norm of p
+  ; ; Determine the levenberg-marquardt parameter
+  catch_msg = 'calculating LM parameter (MPFIT_LMPAR)'
+  par = mpfit_lmpar(fjac, ipvt, diag, qtf, delta, wa1, wa2, par = par)
+
+  ; ; Store the direction p and x+p. Calculate the norm of p
   wa1 = -wa1
 
-  if qanylim EQ 0 AND qminmax EQ 0 then begin
-      ;; No parameter limits, so just move to new position WA2
-      alpha = one
-      wa2 = x + wa1
-
+  if qanylim eq 0 and qminmax eq 0 then begin
+    ; ; No parameter limits, so just move to new position WA2
+    alpha = one
+    wa2 = x + wa1
   endif else begin
-      
-      ;; Respect the limits.  If a step were to go out of bounds, then
-      ;; we should take a step in the same direction but shorter distance.
-      ;; The step should take us right to the limit in that case.
-      alpha = one
+    ; ; Respect the limits.  If a step were to go out of bounds, then
+    ; ; we should take a step in the same direction but shorter distance.
+    ; ; The step should take us right to the limit in that case.
+    alpha = one
 
-      if qanylim EQ 1 then begin
-          ;; Do not allow any steps out of bounds
-          catch_msg = 'checking for a step out of bounds'
-          if nlpeg GT 0 then wa1[whlpeg] = wa1[whlpeg] > 0
-          if nupeg GT 0 then wa1[whupeg] = wa1[whupeg] < 0
+    if qanylim eq 1 then begin
+      ; ; Do not allow any steps out of bounds
+      catch_msg = 'checking for a step out of bounds'
+      if nlpeg gt 0 then wa1[whlpeg] = wa1[whlpeg] > 0
+      if nupeg gt 0 then wa1[whupeg] = wa1[whupeg] < 0
 
-          dwa1 = abs(wa1) GT MACHEP0
-          whl = where(dwa1 AND qllim AND (x + wa1 LT llim), lct)
-          if lct GT 0 then $
-            alpha = min([alpha, (llim[whl]-x[whl])/wa1[whl]])
-          whu = where(dwa1 AND qulim AND (x + wa1 GT ulim), uct)
-          if uct GT 0 then $
-            alpha = min([alpha, (ulim[whu]-x[whu])/wa1[whu]])
+      dwa1 = abs(wa1) gt MACHEP0
+      whl = where(dwa1 and qllim and (x + wa1 lt llim), lct)
+      if lct gt 0 then $
+        alpha = min([alpha, (llim[whl] - x[whl]) / wa1[whl]])
+      whu = where(dwa1 and qulim and (x + wa1 gt ulim), uct)
+      if uct gt 0 then $
+        alpha = min([alpha, (ulim[whu] - x[whu]) / wa1[whu]])
+    endif
+
+    ; ; Obey any max step values.
+
+    if qminmax eq 1 then begin
+      nwa1 = wa1 * alpha
+      whmax = where(qmax and maxstep gt 0, ct)
+      if ct gt 0 then begin
+        mrat = max(abs(nwa1[whmax]) / abs(maxstep[ifree[whmax]]))
+        if mrat gt 1 then alpha = alpha / mrat
       endif
+    endif
 
-      ;; Obey any max step values.
+    ; ; Scale the resulting vector
+    wa1 = wa1 * alpha
+    wa2 = x + wa1
 
-      if qminmax EQ 1 then begin
-          nwa1 = wa1 * alpha
-          whmax = where(qmax AND maxstep GT 0, ct)
-          if ct GT 0 then begin
-              mrat = max(abs(nwa1[whmax])/abs(maxstep[ifree[whmax]]))
-              if mrat GT 1 then alpha = alpha / mrat
-          endif
-      endif          
+    ; ; Adjust the final output values.  If the step put us exactly
+    ; ; on a boundary, make sure we peg it there.
+    sgnu = (ulim ge 0) * 2d - 1d
+    sgnl = (llim ge 0) * 2d - 1d
 
-      ;; Scale the resulting vector
-      wa1 = wa1 * alpha
-      wa2 = x + wa1
+    ; ; Handles case of
+    ; ;      ... nonzero *LIM ...     ... zero *LIM ...
+    ulim1 = ulim * (1 - sgnu * MACHEP0) - (ulim eq 0) * MACHEP0
+    llim1 = llim * (1 + sgnl * MACHEP0) + (llim eq 0) * MACHEP0
 
-      ;; Adjust the final output values.  If the step put us exactly
-      ;; on a boundary, make sure we peg it there.
-      sgnu = (ulim GE 0)*2d - 1d
-      sgnl = (llim GE 0)*2d - 1d
+    wh = where(qulim and (wa2 ge ulim1), ct)
+    if ct gt 0 then wa2[wh] = ulim[wh]
 
-      ;; Handles case of 
-      ;;      ... nonzero *LIM ...     ... zero *LIM ...
-      ulim1 = ulim*(1-sgnu*MACHEP0) - (ulim EQ 0)*MACHEP0
-      llim1 = llim*(1+sgnl*MACHEP0) + (llim EQ 0)*MACHEP0
-
-      wh = where(qulim AND (wa2 GE ulim1), ct)
-      if ct GT 0 then wa2[wh] = ulim[wh]
-
-      wh = where(qllim AND (wa2 LE llim1), ct)
-      if ct GT 0 then wa2[wh] = llim[wh]
+    wh = where(qllim and (wa2 le llim1), ct)
+    if ct gt 0 then wa2[wh] = llim[wh]
   endelse
 
   wa3 = diag * wa1
   pnorm = mpfit_enorm(wa3)
 
-  ;; On the first iteration, adjust the initial step bound
-  if iter EQ 1 then delta = min([delta,pnorm])
+  ; ; On the first iteration, adjust the initial step bound
+  if iter eq 1 then delta = min([delta, pnorm])
 
   xnew[ifree] = wa2
-  if isext then goto, SAVE_STATE
+  if isext then goto, save_state
 
-  ;; Evaluate the function at x+p and calculate its norm
+  ; ; Evaluate the function at x+p and calculate its norm
   mperr = 0
-  catch_msg = 'calling '+fcn
-  wa4 = mpfit_call(fcn, xnew, _EXTRA=fcnargs)
+  catch_msg = 'calling ' + fcn
+  wa4 = mpfit_call(fcn, xnew, _extra = fcnargs)
   iflag = mperr
-  if iflag LT 0 then begin
-      errmsg = 'WARNING: premature termination by "'+fcn+'"'
-      goto, TERMINATE
+  if iflag lt 0 then begin
+    errmsg = 'WARNING: premature termination by "' + fcn + '"'
+    goto, terminate
   endif
-  RESUME_FIT:
+  resume_fit:
   fnorm1 = mpfit_enorm(wa4)
-  
-  ;; Compute the scaled actual reduction
+
+  ; ; Compute the scaled actual reduction
   catch_msg = 'computing convergence criteria'
   actred = -one
-  if 0.1D * fnorm1 LT fnorm then actred = - (fnorm1/fnorm)^2 + 1.
+  if 0.1d * fnorm1 lt fnorm then actred = -(fnorm1 / fnorm) ^ 2 + 1.
 
-  ;; Compute the scaled predicted reduction and the scaled directional
-  ;; derivative
-  for j = 0L, n-1 do begin
-      wa3[j] = 0
-      wa3[0:j] = wa3[0:j] + fjac[0:j,j]*wa1[ipvt[j]]
+  ; ; Compute the scaled predicted reduction and the scaled directional
+  ; ; derivative
+  for j = 0l, n - 1 do begin
+    wa3[j] = 0
+    wa3[0 : j] = wa3[0 : j] + fjac[0 : j, j] * wa1[ipvt[j]]
   endfor
 
-  ;; Remember, alpha is the fraction of the full LM step actually
-  ;; taken
-  temp1 = mpfit_enorm(alpha*wa3)/fnorm
-  temp2 = (sqrt(alpha*par)*pnorm)/fnorm
-  half  = zero + 0.5
-  prered = temp1*temp1 + (temp2*temp2)/half
-  dirder = -(temp1*temp1 + temp2*temp2)
+  ; ; Remember, alpha is the fraction of the full LM step actually
+  ; ; taken
+  temp1 = mpfit_enorm(alpha * wa3) / fnorm
+  temp2 = (sqrt(alpha * par) * pnorm) / fnorm
+  half = zero + 0.5
+  prered = temp1 * temp1 + (temp2 * temp2) / half
+  dirder = -(temp1 * temp1 + temp2 * temp2)
 
-  ;; Compute the ratio of the actual to the predicted reduction.
+  ; ; Compute the ratio of the actual to the predicted reduction.
   ratio = zero
   tenth = zero + 0.1
-  if prered NE 0 then ratio = actred/prered
+  if prered ne 0 then ratio = actred / prered
 
-  ;; Update the step bound
-  if ratio LE 0.25D then begin
-      if actred GE 0 then temp = half $
-      else temp = half*dirder/(dirder + half*actred)
-      if ((0.1D*fnorm1) GE fnorm) OR (temp LT 0.1D) then temp = tenth
-      delta = temp*min([delta,pnorm/tenth])
-      par = par/temp
+  ; ; Update the step bound
+  if ratio le 0.25d then begin
+    if actred ge 0 then temp = half $
+    else temp = half * dirder / (dirder + half * actred)
+    if ((0.1d * fnorm1) ge fnorm) or (temp lt 0.1d) then temp = tenth
+    delta = temp * min([delta, pnorm / tenth])
+    par = par / temp
   endif else begin
-      if (par EQ 0) OR (ratio GE 0.75) then begin
-          delta = pnorm/half
-          par = half*par
-      endif
+    if (par eq 0) or (ratio ge 0.75) then begin
+      delta = pnorm / half
+      par = half * par
+    endif
   endelse
 
-  ;; Test for successful iteration
-  if ratio GE 0.0001 then begin
-      ;; Successful iteration.  Update x, fvec, and their norms
-      x = wa2
-      wa2 = diag * x
+  ; ; Test for successful iteration
+  if ratio ge 0.0001 then begin
+    ; ; Successful iteration.  Update x, fvec, and their norms
+    x = wa2
+    wa2 = diag * x
 
-      fvec = wa4
-      xnorm = mpfit_enorm(wa2)
-      fnorm = fnorm1
-      iter = iter + 1
+    fvec = wa4
+    xnorm = mpfit_enorm(wa2)
+    fnorm = fnorm1
+    iter = iter + 1
   endif
 
-  ;; Tests for convergence
-  if (abs(actred) LE ftol) AND (prered LE ftol) $
-    AND  (0.5D * ratio LE 1) then info = 1
-  if delta LE xtol*xnorm then info = 2
-  if (abs(actred) LE ftol) AND (prered LE ftol) $
-    AND (0.5D * ratio LE 1) AND (info EQ 2) then info = 3
-  if info NE 0 then goto, TERMINATE
+  ; ; Tests for convergence
+  if (abs(actred) le ftol) and (prered le ftol) $
+    and (0.5d * ratio le 1) then info = 1
+  if delta le xtol * xnorm then info = 2
+  if (abs(actred) le ftol) and (prered le ftol) $
+    and (0.5d * ratio le 1) and (info eq 2) then info = 3
+  if info ne 0 then goto, terminate
 
-  ;; Tests for termination and stringent tolerances
-  if iter GE maxiter then info = 5
-  if (abs(actred) LE MACHEP0) AND (prered LE MACHEP0) $
-    AND (0.5*ratio LE 1) then info = 6
-  if delta LE MACHEP0*xnorm then info = 7
-  if gnorm LE MACHEP0 then info = 8
-  if info NE 0 then goto, TERMINATE
+  ; ; Tests for termination and stringent tolerances
+  if iter ge maxiter then info = 5
+  if (abs(actred) le MACHEP0) and (prered le MACHEP0) $
+    and (0.5 * ratio le 1) then info = 6
+  if delta le MACHEP0 * xnorm then info = 7
+  if gnorm le MACHEP0 then info = 8
+  if info ne 0 then goto, terminate
 
-  ;; End of inner loop. Repeat if iteration unsuccessful
-  if ratio LT 0.0001 then begin
-      goto, INNER_LOOP
+  ; ; End of inner loop. Repeat if iteration unsuccessful
+  if ratio lt 0.0001 then begin
+    goto, inner_loop
   endif
 
-  ;; Check for over/underflow
-  wh = where(finite(wa1) EQ 0 OR finite(wa2) EQ 0 OR finite(x) EQ 0, ct)
-  if ct GT 0 OR finite(ratio) EQ 0 then begin
-      FAIL_OVERFLOW:
-      errmsg = ('ERROR: parameter or function value(s) have become '+$
-                'infinite; check model function for over- '+$
-                'and underflow')
-      info = -16
-      goto, TERMINATE
+  ; ; Check for over/underflow
+  wh = where(finite(wa1) eq 0 or finite(wa2) eq 0 or finite(x) eq 0, ct)
+  if ct gt 0 or finite(ratio) eq 0 then begin
+    fail_overflow:
+    errmsg = ('ERROR: parameter or function value(s) have become ' + $
+      'infinite; check model function for over- ' + $
+      'and underflow')
+    info = -16
+    goto, terminate
   endif
 
-  ;; End of outer loop.
-  goto, OUTER_LOOP
+  ; ; End of outer loop.
+  goto, outer_loop
 
-TERMINATE:
+  terminate:
   catch_msg = 'in the termination phase'
-  ;; Termination, either normal or user imposed.
-  if iflag LT 0 then info = iflag
+  ; ; Termination, either normal or user imposed.
+  if iflag lt 0 then info = iflag
   iflag = 0
-  if n_elements(xnew) EQ 0 then goto, FINAL_RETURN
-  if nfree EQ 0 then xnew = xall else xnew[ifree] = x
+  if n_elements(xnew) eq 0 then goto, final_return
+  if nfree eq 0 then xnew = xall else xnew[ifree] = x
   dof = n_elements(fvec) - nfree
 
+  ; ; Call the ITERPROC at the end of the fit, if the fit status is
+  ; ; okay.  Don't call it if the fit failed for some reason.
+  if info gt 0 then begin
+    mperr = 0
+    xnew0 = xnew
 
-  ;; Call the ITERPROC at the end of the fit, if the fit status is
-  ;; okay.  Don't call it if the fit failed for some reason.
-  if info GT 0 then begin
-      
-      mperr = 0
-      xnew0 = xnew
-      
-      call_procedure, iterproc, fcn, xnew, iter, fnorm^2, $
-        FUNCTARGS=fcnargs, parinfo=parinfo, quiet=quiet, $
-        dof=dof, _EXTRA=iterargs
-      iflag = mperr
+    call_procedure, iterproc, fcn, xnew, iter, fnorm ^ 2, $
+      functargs = fcnargs, parinfo = parinfo, quiet = quiet, $
+      dof = dof, _extra = iterargs
+    iflag = mperr
 
-      if iflag LT 0 then begin  
-          errmsg = 'WARNING: premature termination by "'+iterproc+'"'
-      endif else begin
-          ;; If parameters were changed (grrr..) then re-tie
-          if max(abs(xnew0-xnew)) GT 0 then begin
-              if qanytied then mpfit_tie, xnew, ptied
-              x = xnew[ifree]
-          endif
-      endelse
-
+    if iflag lt 0 then begin
+      errmsg = 'WARNING: premature termination by "' + iterproc + '"'
+    endif else begin
+      ; ; If parameters were changed (grrr..) then re-tie
+      if max(abs(xnew0 - xnew)) gt 0 then begin
+        if qanytied then mpfit_tie, xnew, ptied
+        x = xnew[ifree]
+      endif
+    endelse
   endif
 
-  ;; Initialize the number of parameters pegged at a hard limit value
-  npegged = 0L
-  if n_elements(qanylim) GT 0 then if qanylim then begin
-      wh = where((qulim AND (x EQ ulim)) OR $
-                 (qllim AND (x EQ llim)), npegged)
+  ; ; Initialize the number of parameters pegged at a hard limit value
+  npegged = 0l
+  if n_elements(qanylim) gt 0 then if qanylim then begin
+    wh = where((qulim and (x eq ulim)) or $
+      (qllim and (x eq llim)), npegged)
   endif
 
-  if fcn NE '(EXTERNAL)' AND nprint GT 0 AND info GT 0 then begin
-      catch_msg = 'calling '+fcn
-      fvec = mpfit_call(fcn, xnew, _EXTRA=fcnargs)
-      catch_msg = 'in the termination phase'
-      fnorm = mpfit_enorm(fvec)
+  if fcn ne '(EXTERNAL)' and nprint gt 0 and info gt 0 then begin
+    catch_msg = 'calling ' + fcn
+    fvec = mpfit_call(fcn, xnew, _extra = fcnargs)
+    catch_msg = 'in the termination phase'
+    fnorm = mpfit_enorm(fvec)
   endif
 
-  if n_elements(fnorm) GT 0 AND n_elements(fnorm1) GT 0 then begin
-      fnorm = max([fnorm, fnorm1])
-      fnorm = fnorm^2.
+  if n_elements(fnorm) gt 0 and n_elements(fnorm1) gt 0 then begin
+    fnorm = max([fnorm, fnorm1])
+    fnorm = fnorm ^ 2.
   endif
 
   covar = !values.d_nan
-  ;; (very carefully) set the covariance matrix COVAR
-  if info GT 0 AND NOT keyword_set(nocovar) $
-    AND n_elements(n) GT 0 $
-    AND n_elements(fjac) GT 0 AND n_elements(ipvt) GT 0 then begin
-      sz = size(fjac)
-      if n GT 0 AND sz[0] GT 1 AND sz[1] GE n AND sz[2] GE n $
-        AND n_elements(ipvt) GE n then begin
-          catch_msg = 'computing the covariance matrix'
-          if n EQ 1 then $
-            cv = mpfit_covar(reform([fjac[0,0]],1,1), ipvt[0]) $
-          else $
-            cv = mpfit_covar(fjac[0:n-1,0:n-1], ipvt[0:n-1])
-          cv = reform(cv, n, n, /overwrite)
-          nn = n_elements(xall)
-          
-          ;; Fill in actual covariance matrix, accounting for fixed
-          ;; parameters.
-          covar = replicate(zero, nn, nn)
-          for i = 0L, n-1 do begin
-              covar[ifree, ifree[i]] = cv[*,i]
-          end
-          
-          ;; Compute errors in parameters
-          catch_msg = 'computing parameter errors'
-          i = lindgen(nn)
-          perror = replicate(abs(covar[0])*0., nn)
-          wh = where(covar[i,i] GE 0, ct)
-          if ct GT 0 then $
-            perror[wh] = sqrt(covar[wh, wh])
-      endif
-  endif
-;  catch_msg = 'returning the result'
-;  profvals.mpfit = profvals.mpfit + (systime(1) - prof_start)
+  ; ; (very carefully) set the covariance matrix COVAR
+  if info gt 0 and not keyword_set(nocovar) $
+    and n_elements(n) gt 0 $
+    and n_elements(fjac) gt 0 and n_elements(ipvt) gt 0 then begin
+    sz = size(fjac)
+    if n gt 0 and sz[0] gt 1 and sz[1] ge n and sz[2] ge n $
+      and n_elements(ipvt) ge n then begin
+      catch_msg = 'computing the covariance matrix'
+      if n eq 1 then $
+        cv = mpfit_covar(reform([fjac[0, 0]], 1, 1), ipvt[0]) $
+      else $
+        cv = mpfit_covar(fjac[0 : n - 1, 0 : n - 1], ipvt[0 : n - 1])
+      cv = reform(cv, n, n, /overwrite)
+      nn = n_elements(xall)
 
-  FINAL_RETURN:
+      ; ; Fill in actual covariance matrix, accounting for fixed
+      ; ; parameters.
+      covar = replicate(zero, nn, nn)
+      for i = 0l, n - 1 do begin
+        covar[ifree, ifree[i]] = cv[*, i]
+      end
+
+      ; ; Compute errors in parameters
+      catch_msg = 'computing parameter errors'
+      i = lindgen(nn)
+      perror = replicate(abs(covar[0]) * 0., nn)
+      wh = where(covar[i, i] ge 0, ct)
+      if ct gt 0 then $
+        perror[wh] = sqrt(covar[wh, wh])
+    endif
+  endif
+  ; catch_msg = 'returning the result'
+  ; profvals.mpfit = profvals.mpfit + (systime(1) - prof_start)
+
+  final_return:
   nfev = mpconfig.nfev
-  if n_elements(xnew) EQ 0 then return, !values.d_nan
+  if n_elements(xnew) eq 0 then return, !values.d_nan
   return, xnew
 
-  
-  ;; ------------------------------------------------------------------
-  ;; Alternate ending if the user supplies the function and gradients
-  ;; externally
-  ;; ------------------------------------------------------------------
+  ; ; ------------------------------------------------------------------
+  ; ; Alternate ending if the user supplies the function and gradients
+  ; ; externally
+  ; ; ------------------------------------------------------------------
 
-  SAVE_STATE:
+  save_state:
 
   catch_msg = 'saving MPFIT state'
 
-  ;; Names of variables to save
+  ; ; Names of variables to save
   varlist = ['alpha', 'delta', 'diag', 'dwarf', 'factor', 'fnorm', $
-             'fjac', 'gnorm', 'nfree', 'ifree', 'ipvt', 'iter', $
-             'm', 'n', 'machvals', 'machep0', 'npegged', $
-             'whlpeg', 'whupeg', 'nlpeg', 'nupeg', $
-             'mpconfig', 'par', 'pnorm', 'qtf', $
-             'wa1', 'wa2', 'wa3', 'xnorm', 'x', 'xnew']
+    'fjac', 'gnorm', 'nfree', 'ifree', 'ipvt', 'iter', $
+    'm', 'n', 'machvals', 'machep0', 'npegged', $
+    'whlpeg', 'whupeg', 'nlpeg', 'nupeg', $
+    'mpconfig', 'par', 'pnorm', 'qtf', $
+    'wa1', 'wa2', 'wa3', 'xnorm', 'x', 'xnew']
   cmd = ''
 
-  ;; Construct an expression that will save them
-  for i = 0L, n_elements(varlist)-1 do begin
-      ival = 0
-      dummy = execute('ival = n_elements('+varlist[i]+')')
-      if ival GT 0 then begin
-          cmd = cmd + ',' + varlist[i]+':'+varlist[i]
-      endif
+  ; ; Construct an expression that will save them
+  for i = 0l, n_elements(varlist) - 1 do begin
+    ival = 0
+    dummy = execute('ival = n_elements(' + varlist[i] + ')')
+    if ival gt 0 then begin
+      cmd = cmd + ',' + varlist[i] + ':' + varlist[i]
+    endif
   endfor
-  cmd = 'state = create_struct({'+strmid(cmd,1)+'})'
+  cmd = 'state = create_struct({' + strmid(cmd, 1) + '})'
   state = 0
 
-  if execute(cmd) NE 1 then $
+  if execute(cmd) ne 1 then $
     message, 'ERROR: could not save MPFIT state'
 
-  ;; Set STATUS keyword to prepare for next iteration, and reset init
-  ;; so we do not init the next time
+  ; ; Set STATUS keyword to prepare for next iteration, and reset init
+  ; ; so we do not init the next time
   info = 9
   extinit = 0
 
   return, xnew
-
 end
-

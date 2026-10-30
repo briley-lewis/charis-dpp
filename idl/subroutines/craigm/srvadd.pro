@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -57,7 +57,7 @@
 ;    U0 = -------------------------------------------------
 ;                           (1 - U1 . V)
 ;
-;  where 
+;  where
 ;    GAMMA is the Lorentz factor = 1/SQRT(1 - |V|^2)
 ;    VUNIT is the unit vector in the direction of V, = V/|V|
 ;    "." is the vector dot product
@@ -119,61 +119,65 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-function srvadd, u, v, classical=classical
+function srvadd, u, v, classical = classical
+  compile_opt idl2
 
-  nu = n_elements(u)/3
-  nv = n_elements(v)/3
+  nu = n_elements(u) / 3
+  nv = n_elements(v) / 3
 
-  if nu EQ 0 OR nv EQ 0 then begin
-      message, 'USAGE: U0 = SRVADD(U1, V)', /info
-      message, '   U1 = vel. of body in rocket frame; V is velocity of rocket in lab', $
-        /info
-      message, '   U0 = vel. of body in lab frame', /info
-      return, -1d
+  if nu eq 0 or nv eq 0 then begin
+    message, 'USAGE: U0 = SRVADD(U1, V)', /info
+    message, '   U1 = vel. of body in rocket frame; V is velocity of rocket in lab', $
+      /info
+    message, '   U0 = vel. of body in lab frame', /info
+    return, -1d
   endif
 
-  if nu NE nv AND nu NE 1 AND nv NE 1 then begin
-      message, 'ERROR: U and V must have the same number of vectors'
-  endif else if nu EQ 1 then begin
-      v1 = v
-      u1 = v*0
-      u1(0,*) = u(0) & u1(1,*) = u(1) & u1(2,*) = u(2)
-  endif else if nv EQ 1 then begin
-      u1 = u
-      v1 = u*0
-      v1(0,*) = v(0) & v1(1,*) = v(1) & v1(2,*) = v(2)
+  if nu ne nv and nu ne 1 and nv ne 1 then begin
+    message, 'ERROR: U and V must have the same number of vectors'
+  endif else if nu eq 1 then begin
+    v1 = v
+    u1 = v * 0
+    u1[0, *] = u[0]
+    u1[1, *] = u[1]
+    u1[2, *] = u[2]
+  endif else if nv eq 1 then begin
+    u1 = u
+    v1 = u * 0
+    v1[0, *] = v[0]
+    v1[1, *] = v[1]
+    v1[2, *] = v[2]
   endif else begin
-      u1 = u
-      v1 = v
+    u1 = u
+    v1 = v
   endelse
 
   if keyword_set(classical) then begin
-      return, u1+v1
+    return, u1 + v1
   endif
 
-  ;; Compute unit vector v, along with 1/gamma and 1 - 1/gamma
+  ; ; Compute unit vector v, along with 1/gamma and 1 - 1/gamma
   vunit = v1
-  vnorm = total(vunit^2,1)        ;; Momentarily = |V|^2
+  vnorm = total(vunit ^ 2, 1) ; ; Momentarily = |V|^2
 
-  oogamma = sqrt(1 - vnorm)       ;; 1/gamma
-  omoogamma = 1 - oogamma         ;; 1 - 1/gamma
-  vnorm = sqrt(temporary(vnorm))  ;; Now vnorm = |V|
-  wh = where(vnorm EQ 0, ct)      ;; Avoid overflow
-  if ct GT 0 then vnorm(wh) = 1
+  oogamma = sqrt(1 - vnorm) ; ; 1/gamma
+  omoogamma = 1 - oogamma ; ; 1 - 1/gamma
+  vnorm = sqrt(temporary(vnorm)) ; ; Now vnorm = |V|
+  wh = where(vnorm eq 0, ct) ; ; Avoid overflow
+  if ct gt 0 then vnorm[wh] = 1
 
-  ;; Normalize the unit vector
-  if ct GT 0 then $
-    for i = 0, 2 do vunit(i,*) = vunit(i,*) / vnorm
+  ; ; Normalize the unit vector
+  if ct gt 0 then $
+    for i = 0, 2 do vunit[i, *] = vunit[i, *] / vnorm
 
-  ;; Compute elements of numerator and denominator
-  udv  = total(u1*v1,1)        ;; Dot product U1 . V
-  denom = 1/(1 + udv)          ;; Denominator of expression
-  udvu = temporary(udv)/vnorm  ;; Dot product U1 . VUNIT
-  uu = [1,1,1]                 ;; Used to expand N-vector to 3xN array
-  
-  ;; U0 = ( (1-1/GAMMA)*(U1 . VUNIT)*VUNIT + U1/GAMMA + V ) / (1 - U1 . V)
-  return, ((uu#(omoogamma*udvu))*vunit + (uu#oogamma)*u1 + v1)*(uu#denom)
+  ; ; Compute elements of numerator and denominator
+  udv = total(u1 * v1, 1) ; ; Dot product U1 . V
+  denom = 1 / (1 + udv) ; ; Denominator of expression
+  udvu = temporary(udv) / vnorm ; ; Dot product U1 . VUNIT
+  uu = [1, 1, 1] ; ; Used to expand N-vector to 3xN array
 
+  ; ; U0 = ( (1-1/GAMMA)*(U1 . VUNIT)*VUNIT + U1/GAMMA + V ) / (1 - U1 . V)
+  return, ((uu # (omoogamma * udvu)) * vunit + (uu # oogamma) * u1 + v1) * (uu # denom)
 end

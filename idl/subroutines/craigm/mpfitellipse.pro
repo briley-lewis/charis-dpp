@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -101,7 +101,7 @@
 ;            If the fit is unweighted (i.e. no errors were given, or
 ;            the weights were uniformly set to unity), then PERROR
 ;            will probably not represent the true parameter
-;            uncertainties.  
+;            uncertainties.
 ;
 ;   QUIET - if set then diagnostic fitting messages are suppressed.
 ;           Default: QUIET=1 (i.e., no diagnostics]
@@ -146,7 +146,7 @@
 ; REFERENCES:
 ;
 ;   MINPACK-1, Jorge More', available from netlib (www.netlib.org).
-;   "Optimization Software Guide," Jorge More' and Stephen Wright, 
+;   "Optimization Software Guide," Jorge More' and Stephen Wright,
 ;     SIAM, *Frontiers in Applied Mathematics*, Number 14.
 ;
 ; MODIFICATION HISTORY:
@@ -179,143 +179,147 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-
-FORWARD_FUNCTION mpfitellipse_u, mpfitellipse_eval, mpfitellipse, mpfit
+forward_function mpfitellipse_u, mpfitellipse_eval, mpfitellipse, mpfit
 
 ; Compute the "u" value = (x/a)^2 + (y/b)^2 with optional rotation
-function mpfitellipse_u, x, y, p, tilt=tilt, circle=circle
-  COMPILE_OPT strictarr
-  widx  = abs(p[0]) > 1e-20 & widy  = abs(p[1]) > 1e-20 
-  if keyword_set(circle) then widy  = widx
-  xp    = x-p[2]            & yp    = y-p[3]
+function mpfitellipse_u, x, y, p, tilt = tilt, circle = circle
+  compile_opt strictarr
+  widx = abs(p[0]) > 1e-20
+  widy = abs(p[1]) > 1e-20
+  if keyword_set(circle) then widy = widx
+  xp = x - p[2]
+  yp = y - p[3]
   theta = p[4]
 
-  if keyword_set(tilt) AND theta NE 0 then begin
-      c  = cos(theta) & s  = sin(theta)
-      return, ( (xp * (c/widx) - yp * (s/widx))^2 + $
-                (xp * (s/widy) + yp * (c/widy))^2 )
+  if keyword_set(tilt) and theta ne 0 then begin
+    c = cos(theta)
+    s = sin(theta)
+    return, ((xp * (c / widx) - yp * (s / widx)) ^ 2 + $
+      (xp * (s / widy) + yp * (c / widy)) ^ 2)
   endif else begin
-      return, (xp/widx)^2 + (yp/widy)^2
+    return, (xp / widx) ^ 2 + (yp / widy) ^ 2
   endelse
-
 end
 
 ; This is the call-back function for MPFIT.  It evaluates the
 ; function, subtracts the data, and returns the residuals.
-function mpfitellipse_eval, p, tilt=tilt, circle=circle, _EXTRA=extra
-
-  COMPILE_OPT strictarr
+function mpfitellipse_eval, p, tilt = tilt, circle = circle, _extra = extra
+  compile_opt strictarr
   common mpfitellipse_common, xy, wc
 
-  tilt = keyword_set(tilt) 
+  tilt = keyword_set(tilt)
   circle = keyword_set(circle)
-  u2 = mpfitellipse_u(xy[*,0], xy[*,1], p, tilt=tilt, circle=circle) - 1.
+  u2 = mpfitellipse_u(xy[*, 0], xy[*, 1], p, tilt = tilt, circle = circle) - 1.
 
-  if n_elements(wc) GT 0 then begin
-      if circle then u2 = sqrt(abs(p[0]*p[0]*wc))*u2 $
-      else           u2 = sqrt(abs(p[0]*p[1]*wc))*u2 
+  if n_elements(wc) gt 0 then begin
+    if circle then u2 = sqrt(abs(p[0] * p[0] * wc)) * u2 $
+    else u2 = sqrt(abs(p[0] * p[1] * wc)) * u2
   endif
 
   return, u2
 end
 
-function mpfitellipse, x, y, p0, WEIGHTS=wts, $
-                       BESTNORM=bestnorm, nfev=nfev, STATUS=status, $
-                       tilt=tilt, circular=circle, $
-                       circle=badcircle1, symmetric=badcircle2, $
-                       parinfo=parinfo, query=query, $
-                       covar=covar, perror=perror, niter=iter, $
-                       quiet=quiet, ERRMSG=errmsg, _EXTRA=extra
-
-  COMPILE_OPT strictarr
-  status = 0L
+function mpfitellipse, x, y, p0, weights = wts, $
+  bestnorm = bestnorm, nfev = nfev, status = status, $
+  tilt = tilt, circular = circle, $
+  circle = badcircle1, symmetric = badcircle2, $
+  parinfo = parinfo, query = query, $
+  covar = covar, perror = perror, niter = iter, $
+  quiet = quiet, errmsg = errmsg, _extra = extra
+  compile_opt strictarr
+  status = 0l
   errmsg = ''
 
-  ;; Detect MPFIT and crash if it was not found
+  ; ; Detect MPFIT and crash if it was not found
   catch, catcherror
-  if catcherror NE 0 then begin
-      MPFIT_NOTFOUND:
-      catch, /cancel
-      message, 'ERROR: the required function MPFIT must be in your IDL path', /info
-      return, !values.d_nan
+  if catcherror ne 0 then begin
+    mpfit_notfound:
+    catch, /cancel
+    message, 'ERROR: the required function MPFIT must be in your IDL path', /info
+    return, !values.d_nan
   endif
-  if mpfit(/query) NE 1 then goto, MPFIT_NOTFOUND
+  if mpfit(/query) ne 1 then goto, mpfit_notfound
   catch, /cancel
   if keyword_set(query) then return, 1
 
-  if n_params() EQ 0 then begin
-      message, "USAGE: PARMS = MPFITELLIPSE(X, Y, START_PARAMS, ... )", $
-        /info
-      return, !values.d_nan
+  if n_params() eq 0 then begin
+    message, 'USAGE: PARMS = MPFITELLIPSE(X, Y, START_PARAMS, ... )', $
+      /info
+    return, !values.d_nan
   endif
-  nx = n_elements(x) & ny = n_elements(y)
-  if (nx EQ 0) OR (ny EQ 0) OR (nx NE ny) then begin
-      message, 'ERROR: X and Y must have the same number of elements', /info
-      return, !values.d_nan
+  nx = n_elements(x)
+  ny = n_elements(y)
+  if (nx eq 0) or (ny eq 0) or (nx ne ny) then begin
+    message, 'ERROR: X and Y must have the same number of elements', /info
+    return, !values.d_nan
   endif
 
-  if keyword_set(badcircle1) OR keyword_set(badcircle2) then $
-    message, 'ERROR: do not use the CIRCLE or SYMMETRIC keywords.  ' +$
+  if keyword_set(badcircle1) or keyword_set(badcircle2) then $
+    message, 'ERROR: do not use the CIRCLE or SYMMETRIC keywords.  ' + $
     'Use CIRCULAR instead.'
 
-  p = make_array(5, value=x[0]*0)
+  p = make_array(5, value = x[0] * 0)
 
-  if n_elements(p0) GT 0 then begin
-      p[0] = p0
-      if keyword_set(circle) then p[1] = p[0]
+  if n_elements(p0) gt 0 then begin
+    p[0] = p0
+    if keyword_set(circle) then p[1] = p[0]
   endif else begin
-      mx = moment(x)
-      my = moment(y)
-      p[0] = [sqrt(mx[1]), sqrt(my[1]), mx[0], my[0], 0]
-      if keyword_set(circle) then $
-        p[0:1] = sqrt(mx[1]+my[1])
+    mx = moment(x)
+    my = moment(y)
+    p[0] = [sqrt(mx[1]), sqrt(my[1]), mx[0], my[0], 0]
+    if keyword_set(circle) then $
+      p[0 : 1] = sqrt(mx[1] + my[1])
   endelse
 
   common mpfitellipse_common, xy, wc
-  if n_elements(wts) GT 0 then begin
-      wc = abs(wts)
+  if n_elements(wts) gt 0 then begin
+    wc = abs(wts)
   endif else begin
-      wc = 0 & dummy = temporary(wc)
+    wc = 0
+    dummy = temporary(wc)
   endelse
 
-  xy = [[x],[y]]
+  xy = [[x], [y]]
 
   result = mpfit('mpfitellipse_eval', p, $
-                 parinfo=parinfo, STATUS=status, nfev=nfev, BESTNORM=bestnorm,$
-                 covar=covar, perror=perror, niter=iter, $
-                 functargs={circle:keyword_set(circle), tilt:keyword_set(tilt)},$
-                 ERRMSG=errmsg, quiet=quiet, _EXTRA=extra)
+    parinfo = parinfo, status = status, nfev = nfev, bestnorm = bestnorm, $
+    covar = covar, perror = perror, niter = iter, $
+    functargs = {circle: keyword_set(circle), tilt: keyword_set(tilt)}, $
+    errmsg = errmsg, quiet = quiet, _extra = extra)
 
-  ;; Print error message if there is one.
-  if NOT keyword_set(quiet) AND errmsg NE '' then $
+  ; ; Print error message if there is one.
+  if not keyword_set(quiet) and errmsg ne '' then $
     message, errmsg, /info
 
-  ;; Sanity check on resulting parameters
+  ; ; Sanity check on resulting parameters
   if keyword_set(circle) then begin
-      result[1] = result[0]
-      perror[1] = perror[0]
+    result[1] = result[0]
+    perror[1] = perror[0]
   endif
-  if NOT keyword_set(tilt) then begin
-      result[4] = 0
-      perror[4] = 0
-  endif 
+  if not keyword_set(tilt) then begin
+    result[4] = 0
+    perror[4] = 0
+  endif
 
-  ;; Make sure the axis lengths are positive, and the semi-major axis
-  ;; is listed first
-  result[0:1] = abs(result[0:1])
-  if abs(result[0]) LT abs(result[1]) then begin
-      tmp = result[0] & result[0] = result[1] & result[1] = tmp
-      tmp = perror[0] & perror[0] = perror[1] & perror[1] = tmp
-      if keyword_set(tilt) then result[4] = result[4] - !dpi/2d
+  ; ; Make sure the axis lengths are positive, and the semi-major axis
+  ; ; is listed first
+  result[0 : 1] = abs(result[0 : 1])
+  if abs(result[0]) lt abs(result[1]) then begin
+    tmp = result[0]
+    result[0] = result[1]
+    result[1] = tmp
+    tmp = perror[0]
+    perror[0] = perror[1]
+    perror[1] = tmp
+    if keyword_set(tilt) then result[4] = result[4] - !dpi / 2d
   endif
 
   if keyword_set(tilt) then begin
-      ;; Put tilt in the range 0 to +Pi
-      result[4] = result[4] - !dpi * floor(result[4]/!dpi)
+    ; ; Put tilt in the range 0 to +Pi
+    result[4] = result[4] - !dpi * floor(result[4] / !dpi)
   endif
 
   return, result
 end
-

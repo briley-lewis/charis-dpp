@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -41,7 +41,7 @@
 ;
 ; EXAMPLE:
 ;
-;  if fxgfiltered(unit) EQ 0 then begin  
+;  if fxgfiltered(unit) EQ 0 then begin
 ;    ;; If zero then can use standard IDL routines
 ;    point_lun, unit, position
 ;    readu, unit, buffer
@@ -65,16 +65,17 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 function fxgfiltered, unit
+  compile_opt idl2
 
   on_error, 2
-  if n_elements(unit) EQ 0 then $
+  if n_elements(unit) eq 0 then $
     message, 'ERROR: UNIT is not defined'
 
-@fxfilter.pro
-  if unit LT 0 OR unit GE FXFILTER_MAX_LUN then $
+  @fxfilter.pro
+  if unit lt 0 or unit ge FXFILTER_MAX_LUN then $
     message, 'ERROR: UNIT is not a valid file unit'
 
-  return, filterflag(unit) AND 1
+  return, filterflag(unit) and 1
 end

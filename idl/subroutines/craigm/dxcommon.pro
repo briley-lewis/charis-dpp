@@ -9,7 +9,7 @@
 ; PURPOSE:
 ;   Defines DEBUG_LEVEL common block (INTERNAL)
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   This code fragment defines the DEBUG_LEVEL common block.  This
 ;   common is internal to the debugging procedures.
@@ -22,11 +22,12 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
 ;
 ; Define function names just to be sure
 ;
+compile_opt idl2
 forward_function routine_names, routine_info
 
 ;
@@ -35,9 +36,9 @@ forward_function routine_names, routine_info
 common debug_level, dblevel, dbtraceback
 
 ;
-; Set common block values 
+; Set common block values
 ;
-if n_elements(dblevel) EQ 0 then begin
-  dblevel = 0L
+if n_elements(dblevel) eq 0 then begin
+  dblevel = 0l
   dbtraceback = ['']
 endif

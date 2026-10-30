@@ -16,8 +16,8 @@
 ;          STRUCTURE_NAME=STNAME, $
 ;          NAMED_STRUCTS=STRUCTS, NAMED_CLASSES=CLASSES, $
 ;          OFFSET=OFFSET, STATUS=STATUS, ERRMSG=ERRMSG
-;   
-; DESCRIPTION: 
+;
+; DESCRIPTION:
 ;
 ;   CMSV_RVTYPE reads the type portion of an IDL SAVE variable record.
 ;   An IDL variable is stored in two components: the type descriptor
@@ -64,7 +64,7 @@
 ;   NAMED_STRUCTS and NAMED_CLASSES are not destroyed, but appended to
 ;   instead, users are advised to clear these variables when opening
 ;   each new file.
-;   
+;
 ;
 ; ==================================================================
 ;   Research Systems, Inc. has issued a separate license intended
@@ -101,11 +101,11 @@
 ;
 ;   BLOCK                          |------*--------|
 ;                                  0      ^ POINTER
-;     
+;
 ;
 ;   This procedure is part of the CMSVLIB SAVE library for IDL by
 ;   Craig Markwardt.  You must have the full CMSVLIB core package
-;   installed in order for this procedure to function properly.  
+;   installed in order for this procedure to function properly.
 ;
 ;
 ; INPUTS:
@@ -195,364 +195,368 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 forward_function cmsv_rraw
 
-pro cmsv_rarrdesc, block, pointer, sz, status=status, unit=unit, errmsg=errmsg
-  ;; ARRAY_DESC
-  ;;   LONG - START_TOKEN - value 08 - array descriptor flag
-  ;;   LONG - unknown (value 2)
-  ;;   LONG - number of bytes in value
-  ;;   LONG - number of elements in value
-  ;;   LONG - number of variable dimensions
-  ;;   LONGx2 - unknown (value 0,0)
-  ;;   LONG - maximum number of stored dimensions ( = 8 )
-  ;;   LONGx8 - dimensions of number
-  if n_elements(pointer) EQ 0 then pointer = 0L
-  buff = cmsv_rraw(/long, block, pointer, 16, unit=unit, $
-                   status=status, errmsg=errmsg)
-  if status EQ 0 then return
-  if buff(0) NE 8 then begin
-      status = 0
-      errmsg = 'ERROR: CMSV_RVTYPE: invalid array type descriptor'
-      return
+pro cmsv_rarrdesc, block, pointer, sz, status = status, unit = unit, errmsg = errmsg
+  compile_opt idl2
+  ; ; ARRAY_DESC
+  ; ;   LONG - START_TOKEN - value 08 - array descriptor flag
+  ; ;   LONG - unknown (value 2)
+  ; ;   LONG - number of bytes in value
+  ; ;   LONG - number of elements in value
+  ; ;   LONG - number of variable dimensions
+  ; ;   LONGx2 - unknown (value 0,0)
+  ; ;   LONG - maximum number of stored dimensions ( = 8 )
+  ; ;   LONGx8 - dimensions of number
+  if n_elements(pointer) eq 0 then pointer = 0l
+  buff = cmsv_rraw(/long, block, pointer, 16, unit = unit, $
+    status = status, errmsg = errmsg)
+  if status eq 0 then return
+  if buff[0] ne 8 then begin
+    status = 0
+    errmsg = 'ERROR: CMSV_RVTYPE: invalid array type descriptor'
+    return
   endif
 
-  ndims = buff(4)
-  nelt = buff(3)
-  dims = buff(8:8+ndims-1)
+  ndims = buff[4]
+  nelt = buff[3]
+  dims = buff[8 : 8 + ndims - 1]
   vartype = 0
 
   sz = [ndims, dims, vartype, nelt]
   return
 end
 
-pro cmsv_rstructdesc, block, pointer, template, unit=unit, $
-                      status=status, errmsg=errmsg, $
-                      suffix=suffix, structure_name=stname, no_create=nocreate, $
-                      named_structs=structs, named_classes=classes
-  ;; STRUCT_DESCR
-  ;;   LONG - START_TOKEN - value 9 - struct descriptor flag
-  ;;   STRING - name of struct (or 0 if anonymous)
-  ;;   LONG - PREDEF - 0 if struct def'n follows, 1 if already defined
-  ;;   LONG - N_TAGS - number of structure tags
-  ;;   LONG - total "length" in bytes, but nothing meaningful
-  ;;   TAGDESCxN_TAGS - TAG_TABLE - description of each tag
-  ;;   STRINGxN_TAGS - TAG_NAMES - name of each tag
-  ;;   ARRAY_DESCxN_ARRAYS - ARRAY_TAB - descriptor for each array
-  ;;   STRUCT_DESCRxN_STRUCTS - STRUCT_TAB - descriptor for each struct
+pro cmsv_rstructdesc, block, pointer, template, unit = unit, $
+  status = status, errmsg = errmsg, $
+  suffix = suffix, structure_name = stname, no_create = nocreate, $
+  named_structs = structs, named_classes = classes
+  compile_opt idl2
+  ; ; STRUCT_DESCR
+  ; ;   LONG - START_TOKEN - value 9 - struct descriptor flag
+  ; ;   STRING - name of struct (or 0 if anonymous)
+  ; ;   LONG - PREDEF - 0 if struct def'n follows, 1 if already defined
+  ; ;   LONG - N_TAGS - number of structure tags
+  ; ;   LONG - total "length" in bytes, but nothing meaningful
+  ; ;   TAGDESCxN_TAGS - TAG_TABLE - description of each tag
+  ; ;   STRINGxN_TAGS - TAG_NAMES - name of each tag
+  ; ;   ARRAY_DESCxN_ARRAYS - ARRAY_TAB - descriptor for each array
+  ; ;   STRUCT_DESCRxN_STRUCTS - STRUCT_TAB - descriptor for each struct
 
-  template = 0 & dummy = temporary(template)
+  template = 0
+  dummy = temporary(template)
 
-  if n_elements(pointer) EQ 0 then pointer = 0L
-  start_token = cmsv_rraw(/long, block, pointer, unit=unit, $
-                          status=status, errmsg=errmsg)
-  ;; message, 'ERROR: CMSV_RVTYPE: structure descriptor was not found'
-  if status EQ 0 OR start_token NE 9 then return
-  struct_name = cmsv_rraw(/string, block, pointer, unit=unit, $
-                          status=status, errmsg=errmsg)
-  if status EQ 0 then return
-  buff = cmsv_rraw(/long, block, pointer, 3, unit=unit, $
-                   status=status, errmsg=errmsg)
-  if status EQ 0 then return
+  if n_elements(pointer) eq 0 then pointer = 0l
+  start_token = cmsv_rraw(/long, block, pointer, unit = unit, $
+    status = status, errmsg = errmsg)
+  ; ; message, 'ERROR: CMSV_RVTYPE: structure descriptor was not found'
+  if status eq 0 or start_token ne 9 then return
+  struct_name = cmsv_rraw(/string, block, pointer, unit = unit, $
+    status = status, errmsg = errmsg)
+  if status eq 0 then return
+  buff = cmsv_rraw(/long, block, pointer, 3, unit = unit, $
+    status = status, errmsg = errmsg)
+  if status eq 0 then return
 
   status = 0
-  nt = buff(1)
-  if nt LE 0 then begin
-      errmsg = 'ERROR: CMSV_RVTYPE: number of structure tags was <= 0'
-      return
+  nt = buff[1]
+  if nt le 0 then begin
+    errmsg = 'ERROR: CMSV_RVTYPE: number of structure tags was <= 0'
+    return
   endif
-  predefined = (buff(0) AND 1) NE 0  ;; Structure type has already been def'd
-  inherits_  = (buff(0) AND 2) NE 0  ;; This is a class, inherits from a super
-  is_super   = (buff(0) AND 4) NE 0  ;; This is a superclass
+  predefined = (buff[0] and 1) ne 0 ; ; Structure type has already been def'd
+  inherits_ = (buff[0] and 2) ne 0 ; ; This is a class, inherits from a super
+  is_super = (buff[0] and 4) ne 0 ; ; This is a superclass
 
-  ;; Structure has already been defined
+  ; ; Structure has already been defined
   if predefined then begin
-      stname = struct_name
-      errmsg = ''
-      status = 1
-      if NOT keyword_set(nocreate) then begin
-          status = execute('template = {'+stname+'}')
-          if status EQ 0 then $
-            errmsg = ('ERROR: CMSV_RVTYPE: could not create named structure '+$
-                      struct_name)
-      endif
-      return
+    stname = struct_name
+    errmsg = ''
+    status = 1
+    if not keyword_set(nocreate) then begin
+      status = execute('template = {' + stname + '}')
+      if status eq 0 then $
+        errmsg = ('ERROR: CMSV_RVTYPE: could not create named structure ' + $
+          struct_name)
+    endif
+    return
   endif
 
-  ;; Read tag_table - type descriptions of each tag
-  ;; LONG - offset
-  ;; LONG - IDL variable type
-  ;; LONG - type flags '20'x: struct, '14'x: array
-  tag_table = cmsv_rraw(/long, block, pointer, 3*nt, unit=unit, $
-                        status=status, errmsg=errmsg)
-  if status EQ 0 then return
+  ; ; Read tag_table - type descriptions of each tag
+  ; ; LONG - offset
+  ; ; LONG - IDL variable type
+  ; ; LONG - type flags '20'x: struct, '14'x: array
+  tag_table = cmsv_rraw(/long, block, pointer, 3 * nt, unit = unit, $
+    status = status, errmsg = errmsg)
+  if status eq 0 then return
   tag_table = reform(tag_table, 3, nt, /overwrite)
 
-  ;; Read tag names
-  ;; STRING
+  ; ; Read tag names
+  ; ; STRING
   tag_names1 = strarr(nt)
-  for i = 0L, nt-1 do begin
-      tag_names1(i) = cmsv_rraw(/string, block, pointer, unit=unit, $
-                                status=status, errmsg=errmsg)
-      if status EQ 0 then return
+  for i = 0l, nt - 1 do begin
+    tag_names1[i] = cmsv_rraw(/string, block, pointer, unit = unit, $
+      status = status, errmsg = errmsg)
+    if status eq 0 then return
   endfor
 
-  ;; Read array descriptors - compose a list of SIZE types
+  ; ; Read array descriptors - compose a list of SIZE types
   ssz = lonarr(12, nt)
-  for i = 0L, nt-1 do begin
-      if (tag_table(2,i) AND '24'x) NE 0 then begin
-          cmsv_rarrdesc, block, pointer, sz, unit=unit, $
-            status=status, errmsg=errmsg
-          if status EQ 0 then return
-      endif else begin
-          sz = [0L, 0, 1L]
-      endelse
-      sz(sz(0)+1) = tag_table(1,i) ;; Insert the variable type
-      ssz(0,i) = sz
+  for i = 0l, nt - 1 do begin
+    if (tag_table[2, i] and '24'x) ne 0 then begin
+      cmsv_rarrdesc, block, pointer, sz, unit = unit, $
+        status = status, errmsg = errmsg
+      if status eq 0 then return
+    endif else begin
+      sz = [0l, 0, 1l]
+    endelse
+    sz[sz[0] + 1] = tag_table[1, i] ; ; Insert the variable type
+    ssz[0, i] = sz
   endfor
 
-  ;; Read struct descriptors - compose the resulting struct template
-  for i = 0L, nt-1 do begin
-      sz = reform(ssz(*,i))
+  ; ; Read struct descriptors - compose the resulting struct template
+  for i = 0l, nt - 1 do begin
+    sz = reform(ssz[*, i])
 
-      ;; Recursively read struct descriptor
-      if (tag_table(2,i) AND '20'x) NE 0 then begin
-          cmsv_rstructdesc, block, pointer, tp, unit=unit, $
-            status=status, errmsg=errmsg, suffix=suffix, $
-            no_create=no_create, named_structs=structs, named_classes=classes
-          if status EQ 0 then tp = 0L
-      endif else begin
-          forward_function make_array
-          tp = make_array(1, type=sz(sz(0)+1))
-          tp = tp(0)
-      endelse
+    ; ; Recursively read struct descriptor
+    if (tag_table[2, i] and '20'x) ne 0 then begin
+      cmsv_rstructdesc, block, pointer, tp, unit = unit, $
+        status = status, errmsg = errmsg, suffix = suffix, $
+        no_create = no_create, named_structs = structs, named_classes = classes
+      if status eq 0 then tp = 0l
+    endif else begin
+      forward_function make_array
+      tp = make_array(1, type = sz[sz[0] + 1])
+      tp = tp[0]
+    endelse
 
-      ;; Use array descriptor to compose array if needed
-      if (tag_table(2,i) AND '04'x) NE 0 then begin
-          ndims = sz(0)
-          nelt = sz(ndims+2)
-          dims = sz(1:ndims)
-          tp = replicate(tp, nelt)
-          tp = reform(tp, dims, /overwrite)
-      endif
+    ; ; Use array descriptor to compose array if needed
+    if (tag_table[2, i] and '04'x) ne 0 then begin
+      ndims = sz[0]
+      nelt = sz[ndims + 2]
+      dims = sz[1 : ndims]
+      tp = replicate(tp, nelt)
+      tp = reform(tp, dims, /overwrite)
+    endif
 
-      ;; Add this tag element to the structure
-      if tag_names1(i) NE '' AND NOT keyword_set(nocreate) then begin
-          if n_elements(ss) EQ 0 then $
-            ss = create_struct(tag_names1(i), tp) $
-          else $
-            ss = create_struct(ss, tag_names1(i), tp)
-      endif
-      stname = struct_name
-  endfor
-
-  ;; Read class information
-  ;; STRING - name of class
-  ;; LONG - number of super classes = N_SUP
-  ;; STRINGxN_SUP - names of super classes
-  ;; {structdesc}xN_SUP - structures of each super class
-  if inherits_ OR is_super then begin
-      classname = cmsv_rraw(/string, block, pointer, unit=unit, $
-                            status=status, errmsg=errmsg)
-      if classname EQ '' then begin
-          status = 0
-          errmsg = 'ERROR: CMSV_RVTYPE: invalid class name'
-          return
-      endif
-      if status EQ 0 then return
-      n_sup = cmsv_rraw(/long, block, pointer, unit=unit, $
-                        status=status, errmsg=errmsg)
-      if status EQ 0 then return
-      
-      if n_sup GT 0 then begin
-          supnames = cmsv_rraw(/string, block, pointer, n_sup, unit=unit, $
-                               status=status, errmsg=errmsg)
-          if status EQ 0 then return
-
-          ;; Read sub-structures, but do not create them, we have to
-          ;; do this because otherwise we lose synchronization.
-          for i = 0, n_sup-1 do begin
-              
-              cmsv_rstructdesc, block, pointer, tp, unit=unit, $
-                status=status, errmsg=errmsg, suffix=suffix, $
-                no_create=no_create, named_structs=structs, named_classes=classes
-          endfor
-      endif
-
-      ;; Set output variables.  First, the name of this structure
-      stname = classname
-
-      ;; Second, the name of this class is placed in the class name
-      ;; inventory.
-      if n_elements(classes) EQ 0 then $
-        classes = [classname] $
+    ; ; Add this tag element to the structure
+    if tag_names1[i] ne '' and not keyword_set(nocreate) then begin
+      if n_elements(ss) eq 0 then $
+        ss = create_struct(tag_names1[i], tp) $
       else $
-        classes = [classes, classname]
+        ss = create_struct(ss, tag_names1[i], tp)
+    endif
+    stname = struct_name
+  endfor
 
-      status = 1
+  ; ; Read class information
+  ; ; STRING - name of class
+  ; ; LONG - number of super classes = N_SUP
+  ; ; STRINGxN_SUP - names of super classes
+  ; ; {structdesc}xN_SUP - structures of each super class
+  if inherits_ or is_super then begin
+    classname = cmsv_rraw(/string, block, pointer, unit = unit, $
+      status = status, errmsg = errmsg)
+    if classname eq '' then begin
+      status = 0
+      errmsg = 'ERROR: CMSV_RVTYPE: invalid class name'
       return
+    endif
+    if status eq 0 then return
+    n_sup = cmsv_rraw(/long, block, pointer, unit = unit, $
+      status = status, errmsg = errmsg)
+    if status eq 0 then return
+
+    if n_sup gt 0 then begin
+      supnames = cmsv_rraw(/string, block, pointer, n_sup, unit = unit, $
+        status = status, errmsg = errmsg)
+      if status eq 0 then return
+
+      ; ; Read sub-structures, but do not create them, we have to
+      ; ; do this because otherwise we lose synchronization.
+      for i = 0, n_sup - 1 do begin
+        cmsv_rstructdesc, block, pointer, tp, unit = unit, $
+          status = status, errmsg = errmsg, suffix = suffix, $
+          no_create = no_create, named_structs = structs, named_classes = classes
+      endfor
+    endif
+
+    ; ; Set output variables.  First, the name of this structure
+    stname = classname
+
+    ; ; Second, the name of this class is placed in the class name
+    ; ; inventory.
+    if n_elements(classes) eq 0 then $
+      classes = [classname] $
+    else $
+      classes = [classes, classname]
+
+    status = 1
+    return
   endif
 
-  ;; Make it a named structure if it has a name; otherwise it's
-  ;; anonymous
-  if stname NE '' AND NOT keyword_set(nocreate) then begin
-      catch, catcherr
-      if catcherr NE 0 then begin
-          catch, /cancel
-          status = 0
-          errmsg = 'ERROR: CMSV_RVTYPE: conflict between memory and '+ $
-            'saved named structures'
-      endif else begin
-          if n_elements(suffix) EQ 0 then sf = '' $
-          else                            sf = strtrim(suffix(0),2)
-          s1 = create_struct(ss, name=struct_name+sf)
-          catch, /cancel
-          
-          ss = temporary(s1)
-      endelse
+  ; ; Make it a named structure if it has a name; otherwise it's
+  ; ; anonymous
+  if stname ne '' and not keyword_set(nocreate) then begin
+    catch, catcherr
+    if catcherr ne 0 then begin
+      catch, /cancel
+      status = 0
+      errmsg = 'ERROR: CMSV_RVTYPE: conflict between memory and ' + $
+        'saved named structures'
+    endif else begin
+      if n_elements(suffix) eq 0 then sf = '' $
+      else sf = strtrim(suffix[0], 2)
+      s1 = create_struct(ss, name = struct_name + sf)
+      catch, /cancel
+
+      ss = temporary(s1)
+    endelse
   endif
-  
-  ;; Add this structure name to the inventory list
-  if stname NE '' then begin
-      if n_elements(structs) EQ 0 then $
-        structs = [stname] $
-      else $
-        structs = [structs, stname]
+
+  ; ; Add this structure name to the inventory list
+  if stname ne '' then begin
+    if n_elements(structs) eq 0 then $
+      structs = [stname] $
+    else $
+      structs = [structs, stname]
   endif
 
   status = 1
   if keyword_set(nocreate) then return
-  if n_elements(ss) GT 0 then begin
-      template = ss
-      status = 1
+  if n_elements(ss) gt 0 then begin
+    template = ss
+    status = 1
   endif else begin
-      status = 0
-      errmsg = 'ERROR: CMSV_RVTYPE: could not decode structure descriptor'
+    status = 0
+    errmsg = 'ERROR: CMSV_RVTYPE: could not decode structure descriptor'
   endelse
 
   return
 end
 
-pro cmsv_rvtype, block, pointer, result, sz, unit=unit, offset=offset, $
-                 status=status, errmsg=errmsg, $
-                 template=template1, no_create=nocreate, no_type=notype, $
-                 heap=heap, system=system, $
-                 suffix=suffix, structure_name=stname, $
-                 named_structs=structs, named_classes=classes
+pro cmsv_rvtype, block, pointer, result, sz, unit = unit, offset = offset, $
+  status = status, errmsg = errmsg, $
+  template = template1, no_create = nocreate, no_type = notype, $
+  heap = heap, system = system, $
+  suffix = suffix, structure_name = stname, $
+  named_structs = structs, named_classes = classes
+  compile_opt idl2
 
-  ;; VARIABLE BLOCK
-  ;;   STRING - VARNAME - name of variable
-  ;;   TYPEDESC - type descriptor
+  ; ; VARIABLE BLOCK
+  ; ;   STRING - VARNAME - name of variable
+  ; ;   TYPEDESC - type descriptor
 
-  ;; HEAP VARIABLE
-  ;;   LONG - HEAP_INDEX - heap index of data value
-  ;;   LONG - value 0x02 or 0x12 - unknown
-  ;;   TYPEDESC - type descriptor
+  ; ; HEAP VARIABLE
+  ; ;   LONG - HEAP_INDEX - heap index of data value
+  ; ;   LONG - value 0x02 or 0x12 - unknown
+  ; ;   TYPEDESC - type descriptor
   status = 0
-  size = [0L, 0, 1]
-  if n_elements(pointer) EQ 0 then pointer = 0L
-  result = 0 & dummy = temporary(result)
+  size = [0l, 0, 1]
+  if n_elements(pointer) eq 0 then pointer = 0l
+  result = 0
+  dummy = temporary(result)
 
   if keyword_set(heap) then begin
-      ;; Read heap index
-      varname = cmsv_rraw(/long, block, pointer, 2, unit=unit, $
-                          status=status, errmsg=errmsg)
-      varname = varname(0)
-      if status EQ 0 then return
+    ; ; Read heap index
+    varname = cmsv_rraw(/long, block, pointer, 2, unit = unit, $
+      status = status, errmsg = errmsg)
+    varname = varname[0]
+    if status eq 0 then return
   endif else begin
-      ;; Read variable name
-      varname = cmsv_rraw(/string, block, pointer, unit=unit, $
-                          status=status, errmsg=errmsg)
-      if status EQ 0 then return
+    ; ; Read variable name
+    varname = cmsv_rraw(/string, block, pointer, unit = unit, $
+      status = status, errmsg = errmsg)
+    if status eq 0 then return
   endelse
 
-  if n_elements(classes) GT 0 then begin
-      sz1 = size(classes)
-      if sz1(sz1(0)+1) NE 7 then begin
-          errmsg = 'ERROR: CMSV_RVTYPE: NAMED_CLASSES must be an array '+ $
-            'of strings'
-          status = 0
-          return
-      endif
+  if n_elements(classes) gt 0 then begin
+    sz1 = size[classes]
+    if sz1[sz1[0] + 1] ne 7 then begin
+      errmsg = 'ERROR: CMSV_RVTYPE: NAMED_CLASSES must be an array ' + $
+        'of strings'
+      status = 0
+      return
+    endif
   endif
 
-  if n_elements(structs) GT 0 then begin
-      sz1 = size(structs)
-      if sz1(sz1(0)+1) NE 7 then begin
-          errmsg = 'ERROR: CMSV_RVTYPE: NAMED_STRUCTS must be an array '+ $
-            'of strings'
-          status = 0
-          return
-      endif
+  if n_elements(structs) gt 0 then begin
+    sz1 = size[structs]
+    if sz1[sz1[0] + 1] ne 7 then begin
+      errmsg = 'ERROR: CMSV_RVTYPE: NAMED_STRUCTS must be an array ' + $
+        'of strings'
+      status = 0
+      return
+    endif
   endif
 
   result = varname
   status = 1
   if keyword_set(notype) then return
 
-  ;; Read variable type information.  Here is a summary of the
-  ;; formatting of the descriptors.
+  ; ; Read variable type information.  Here is a summary of the
+  ; ; formatting of the descriptors.
 
-  ;; SCALAR_TYPE
-  ;;   LONG - variable type (IDL type code)
-  ;;   LONG - value 0
+  ; ; SCALAR_TYPE
+  ; ;   LONG - variable type (IDL type code)
+  ; ;   LONG - value 0
 
-  ;; ARRAY_TYPE
-  ;;   LONG - variable type (IDL type code)
-  ;;   LONG - VARFLAGS - bitwise OR of following:
-  ;;                      '02'xb - system variable
-  ;;                      '04'xb - array
-  ;;                      '10'xb - don't know, it's kind of random
-  ;;                      '20'xb - structure
-  ;;   ARRAY_DESC - array descriptor
-  ;;   STRUCT_DESC (if a structure) - structure descriptor
+  ; ; ARRAY_TYPE
+  ; ;   LONG - variable type (IDL type code)
+  ; ;   LONG - VARFLAGS - bitwise OR of following:
+  ; ;                      '02'xb - system variable
+  ; ;                      '04'xb - array
+  ; ;                      '10'xb - don't know, it's kind of random
+  ; ;                      '20'xb - structure
+  ; ;   ARRAY_DESC - array descriptor
+  ; ;   STRUCT_DESC (if a structure) - structure descriptor
 
-  ;; IDL variable type
-  vartype = cmsv_rraw(/long, block, pointer, unit=unit, $
-                      status=status, errmsg=errmsg)
-  if status EQ 0 then return
-  ;; Array type flags
-  varflags = cmsv_rraw(/long, block, pointer, unit=unit, $
-                       status=status, errmsg=errmsg)
-  if status EQ 0 then return
+  ; ; IDL variable type
+  vartype = cmsv_rraw(/long, block, pointer, unit = unit, $
+    status = status, errmsg = errmsg)
+  if status eq 0 then return
+  ; ; Array type flags
+  varflags = cmsv_rraw(/long, block, pointer, unit = unit, $
+    status = status, errmsg = errmsg)
+  if status eq 0 then return
 
-  ;; System variable
+  ; ; System variable
   if keyword_set(system) then begin
-      dummy = cmsv_rraw(/long, block, pointer, 2, unit=unit, $
-                        status=status, errmsg=errmsg)
-      if status EQ 0 then return
-      if (dummy(1) AND '02'xl) EQ 0 then begin
-          errmsg = 'ERROR: CMSV_RVTYPE: system variable type mismatch'
-          status = 0
-          return
-      endif
-      if (dummy(1) AND 'ed'xl) NE (varflags AND 'ed'xl) then begin
-          errmsg = 'ERROR: CMSV_RVTYPE: variable type mismatch'
-          status = 0
-          return
-      endif
-  endif
-
-  ;; Scalar type
-  if (varflags(0) AND '24'x) EQ 0 then begin     
-      sz = [0L, vartype, 1]
+    dummy = cmsv_rraw(/long, block, pointer, 2, unit = unit, $
+      status = status, errmsg = errmsg)
+    if status eq 0 then return
+    if (dummy[1] and '02'xl) eq 0 then begin
+      errmsg = 'ERROR: CMSV_RVTYPE: system variable type mismatch'
+      status = 0
       return
+    endif
+    if (dummy[1] and 'ed'xl) ne (varflags and 'ed'xl) then begin
+      errmsg = 'ERROR: CMSV_RVTYPE: variable type mismatch'
+      status = 0
+      return
+    endif
   endif
 
-  ;; Complex array type
-  struct = (varflags(0) AND '20'x) NE 0 
-  cmsv_rarrdesc, block, pointer, sz, unit=unit, status=status, errmsg=errmsg
-  if status EQ 0 then return
+  ; ; Scalar type
+  if (varflags[0] and '24'x) eq 0 then begin
+    sz = [0l, vartype, 1]
+    return
+  endif
+
+  ; ; Complex array type
+  struct = (varflags[0] and '20'x) ne 0
+  cmsv_rarrdesc, block, pointer, sz, unit = unit, status = status, errmsg = errmsg
+  if status eq 0 then return
   if keyword_set(struct) then begin
-      cmsv_rstructdesc, block, pointer, template1, unit=unit, $
-        status=status, errmsg=errmsg, no_create=nocreate, $
-        suffix=suffix, structure_name=stname, $
-        named_structs=structs, named_classes=classes
+    cmsv_rstructdesc, block, pointer, template1, unit = unit, $
+      status = status, errmsg = errmsg, no_create = nocreate, $
+      suffix = suffix, structure_name = stname, $
+      named_structs = structs, named_classes = classes
   endif
-  if status EQ 0 then return
+  if status eq 0 then return
 
-  sz(sz(0)+1) = vartype
+  sz[sz[0] + 1] = vartype
 
   return
 end

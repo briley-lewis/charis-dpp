@@ -1,4 +1,4 @@
-pro charis_autoreduce,quicklook=quicklook,help=help,target=target,liststeps=liststeps
+pro charis_autoreduce,quicklook=quicklook,help=help,target=target,liststeps=liststeps,preproc=preproc,skysub=skysub,setup=setup,pdi=pdi
 
 if keyword_set(liststeps) then begin
 print,'1.charis_newobs'
@@ -33,7 +33,14 @@ print,"Does automatic reduction of CHARIS IFS data "
 print,""
 print,"Example: charis_autoreduce
 print,""
+print,"or"
+print,"Example: charis_autoreduce,/preproc
+print,""
 print,"****Keywords****"
+print,"*setup - just do the file structure setup.  Stops before sky subtraction"
+print,"*skysub - do the file structure setup + sky subtraction"
+print,"*preproc - do the file structure setup, sky subtraction, and image registration"
+print,""
 print,"quicklook - Is this a quicklook reduction [no calibration] or an end-to-end reduction?"
 print,"target - manually sets the target name"
 print,"liststeps - do not run autoreduce but just list the reduction steps: helpful for novice users"
@@ -92,7 +99,12 @@ charis_newobs,object=targname,date=obsdate,filter=filts,outfilename=pfname
 
 step2:
 close,/all
+
+if ~keyword_set(pdi) then begin
 charis_imprep,pfname
+endif else begin
+charis_imprep,pfname,/pdi
+endelse
 
 step3:
 close,/all
@@ -101,16 +113,31 @@ close,/all
 readcol,'obs*txt',n1,n2,n3,n4,n5,n6,format='(a,a,a,a,a,a)'
 skyframe=where(n6 eq 'sky',numbersky) 
 
+if keyword_set(setup) then begin
+print,'Finished setup'
+goto,skiptotheend
+endif
+
 if numbersky ge 1 then begin
 charis_subtract_sky,pfname
 
 step4:
 close,/all
-charis_register_cube,pfname
+
+if keyword_set(skysub) then begin
+print,'Finished Sky Subtraction'
+goto,skiptotheend
+endif
+
+charis_register_cube,pfname,rsub=1
 endif else begin
-charis_register_cube,pfname,suffname='e'
+charis_register_cube,pfname,suffname='e',rsub=1
 endelse
 
+if keyword_set(preproc) then begin
+print,'Finished preprocessing'
+goto,skiptotheend
+endif
 step5:
 close,/all
 charis_specphot_cal,pfname,modamp=25,starlib=1

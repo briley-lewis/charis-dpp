@@ -52,7 +52,7 @@ Print,'fixradius - fix the aperture radius to a constant instead of scaling with
 Print,'meancomb - mean-combine the calibration cubes instead of median'
 Print,'ap factor - rescale the aperture for photometry'
 Print,'filtername - set manual value for the filter (low, JHK)'
-Print,'star lib - 0,1,2 (Pickles, Kurucz or Manual)
+Print,'star lib - 1,2,3 (Kurucz, Pickles, or Manual)
 Print,'pref/suffname - Manually override the prefix and suffix of file names used (useful for the pfname switch but applied to images other than "reg" images)'
 print,'fluxunits - What Flux Density units? 0=mJy,1=Jy,2=W/m^2/um,3=ergs/s/cm^2/A,4=ergs/s/cm^2/Hz,5=contrast'
 ;print,''
@@ -90,15 +90,46 @@ print,'*****WARNING!!!!!! Assuming a Dwarf Luminosity Class!!!!!******'
 endif
 
 ;******Which Stellar Library Do you Want to Use?*****
-;0 - Pickles 1998 PASP library (empirical, incomplete data)
 ;1 - Kurucz 1993 (theoretical models)
-;2 - empirical model (user-selected)
+;2 - Pickles 1998 PASP library (empirical, incomplete data)
+;3 - empirical model (user-selected)
 
 if ~keyword_set(starlib) then begin
-read,"Select the Stellar Library Source (0 = Pickles, 1 = Kurucz, 2 = empirical model)",slib
+read,"Select the Stellar Library Source (1 = Kurucz, 2 = Pickles, 3 = empirical model)",slib
+;read,"Select the Stellar Library Source (0 = Pickles, 1 = Kurucz, 2 = empirical model)",slib
 endif else begin
 slib=starlib
 endelse
+
+;******
+;LOGGING
+;the command line call
+
+dpp_command=(recall_commands())[0]
+
+;setting up log file
+currenttime=systime()
+ct=strsplit(currenttime,/extract,' ')
+;format is month, day, hms, year
+currenttime_log=ct[1]+ct[2]+'_'+ct[4]+'_'+ct[3]
+trimmed_time_log=ct[1]+ct[2]+'_'+ct[4]
+logfilename=currenttime_log+'.log'
+logfilenametrimmed=trimmed_time_log
+
+;now, look to see if logfile exists
+checklog_list=file_search('./log/'+logfilenametrimmed+'*',count=count_checklog)
+checklog=checklog_list[n_elements(checklog_list)-1]
+
+if count_checklog eq 0 then begin
+logname='./log/'+logfilename
+openw,11,logname
+printf,11,ct[3],dpp_command,format='(a,x,a)'
+endif else begin
+logname='./'+checklog
+openw,11,logname,/append
+printf,11,ct[3],dpp_command,format='(a,x,a)'
+endelse
+;*****
 
 ;if you want to keep the aperture equal to the image slice FWHM then do nothing.  If you want to change the scaling set the ap_factor keyword
 if ~keyword_set(ap_factor) then ap_factor = 1
@@ -401,6 +432,10 @@ endelse
    'broadband':begin
     starmagval=hmag
     end
+
+   'Broadband':begin 
+    starmagval=hmag
+    end
    
    'J':begin
     starmagval=jmag
@@ -613,6 +648,8 @@ for ichannel=0L,n_elements(wvlh_charis)-1 $
 ;error in spectrophotometric calibration/slice
 for ichannel=0L,n_elements(wvlh_charis)-1 $
  do sxaddpar,h1,'CERR'+strc(ichannel),1/snratio_sats[ichannel],"Cal Fractional error for slice "+strc(ichannel)
+
+sxaddpar,h0,'HISTORY',currenttime_log+' '+dpp_command
 
 ;temporary hack of file path 
  if (keyword_set(pick) or keyword_set(datacube)) then begin

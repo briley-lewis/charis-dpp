@@ -12,7 +12,7 @@
 ; CALLING SEQUENCE:
 ;   C = CROSSPN(A, B)
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   The function CROSSPN computes the vector cross product (outer
 ;   product).  The difference between CROSSPN and the IDL library
@@ -66,38 +66,37 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
 function crosspn, x1, x2
+  compile_opt idl2
 
-  n1 = n_elements(x1)/3
-  n2 = n_elements(x2)/3
+  n1 = n_elements(x1) / 3
+  n2 = n_elements(x2) / 3
 
-  if n1 EQ 1 AND n2 EQ 1 then begin
-      return, crossp(x1,x2)
-  endif else if n1 GT 1 AND n2 EQ 1 then begin
-      xr = make_array(3,n1,value=0*x1(0)*x2(0))
-      xr(0,*) = x1(1,*)*x2(2) - x2(1)*x1(2,*)
-      xr(1,*) = x1(2,*)*x2(0) - x2(2)*x1(0,*)
-      xr(2,*) = x1(0,*)*x2(1) - x2(0)*x1(1,*)
-      return, xr
-  endif else if n1 EQ 1 AND n2 GT 1 then begin
-      xr = make_array(3,n2,value=0*x1(0)*x2(0))
-      xr(0,*) = x1(1)*x2(2,*) - x2(1,*)*x1(2)
-      xr(1,*) = x1(2)*x2(0,*) - x2(2,*)*x1(0)
-      xr(2,*) = x1(0)*x2(1,*) - x2(0,*)*x1(1)
-      return, xr
-  endif else if n1 EQ n2 then begin
-      xr = make_array(3,n1,value=0*x1(0)*x2(0))
-      xr(0,*) = x1(1,*)*x2(2,*) - x2(1,*)*x1(2,*)
-      xr(1,*) = x1(2,*)*x2(0,*) - x2(2,*)*x1(0,*)
-      xr(2,*) = x1(0,*)*x2(1,*) - x2(0,*)*x1(1,*)
-      return, xr
+  if n1 eq 1 and n2 eq 1 then begin
+    return, crossp(x1, x2)
+  endif else if n1 gt 1 and n2 eq 1 then begin
+    xr = make_array(3, n1, value = 0 * x1[0] * x2[0])
+    xr[0, *] = x1[1, *] * x2[2] - x2[1] * x1[2, *]
+    xr[1, *] = x1[2, *] * x2[0] - x2[2] * x1[0, *]
+    xr[2, *] = x1[0, *] * x2[1] - x2[0] * x1[1, *]
+    return, xr
+  endif else if n1 eq 1 and n2 gt 1 then begin
+    xr = make_array(3, n2, value = 0 * x1[0] * x2[0])
+    xr[0, *] = x1[1] * x2[2, *] - x2[1, *] * x1[2]
+    xr[1, *] = x1[2] * x2[0, *] - x2[2, *] * x1[0]
+    xr[2, *] = x1[0] * x2[1, *] - x2[0, *] * x1[1]
+    return, xr
+  endif else if n1 eq n2 then begin
+    xr = make_array(3, n1, value = 0 * x1[0] * x2[0])
+    xr[0, *] = x1[1, *] * x2[2, *] - x2[1, *] * x1[2, *]
+    xr[1, *] = x1[2, *] * x2[0, *] - x2[2, *] * x1[0, *]
+    xr[2, *] = x1[0, *] * x2[1, *] - x2[0, *] * x1[1, *]
+    return, xr
   endif else begin
-      message, 'ERROR: number of vectors must match'
+    message, 'ERROR: number of vectors must match'
   endelse
 
   return, 0
 end
-
-      

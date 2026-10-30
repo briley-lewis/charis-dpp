@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -88,7 +88,7 @@
 ;
 ;   ACCESS - a string, set to the access privileges of the resource.
 ;            Possible values are:
-; 
+;
 ;              'R'  - read-only
 ;              'W'  - write/create
 ;              'RW' - write/update
@@ -145,208 +145,203 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-;; Utility routine: open a network resource using the 'curl' command
-pro fxgopen_curl, unit, resource, suffix, errmsg=errmsg, error=error, _EXTRA=extra
-  ;; The curl command automatically redirects to stdout
-  cmd = string(resource(0), format='("curl -s ''",A0,"''")')
-@fxfilter
-  wh = where(suffix EQ filters(0,*), ct)
-  ;; Handle the case where the remote file is gzipped, compressed, etc
-  ;; XXX: this assumes that the command can take '-' to mean 'stdin'
-  if ct GT 0 then cmd = cmd + ' | '+string('-',format=filters(1,wh(0)))
-  fxpopenr, unit, cmd, errmsg=errmsg, error=error, _EXTRA=extra
+; ; Utility routine: open a network resource using the 'curl' command
+pro fxgopen_curl, unit, resource, suffix, errmsg = errmsg, error = error, _extra = extra
+  compile_opt idl2
+  ; ; The curl command automatically redirects to stdout
+  cmd = string(resource[0], format = '("curl -s ''",A0,"''")')
+  @fxfilter
+  wh = where(suffix eq filters(0, *), ct)
+  ; ; Handle the case where the remote file is gzipped, compressed, etc
+  ; ; XXX: this assumes that the command can take '-' to mean 'stdin'
+  if ct gt 0 then cmd = cmd + ' | ' + string('-', format = filters(1, wh[0]))
+  FXPOPENR, unit, cmd, errmsg = errmsg, error = error, _extra = extra
   return
 end
 
-
-PRO FXGOPEN, UNIT, RESOURCE, ACCESS=ACCESS0, errmsg=errmsg, $
-             ERROR=error, SUFFIX=suffix0, _EXTRA=extra
+pro FXGOPEN, UNIT, RESOURCE, access = ACCESS0, errmsg = errmsg, $
+  error = error, suffix = suffix0, _extra = extra
+  compile_opt idl2
 
   on_error, 2
   error = -1
   errmsg = ''
 
-  ;; Default the parameters
-  IF N_ELEMENTS(ACCESS0) EQ 0 THEN ACCESS0='R'
-  ACCESS=STRUPCASE(ACCESS0)
-  IF ACCESS NE 'R' AND ACCESS NE 'W' AND ACCESS NE 'RW' THEN begin
-      MESSAGE = 'ERROR: ACCESS must be R, W, or RW.'
-      goto, ERR_RETURN
+  ; ; Default the parameters
+  if n_elements(ACCESS0) eq 0 then ACCESS0 = 'R'
+  ACCESS = strupcase(ACCESS0)
+  if ACCESS ne 'R' and ACCESS ne 'W' and ACCESS ne 'RW' then begin
+    MESSAGE = 'ERROR: ACCESS must be R, W, or RW.'
+    goto, err_return
   endif
 
-  ;; Check that the resource is at least a string.
-  sz = size(resource)
-  if sz(sz(0)+1) NE 7 then begin
-      message = 'ERROR: RESOURCE must be a string.'
-      goto, ERR_RETURN
+  ; ; Check that the resource is at least a string.
+  sz = size(RESOURCE)
+  if sz[sz[0] + 1] ne 7 then begin
+    MESSAGE = 'ERROR: RESOURCE must be a string.'
+    goto, err_return
   endif
 
-  ;; Separate the protocol component of a URL
-  len = strlen(resource)
-  i = 0L
-  while i LT len AND strmid(resource, i, 1) NE ':' $
-    AND strmid(resource, i, 1) NE '/' do i = i + 1
-  if i EQ len OR (i LT len AND strmid(resource, i, 1) EQ '/') then begin
-      protocol = 'file'
-      location = resource
+  ; ; Separate the protocol component of a URL
+  len = strlen(RESOURCE)
+  i = 0l
+  while i lt len and strmid(RESOURCE, i, 1) ne ':' $
+    and strmid(RESOURCE, i, 1) ne '/' do i = i + 1
+  if i eq len or (i lt len and strmid(RESOURCE, i, 1) eq '/') then begin
+    protocol = 'file'
+    location = RESOURCE
   endif else begin
-      if i EQ 0 OR i EQ len-1 then begin
-          message = 'ERROR: incorrect resource name format'
-          goto, ERR_RETURN
-      endif
-      protocol = strmid(resource, 0, i)
-      location = strmid(resource, i+1, strlen(resource)-i-1)
+    if i eq 0 or i eq len - 1 then begin
+      MESSAGE = 'ERROR: incorrect resource name format'
+      goto, err_return
+    endif
+    protocol = strmid(RESOURCE, 0, i)
+    location = strmid(RESOURCE, i + 1, strlen(RESOURCE) - i - 1)
   endelse
-  
-  ;; An ode to DOS: single-letter protocols are probably disk drives
-  if strlen(protocol) EQ 1 then begin
-      protocol = 'file'
-      location = resource
+
+  ; ; An ode to DOS: single-letter protocols are probably disk drives
+  if strlen(protocol) eq 1 then begin
+    protocol = 'file'
+    location = RESOURCE
   endif
 
-  ;; Separate the server component
+  ; ; Separate the server component
   len = strlen(location)
-  i = 0L
-  while i LT len AND strmid(location, i, 1) EQ '/' do i = i + 1
-  if i EQ 0 OR i EQ 1 then begin ;; No slash, or a single slash -- a local file
+  i = 0l
+  while i lt len and strmid(location, i, 1) eq '/' do i = i + 1
+  if i eq 0 or i eq 1 then begin ; ; No slash, or a single slash -- a local file
 
-      if i EQ len then begin
-          message = 'ERROR: incorrect resource name format'
-          goto, ERR_RETURN
-      endif
-      server = ''
-      path   = location
-  endif else if i EQ 3 then begin ;; Three slashes -- a local file
-      server = ''
-      path = strmid(location, 2, len-2)
-  endif else if i GT 3 then begin ;; Too many slashes
-      message = 'ERROR: incorrect resource name format'
-      goto, ERR_RETURN
-  endif else begin               ;; Format proto://server[/path]
-      path = strmid(location, 2, len-2)
-      slash = strpos(path, '/')
-      if slash EQ -1 then begin  ;; No path
-          server = path
-          path   = ''
-      endif else begin           ;; Server and path
-          server = strmid(path, 0, slash)
-          path   = strmid(path, slash, strlen(path)-slash)
-      endelse
+    if i eq len then begin
+      MESSAGE = 'ERROR: incorrect resource name format'
+      goto, err_return
+    endif
+    server = ''
+    path = location
+  endif else if i eq 3 then begin ; ; Three slashes -- a local file
+    server = ''
+    path = strmid(location, 2, len - 2)
+  endif else if i gt 3 then begin ; ; Too many slashes
+    MESSAGE = 'ERROR: incorrect resource name format'
+    goto, err_return
+  endif else begin ; ; Format proto://server[/path]
+    path = strmid(location, 2, len - 2)
+    slash = strpos(path, '/')
+    if slash eq -1 then begin ; ; No path
+      server = path
+      path = ''
+    endif else begin ; ; Server and path
+      server = strmid(path, 0, slash)
+      path = strmid(path, slash, strlen(path) - slash)
+    endelse
   endelse
 
-  ;; Determine the suffix of the path
-  components = str_sep(path, '.')
+  ; ; Determine the suffix of the path
+  components = STR_SEP(path, '.')
   len = n_elements(components)
-  if len GT 1 then suffix = components(len-1) else suffix = ''
-  if n_elements(suffix0) GT 0 then $
-    suffix = strtrim(suffix0(0),2)
+  if len gt 1 then suffix = components[len - 1] else suffix = ''
+  if n_elements(suffix0) gt 0 then $
+    suffix = strtrim(suffix0[0], 2)
 
-  ;; Find out if this is a pipe
-  if strmid(path, 0, 1) EQ '|' then begin
-      if access NE 'R' then begin
-          message = 'ERROR: pipes may only be opened with READ access.'
-          goto, ERR_RETURN
-      endif
-      fxpopenr, unit, path, errmsg=errmsg, error=error, _EXTRA=extra
-      return
+  ; ; Find out if this is a pipe
+  if strmid(path, 0, 1) eq '|' then begin
+    if ACCESS ne 'R' then begin
+      MESSAGE = 'ERROR: pipes may only be opened with READ access.'
+      goto, err_return
+    endif
+    FXPOPENR, UNIT, path, errmsg = errmsg, error = error, _extra = extra
+    return
   endif
 
-@fxfilter
+  @fxfilter
   case strlowcase(protocol) of
+    ; ; FILE access is the only supported protocol currently.
+    'file': begin
+      wh = where(suffix eq filters(0, *), ct)
+      if ct gt 0 then begin ; ; A filtered file must spawn a pipe
 
-      ;; FILE access is the only supported protocol currently.
-      'file': begin
-          wh = where(suffix EQ filters(0,*), ct)
-          if ct GT 0 then begin  ;; A filtered file must spawn a pipe
+        ; ; This file suffix is associated with a PIPE
+        if ACCESS ne 'R' then begin
+          MESSAGE = 'ERROR: pipes may only be opened with READ access.'
+          goto, err_return
+        endif
 
-              ;; This file suffix is associated with a PIPE
-              if access NE 'R' then begin
-                  message = 'ERROR: pipes may only be opened with READ access.'
-                  goto, ERR_RETURN
-              endif
+        ; ; Check that the file itself is read-openable.
+        openr, UNIT, path, /get_lun, error = error
+        if error ne 0 then goto, open_error
+        free_lun, UNIT
 
-              ;; Check that the file itself is read-openable.
-              openr, unit, path, /get_lun, error=error
-              if error NE 0 then goto, OPEN_ERROR
-              free_lun, unit
+        ; ; If it is, then open a pipe on it.
+        fmt = filters(1, wh[0])
+        flags = filters(2, wh[0])
+        flags = strtrim(strcompress(strupcase(flags)), 2)
+        compress = 0
+        if flags eq '' then begin
+          cmd = string(path, format = fmt)
+        endif else begin
+          case 1 of
+            (strpos(flags, 'COMPRESS') ge 0): compress = 1
+          endcase
 
-              ;; If it is, then open a pipe on it.
-              fmt   = filters(1,wh(0))
-              flags = filters(2,wh(0))
-              flags = strtrim(strcompress(strupcase(flags)),2)
-              compress = 0
-              if flags EQ '' then begin
-                  cmd = string(path, format=fmt)
-              endif else begin
-                  case 1 of
-                      (strpos(flags,'COMPRESS') GE 0): compress = 1
-                  endcase
+          cmd = path
+        endelse
 
-                  cmd = path
-              endelse
+        FXPOPENR, UNIT, cmd, compress = compress, $
+          errmsg = errmsg, error = error, _extra = extra
+        return
+      endif else begin
+        ; ; General file access is achieved through trusty
+        ; ; OPEN[RWU]
 
-              fxpopenr, unit, cmd, compress=compress, $
-                errmsg=errmsg, error=error, _EXTRA=extra
-              return
-          endif else begin
+        case ACCESS of
+          'R': openr, UNIT, path, /block, /get_lun, error = error
+          'W': openw, UNIT, path, /block, /get_lun, error = error
+          'RW': openu, UNIT, path, /block, /get_lun, error = error
+        end
+        if error ne 0 then begin
+          open_error:
+          ; ; Deal with the error condition
+          MESSAGE = 'ERROR: could not open file "' + path + '"'
+          goto, err_return
+        endif
 
-              ;; General file access is achieved through trusty
-              ;; OPEN[RWU]
-
-              case access of
-                  'R':  openr, unit, path, /block, /get_lun, error=error
-                  'W':  openw, unit, path, /block, /get_lun, error=error
-                  'RW': openu, unit, path, /block, /get_lun, error=error
-              end
-              if error NE 0 then begin
-                  OPEN_ERROR:
-                  ;; Deal with the error condition
-                  message = 'ERROR: could not open file "'+path+'"'
-                  goto, ERR_RETURN
-              endif
-
-              ;; Make sure the FXFILTER entry is zeroed.  We don't
-              ;; want trouble!
-              filterflag(unit) = 0
-              seek_cmd(unit)   = ''
-              read_cmd(unit)   = ''
-              write_cmd(unit)  = ''
-              close_cmd(unit)  = ''
-              return
-          endelse
-      end
-      'http':  fxgopen_curl, unit, resource, suffix, errmsg=errmsg, error=error, _EXTRA=extra
-      'https': fxgopen_curl, unit, resource, suffix, errmsg=errmsg, error=error, _EXTRA=extra
-      'ftp':   fxgopen_curl, unit, resource, suffix, errmsg=errmsg, error=error, _EXTRA=extra
-      else: begin
-
-          ;; Sorry... we need more protocols here, but probably with
-          ;; an external program such as CURL
-          message = 'ERROR: protocol "'+protocol+'" is not supported'
-          goto, ERR_RETURN
-      end
+        ; ; Make sure the FXFILTER entry is zeroed.  We don't
+        ; ; want trouble!
+        filterflag(UNIT) = 0
+        seek_cmd(UNIT) = ''
+        read_cmd(UNIT) = ''
+        write_cmd(UNIT) = ''
+        close_cmd(UNIT) = ''
+        return
+      endelse
+    end
+    'http': fxgopen_curl, UNIT, RESOURCE, suffix, errmsg = errmsg, error = error, _extra = extra
+    'https': fxgopen_curl, UNIT, RESOURCE, suffix, errmsg = errmsg, error = error, _extra = extra
+    'ftp': fxgopen_curl, UNIT, RESOURCE, suffix, errmsg = errmsg, error = error, _extra = extra
+    else: begin
+      ; ; Sorry... we need more protocols here, but probably with
+      ; ; an external program such as CURL
+      MESSAGE = 'ERROR: protocol "' + protocol + '" is not supported'
+      goto, err_return
+    end
   endcase
 
   return
 
-  ERR_RETURN:
-  forward_function arg_present  ;; For IDL versions before 5
+  err_return:
+  forward_function arg_present ; ; For IDL versions before 5
 
-  if arg_present(errmsg) OR arg_present(error) then begin
-      errmsg = message
+  if arg_present(errmsg) or arg_present(error) then begin
+    errmsg = MESSAGE
+    return
+  endif
+
+  if double(!version.release) lt 5 then begin
+    if n_elements(errmsg) ne 0 then begin
+      errmsg = MESSAGE
       return
+    endif
   endif
-
-  if double(!version.release) LT 5 then begin
-      if n_elements(errmsg) NE 0 then begin
-          errmsg = message
-          return
-      endif
-  endif
-  message, message
+  message, MESSAGE
 end
-
-
-  

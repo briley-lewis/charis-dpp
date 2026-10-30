@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -46,92 +46,92 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-PRO FXPBUFFR, UNIT, NEWLEN
+pro FXPBUFFR, UNIT, NEWLEN
+  compile_opt idl2
 
-@fxfilter
-@fxpcommn
+  @fxfilter
+  @fxpcommn
 
   CUNIT = CACHE_UNIT(UNIT)
-  CLEN  = CACHE_LEN(UNIT)
+  CLEN = CACHE_LEN(UNIT)
 
-  ;; Compute the size of the buffer, rounded to the nearest granularity
-  ;; size.
-  NTOT = CEIL(DOUBLE(NEWLEN-CLEN)/BUFFER_GRAN) * BUFFER_GRAN
+  ; ; Compute the size of the buffer, rounded to the nearest granularity
+  ; ; size.
+  NTOT = ceil(double(NEWLEN - CLEN) / BUFFER_GRAN) * BUFFER_GRAN
 
-  ;; Advance the cache file pointer to the end of the file
-  IF NOT EOF_REACHED(UNIT) THEN $
-    POINT_LUN, CUNIT, CLEN
+  ; ; Advance the cache file pointer to the end of the file
+  if not EOF_REACHED(UNIT) then $
+    point_lun, CUNIT, CLEN
 
-  ;; This strange ON_IOERROR layout is because IDL has problems
-  ;; resetting the error handler inside the loop.  Lots of data is
-  ;; lost, presumably because it is buffered.  Therefore, I moved the
-  ;; ON_IOERROR command outside of the loop.
+  ; ; This strange ON_IOERROR layout is because IDL has problems
+  ; ; resetting the error handler inside the loop.  Lots of data is
+  ; ; lost, presumably because it is buffered.  Therefore, I moved the
+  ; ; ON_IOERROR command outside of the loop.
   READING = 0
-  ON_IOERROR, IO_FAILED
+  on_ioerror, io_failed
 
-  ;; Read from pipe until we are done.  To avoid the "drinking from a
-  ;; fire-hose effect, we read in 32K chunks.
-      
-  WHILE NOT EOF_REACHED(UNIT) AND NTOT GT 0 DO BEGIN
+  ; ; Read from pipe until we are done.  To avoid the "drinking from a
+  ; ; fire-hose effect, we read in 32K chunks.
 
-      ;; Don't read more that BUFFER_MAX at a time, in case we fill
-      ;; the memory while seeking to the end of the pipe file.
-      NREAD = NTOT < BUFFER_MAX
-      BUFFER = BYTARR(NREAD)
+  while not EOF_REACHED(UNIT) and NTOT gt 0 do begin
+    ; ; Don't read more that BUFFER_MAX at a time, in case we fill
+    ; ; the memory while seeking to the end of the pipe file.
+    NREAD = NTOT < BUFFER_MAX
+    BUFFER = bytarr(NREAD)
 
-      ;; You may ask, why this funny treatment of I/O errors here.
-      ;; Well, pipes don't have a well defined endpoint.  A read on
-      ;; the pipe with a fixed buffer size might read past the end of
-      ;; the pipe data stream.  We have to catch that error here since
-      ;; an EOF is not fatal.  See above for the initializing
-      ;; ON_IOERROR.  When such an error does occur, processing
-      ;; proceeds to the end of the loop, and if READING EQ 1, then
-      ;; control returns to READ_FAILED.  Ugghh.  But that's the way
-      ;; IDL (mis-)handles I/O.
-      CC = 0
-      READING = 1
-      READU, UNIT, BUFFER, TRANSFER_COUNT=CC
+    ; ; You may ask, why this funny treatment of I/O errors here.
+    ; ; Well, pipes don't have a well defined endpoint.  A read on
+    ; ; the pipe with a fixed buffer size might read past the end of
+    ; ; the pipe data stream.  We have to catch that error here since
+    ; ; an EOF is not fatal.  See above for the initializing
+    ; ; ON_IOERROR.  When such an error does occur, processing
+    ; ; proceeds to the end of the loop, and if READING EQ 1, then
+    ; ; control returns to READ_FAILED.  Ugghh.  But that's the way
+    ; ; IDL (mis-)handles I/O.
+    CC = 0
+    READING = 1
+    readu, UNIT, BUFFER, transfer_count = CC
 
-      ;; IO Operation could have failed.  If the read operation
-      ;; failed, that may actually be a signal that the pipe has
-      ;; finished.  There may still be good data to extract from the
-      ;; most recent READU command, so we may restart.
-      IF 0 THEN BEGIN
-          IO_FAILED:
-          IF NOT READING THEN GOTO, READ_DONE
-      ENDIF
+    ; ; IO Operation could have failed.  If the read operation
+    ; ; failed, that may actually be a signal that the pipe has
+    ; ; finished.  There may still be good data to extract from the
+    ; ; most recent READU command, so we may restart.
+    if 0 then begin
+      io_failed:
+      if not READING then goto, read_done
+    endif
 
-      READ_FAILED:
-      READING = 0
-      ;; If the transfer count is zero, that is our clue that the pipe
-      ;; has ended.
-      IF CC EQ 0 THEN BEGIN
-          ;; If there really was a failure here, and not enough bytes
-          ;; were read, then that will be picked up when we read from
-          ;; the cache file.
-          CC = FSTAT(UNIT)
-          CC = CC.TRANSFER_COUNT
-          IF CC EQ 0 THEN EOF_REACHED(UNIT) = 1
-      ENDIF
+    read_failed:
+    READING = 0
+    ; ; If the transfer count is zero, that is our clue that the pipe
+    ; ; has ended.
+    if CC eq 0 then begin
+      ; ; If there really was a failure here, and not enough bytes
+      ; ; were read, then that will be picked up when we read from
+      ; ; the cache file.
+      CC = fstat(UNIT)
+      CC = CC.transfer_count
+      if CC eq 0 then EOF_REACHED(UNIT) = 1
+    endif
 
-      ;; Write the buffer out to the cache file ...
-      IF CC GT 0 THEN WRITEU, CUNIT, BUFFER(0:CC-1)
+    ; ; Write the buffer out to the cache file ...
+    if CC gt 0 then writeu, CUNIT, BUFFER[0 : CC - 1]
 
-      ;; ... and note the new cache length.
-      CACHE_LEN(UNIT) = CACHE_LEN(UNIT) + CC
-      CACHE_MAX(UNIT) = CACHE_MAX(UNIT) + CC
-      
-      NTOT = NTOT - CC
-  ENDWHILE
+    ; ; ... and note the new cache length.
+    CACHE_LEN(UNIT) = CACHE_LEN(UNIT) + CC
+    CACHE_MAX(UNIT) = CACHE_MAX(UNIT) + CC
 
-  READ_DONE:
-  ON_IOERROR, NULL
-  
-  ;; Finally, seek back to the point we started at, since that is what
-  ;; the caller is expecting.
-  POINT_LUN, CUNIT, POINTER(UNIT)
+    NTOT = NTOT - CC
+  endwhile
+
+  read_done:
+  on_ioerror, null
+
+  ; ; Finally, seek back to the point we started at, since that is what
+  ; ; the caller is expecting.
+  point_lun, CUNIT, POINTER(UNIT)
 
   RETURN
-END
+end

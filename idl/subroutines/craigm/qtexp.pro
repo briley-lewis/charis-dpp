@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -24,10 +24,10 @@
 ;   The exponential is only defined for a non-unit quaternion with a
 ;   *zero* rotation angle.  Specifically, the expression
 ;
-;      QTEXP([VAXIS * PHI/2, 0])    
+;      QTEXP([VAXIS * PHI/2, 0])
 ;
 ;   becomes
-; 
+;
 ;      [VAXIS*SIN(PHI/2), COS(PHI/2)]
 ;
 ;   where VAXIS is the unit vector rotation axis and PHI is the
@@ -37,7 +37,7 @@
 ;   Typically the input to QTEXP is found by taking the logarithm of a
 ;   unit quaternion using QTLOG, and the identity QTEXP(QTLOG(Q)) is
 ;   the same as Q.
-;   
+;
 ;  Conventions for storing quaternions vary in the literature and from
 ;  library to library.  This library uses the convention that the
 ;  first three components of each quaternion are the 3-vector axis of
@@ -96,30 +96,31 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
 function qtexp, q
+  compile_opt idl2
 
-  if n_params() EQ 0 then begin
-      info = 1
-      USAGE:
-      message, 'USAGE:', /info
-      message, 'QNEW = QTEXP(Q)', info=info
-      return, 0
+  if n_params() eq 0 then begin
+    info = 1
+    usage:
+    message, 'USAGE:', /info
+    message, 'QNEW = QTEXP(Q)', info = info
+    return, 0
   endif
-  nq = n_elements(q)/4
-  if nq LT 1 then goto, USAGE
+  nq = n_elements(q) / 4
+  if nq lt 1 then goto, usage
 
-  v = q(0:2,*)
-  th = sqrt(total(v^2,1))
-  wh = where(th NE 0, ct)
+  v = q[0 : 2, *]
+  th = sqrt(total(v ^ 2, 1))
+  wh = where(th ne 0, ct)
 
-  if ct GT 0 then v(*,wh) = v(*,wh)/rebin(reform(th(wh),1,ct),3,ct)
+  if ct gt 0 then v[*, wh] = v[*, wh] / rebin(reform(th[wh], 1, ct), 3, ct)
 
   q1 = q
 
-  q1(3,*) = cos(th)
-  q1(0:2,*) = rebin(reform([sin(th)],1,nq),3,nq)*v
+  q1[3, *] = cos(th)
+  q1[0 : 2, *] = rebin(reform([sin(th)], 1, nq), 3, nq) * v
 
   return, q1
 end

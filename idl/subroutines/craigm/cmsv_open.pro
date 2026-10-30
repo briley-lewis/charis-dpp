@@ -14,8 +14,8 @@
 ;          ACCESS=ACCESS, /FORCE, /GET_LUN, /REOPEN, $
 ;          COMPATIBILITY=COMPATIBILITY, $
 ;          STATUS=STATUS, ERRMSG=ERRMSG
-;   
-; DESCRIPTION: 
+;
+; DESCRIPTION:
 ;
 ;   CMSV_OPEN opens an IDL SAVE-formatted file for reading or writing.
 ;   The mode of operation is controlled by the ACCESS keyword, which
@@ -24,10 +24,10 @@
 ;
 ;   'R': In the case of reading, the specified file is opened with
 ;   read-only access, and the first bytes are examined to verify that
-;   it is indeed a valid IDL SAVE file.  
+;   it is indeed a valid IDL SAVE file.
 ;
 ;   'W': In the case of writing, the specified file is opened with
-;   write access, and the initial file signature is written.  
+;   write access, and the initial file signature is written.
 ;
 ;   'RW': In the case of read-write access, the file must already
 ;   exist as a valid SAVE file.  Users are advised that every time
@@ -47,7 +47,7 @@
 ;   the REOPEN keyword.
 ;
 ;     * If REOPEN is set then it is assumed that UNIT is an
-;       already-open file, and FILENAME is ignored.  
+;       already-open file, and FILENAME is ignored.
 ;
 ;     * If GET_LUN is set then a file unit is allocated with GET_LUN,
 ;       and upon success this unit is returned in UNIT.
@@ -140,128 +140,128 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
-pro cmsv_open, unit, filename, offset, access=access0, force=force, $
-               get_lun=get_lun, status=status, errmsg=errmsg, $
-               reopen=reopen, compatibility=compat, query=query, $
-               compressed=compressed
+; -
+pro cmsv_open, unit, filename, offset, access = access0, force = force, $
+  get_lun = get_lun, status = status, errmsg = errmsg, $
+  reopen = reopen, compatibility = compat, query = query, $
+  compressed = compressed
+  compile_opt idl2
 
   status = 0
-  offset = 0L
+  offset = 0l
   errmsg = ''
   error = 0
 
   if keyword_set(query) then return
 
   if keyword_set(get_lun) then get_lun, unit
-  if n_elements(access0) EQ 0 then access0 = 'R'
-  access = strupcase(strtrim(access0(0),2))
+  if n_elements(access0) eq 0 then access0 = 'R'
+  access = strupcase(strtrim(access0[0], 2))
 
-  if access NE 'R' AND access NE 'W' AND access NE 'RW' then begin
-      errmsg = 'ERROR: CMSV_OPEN: ACCESS must be one of "R", "RW" or "W"'
-      status = 0
-      return
+  if access ne 'R' and access ne 'W' and access ne 'RW' then begin
+    errmsg = 'ERROR: CMSV_OPEN: ACCESS must be one of "R", "RW" or "W"'
+    status = 0
+    return
   endif
 
-  ;; RE-OPEN
+  ; ; RE-OPEN
 
   if keyword_set(reopen) then begin
-      ;; Re-open an existing unit, but first make sure it's open
-      unit = floor(unit(0))
-      stat = fstat(unit)
-      errmsg = 'ERROR: CMSV_OPEN: Unit '+strtrim(unit,2)+' is not open'
-      if stat.open EQ 0 then begin
-          REOPEN_ERROR:
-          return
+    ; ; Re-open an existing unit, but first make sure it's open
+    unit = floor(unit[0])
+    stat = fstat(unit)
+    errmsg = 'ERROR: CMSV_OPEN: Unit ' + strtrim(unit, 2) + ' is not open'
+    if stat.open eq 0 then begin
+      reopen_error:
+      return
+    endif
+    if access eq 'R' then begin
+      if stat.read eq 0 then begin
+        errmsg = errmsg + ' for reading'
+        goto, reopen_error
       endif
-      if access EQ 'R' then begin
-          if stat.read EQ 0 then begin
-              errmsg = errmsg + ' for reading'
-              goto, REOPEN_ERROR
-          endif
-      endif else if access EQ 'RW' then begin
-          if stat.read EQ 0 OR stat.write EQ 0 then begin
-              errmsg = errmsg + ' for reading and writing'
-              goto, REOPEN_ERROR
-          endif
-      endif else begin
-          if stat.read EQ 0 OR stat.write EQ 0 then begin
-              errmsg = errmsg + ' for writing'
-              goto, REOPEN_ERROR
-          endif
-      endelse
+    endif else if access eq 'RW' then begin
+      if stat.read eq 0 or stat.write eq 0 then begin
+        errmsg = errmsg + ' for reading and writing'
+        goto, reopen_error
+      endif
+    endif else begin
+      if stat.read eq 0 or stat.write eq 0 then begin
+        errmsg = errmsg + ' for writing'
+        goto, reopen_error
+      endif
+    endelse
 
-      point_lun, unit, 0L
-      errmsg = ''
+    point_lun, unit, 0l
+    errmsg = ''
   endif
 
-  ;; READ or READ-WRITE ACCESS
+  ; ; READ or READ-WRITE ACCESS
 
-  if access EQ 'R' OR access EQ 'RW' then begin
-      compressed = 0L
+  if access eq 'R' or access eq 'RW' then begin
+    compressed = 0l
 
-      if NOT keyword_set(reopen) then begin
-          if access EQ 'R' then cmd = 'openr' else cmd = 'openu'
-          call_procedure, cmd, unit(0), filename, error=error, /STREAM
-          
-          if error NE 0 then begin
-              READ_ERROR:
-              close, unit(0)
-              if keyword_set(get_lun) then free_lun, unit(0)
-              status = 0
-              errmsg = !err_string
-              return
-          endif
+    if not keyword_set(reopen) then begin
+      if access eq 'R' then cmd = 'openr' else cmd = 'openu'
+      call_procedure, cmd, unit[0], filename, error = error, /stream
+
+      if error ne 0 then begin
+        read_error:
+        close, unit[0]
+        if keyword_set(get_lun) then free_lun, unit[0]
+        status = 0
+        errmsg = !err_string
+        return
       endif
+    endif
 
-      ;; Read 4-byte signature at start of file
-      on_ioerror, READ_ERROR
-      signature = bytarr(4)
-      readu, unit, signature
-      if string(signature(0:1)) NE 'SR' then begin
-          close, unit(0)
-          if keyword_set(get_lun) then free_lun, unit(0)
-          errmsg = 'ERROR: CMSV_OPEN: '+strtrim(filename(0),2)+ $
-            ' is not a valid SAVE file'
-          return
+    ; ; Read 4-byte signature at start of file
+    on_ioerror, read_error
+    signature = bytarr(4)
+    readu, unit, signature
+    if string(signature[0 : 1]) ne 'SR' then begin
+      close, unit[0]
+      if keyword_set(get_lun) then free_lun, unit[0]
+      errmsg = 'ERROR: CMSV_OPEN: ' + strtrim(filename[0], 2) + $
+        ' is not a valid SAVE file'
+      return
+    endif
+
+    ; ; Check for compressed files, which are not supported
+    if signature[3] eq 6 then begin
+      compressed = 1
+      if not keyword_set(force) then begin
+        errmsg = 'ERROR: CMSVLIB library cannot read ' + $
+          'compressed files'
+        status = 0
+        return
       endif
+    endif
+  endif else if access eq 'W' then begin
+    ; ; WRITE-ONLY (CREATE) ACCESS
 
-      ;; Check for compressed files, which are not supported
-      if signature(3) EQ 6 then begin
-          compressed = 1
-          if NOT keyword_set(force) then begin
-              errmsg = 'ERROR: CMSVLIB library cannot read '+ $
-                'compressed files'
-              status = 0
-              return
-          endif
+    if not keyword_set(reopen) then begin
+      openw, unit, filename, error = error, /stream
+
+      if error ne 0 then begin
+        write_error:
+        close, unit[0]
+        if keyword_set(get_lun) then free_lun, unit[0]
+        status = 0
+        errmsg = !err_string
+        return
       endif
-  endif else if access EQ 'W' then begin
+    endif
 
-      ;; WRITE-ONLY (CREATE) ACCESS
-      
-      if NOT keyword_set(reopen) then begin
-          openw, unit, filename, error=error, /STREAM
+    ; ; Write a valid signature
+    vbyte = '04'xb
+    ; ; '06'xb would indicate a compressed SAVE file, which we don't
+    ; ; support.
 
-          if error NE 0 then begin
-              WRITE_ERROR:
-              close, unit(0)
-              if keyword_set(get_lun) then free_lun, unit(0)
-              status = 0
-              errmsg = !err_string
-              return
-          endif
-      endif
-
-      ;; Write a valid signature
-      vbyte = '04'xb
-      ;; '06'xb would indicate a compressed SAVE file, which we don't
-      ;; support.
-
-      on_ioerror, WRITE_ERROR
-      ;              S       R
-      signature = ['53'xb, '52'xb, '00'xb, vbyte]
-      writeu, unit, signature
+    on_ioerror, write_error
+    ; S       R
+    signature = ['53'xb, '52'xb, '00'xb, vbyte]
+    writeu, unit, signature
   endif
 
   status = 1

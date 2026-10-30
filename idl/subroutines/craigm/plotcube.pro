@@ -12,7 +12,7 @@
 ; CALLING SEQUENCE:
 ;   PLOTCUBE, x, y, z
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   PLOTCUBE plots a three dimensional data set so that it can be
 ;   printed on paper, cut out, and folded together to make a real-life
@@ -118,65 +118,64 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
-;%insert HERE
-;%include subcell.pro
-;%include defsubcell.pro
-;%include plotpan.pro
+; -
+; %insert HERE
+; %include subcell.pro
+; %include defsubcell.pro
+; %include plotpan.pro
 pro plotcube, x, y, z, $
-              xrange=xrange, yrange=yrange, zrange=zrange, $
-              xtitle=xtitle, ytitle=ytitle, ztitle=ztitle, $
-              panel=panel, subpanel=subpanel, $
-              noerase=noerase, $
-              _EXTRA=extra
+  xrange = xrange, yrange = yrange, zrange = zrange, $
+  xtitle = xtitle, ytitle = ytitle, ztitle = ztitle, $
+  panel = panel, subpanel = subpanel, $
+  noerase = noerase, $
+  _extra = extra
+  compile_opt idl2
 
-  ;; Default is full-panel
-  if n_elements(panel) EQ 0 then panel=[0.0,0.0,1.0,1.0]
-  if n_elements(subpanel) EQ 0 then subpanel=[-1.,-1,-1,-1]
-  if n_elements(noerase) EQ 0 then noerase=0
+  ; ; Default is full-panel
+  if n_elements(panel) eq 0 then panel = [0.0, 0.0, 1.0, 1.0]
+  if n_elements(subpanel) eq 0 then subpanel = [-1., -1, -1, -1]
+  if n_elements(noerase) eq 0 then noerase = 0
 
-  if n_elements(xrange) EQ 0 then xrange = [ min(x), max(x) ]
-  if n_elements(yrange) EQ 0 then yrange = [ min(y), max(y) ]
-  if n_elements(zrange) EQ 0 then zrange = [ min(z), max(z) ]
+  if n_elements(xrange) eq 0 then xrange = [min(x), max(x)]
+  if n_elements(yrange) eq 0 then yrange = [min(y), max(y)]
+  if n_elements(zrange) eq 0 then zrange = [min(z), max(z)]
 
-  if n_elements(xtitle) EQ 0 then xtitle = 'X'
-  if n_elements(ytitle) EQ 0 then ytitle = 'Y'
-  if n_elements(ztitle) EQ 0 then ztitle = 'Z'
+  if n_elements(xtitle) eq 0 then xtitle = 'X'
+  if n_elements(ytitle) eq 0 then ytitle = 'Y'
+  if n_elements(ztitle) eq 0 then ztitle = 'Z'
 
-  subcellarray, [1,1,1], [1,1,1,1], newpan, newsub, $
-    panel=panel, subpanel=subpanel
+  subcellarray, [1, 1, 1], [1, 1, 1, 1], newpan, newsub, $
+    panel = panel, subpanel = subpanel
 
-  plotpan, x, z, /xstyle, /ystyle, noerase=noerase, $
-    xtickformat='(A1)', ytitle=ztitle, $
-    xrange=xrange, yrange=zrange, $
-    panel=newpan(1,3,*), subpanel=newsub(1,3,*), _EXTRA=extra
+  plotpan, x, z, /xstyle, /ystyle, noerase = noerase, $
+    xtickformat = '(A1)', ytitle = ztitle, $
+    xrange = xrange, yrange = zrange, $
+    panel = newpan[1, 3, *], subpanel = newsub[1, 3, *], _extra = extra
 
   plotpan, z, y, /xstyle, /ystyle, /noerase, $
-    xtitle=ztitle, ytitle=ytitle, $
-    xrange=[zrange(1),zrange(0)], yrange=yrange, $
-    panel=newpan(0,2,*), subpanel=newsub(0,2,*), _EXTRA=extra
+    xtitle = ztitle, ytitle = ytitle, $
+    xrange = [zrange[1], zrange[0]], yrange = yrange, $
+    panel = newpan[0, 2, *], subpanel = newsub[0, 2, *], _extra = extra
 
   plotpan, x, y, /xstyle, /ystyle, /noerase, $
-    xtickformat='(A1)', ytickformat='(A1)', $
-    xrange=xrange, yrange=yrange, $
-    panel=newpan(1,2,*), subpanel=newsub(1,2,*), _EXTRA=extra
+    xtickformat = '(A1)', ytickformat = '(A1)', $
+    xrange = xrange, yrange = yrange, $
+    panel = newpan[1, 2, *], subpanel = newsub[1, 2, *], _extra = extra
 
   plotpan, z, y, /xstyle, /ystyle, /noerase, $
-    ytickformat='(A1)', xtitle=ztitle, $
-    xrange=zrange, yrange=yrange, $
-    panel=newpan(2,2,*), subpanel=newsub(2,2,*), _EXTRA=extra
+    ytickformat = '(A1)', xtitle = ztitle, $
+    xrange = zrange, yrange = yrange, $
+    panel = newpan[2, 2, *], subpanel = newsub[2, 2, *], _extra = extra
 
   plotpan, x, z, /xstyle, /ystyle, /noerase, $
-    xtickformat='(A1)', ytitle=ztitle, $
-    xrange=xrange, yrange=[zrange(1),zrange(0)], $
-    panel=newpan(1,1,*), subpanel=newsub(1,1,*), _EXTRA=extra
+    xtickformat = '(A1)', ytitle = ztitle, $
+    xrange = xrange, yrange = [zrange[1], zrange[0]], $
+    panel = newpan[1, 1, *], subpanel = newsub[1, 1, *], _extra = extra
 
   plotpan, x, y, /xstyle, /ystyle, /noerase, $
-    xtitle=xtitle, ytitle=ytitle, $
-    xrange=xrange, yrange=[yrange(1), yrange(0)], $
-    panel=newpan(1,0,*), subpanel=newsub(1,0,*), _EXTRA=extra
+    xtitle = xtitle, ytitle = ytitle, $
+    xrange = xrange, yrange = [yrange[1], yrange[0]], $
+    panel = newpan[1, 0, *], subpanel = newsub[1, 0, *], _extra = extra
 
   return
 end
-
-    

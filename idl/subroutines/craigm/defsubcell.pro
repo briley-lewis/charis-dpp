@@ -12,7 +12,7 @@
 ; CALLING SEQUENCE:
 ;   sub = defsubcell( [default] )
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   DEFSUBCELL returns a "nice" subcell, useful for plotting in.  It
 ;   gives 8% margins on the left and bottom, and 5% margins on the
@@ -54,16 +54,16 @@
 ;
 ;-
 
-
 function defsubcell, default
+  compile_opt idl2
 
-  if n_elements(default) EQ 0 then default = [-1.,-1,-1,-1]
+  if n_elements(default) eq 0 then default = [-1., -1, -1, -1]
   mysubcell = default
-  defaultsubpos = [ 0.08, 0.08, 0.95, 0.95 ]
+  defaultsubpos = [0.08, 0.08, 0.95, 0.95]
 
-  iwh = where(mysubcell LT 0, ict)
-  if ict GT 0 then $
-    mysubcell(iwh) = defaultsubpos(iwh)
+  iwh = where(mysubcell lt 0, ict)
+  if ict gt 0 then $
+    mysubcell[iwh] = defaultsubpos[iwh]
 
   return, mysubcell
 end

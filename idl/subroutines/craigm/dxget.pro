@@ -13,7 +13,7 @@
 ;   RESULT = DXGET('NAME')  ; quoted variable name (OR)
 ;   RESULT = DXGET(NAME)    ; unquoted variable name
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   DXGET retrieves a variable value from any point in the IDL call
 ;   stack.  The DXGET and DXSET routines allow any variable at any
@@ -56,62 +56,63 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
-function dxget, vname, level=level0, status=status
-@dxcommon.pro
+; -
+function dxget, vname, level = level0, status = status
+  compile_opt idl2
+  @dxcommon.pro
 
   status = 0
-  if n_params() LT 1 then begin
-      USAGE_MESSAGE:
-      print, "USAGE:"
-      print, "  VALUE = dxget('NAME')   ; named variable"
-      print, "  VALUE = dxget( NAME )   ; without quotes"
-      return, 0
+  if n_params() lt 1 then begin
+    usage_message:
+    print, 'USAGE:'
+    print, '  VALUE = dxget(''NAME'')   ; named variable'
+    print, '  VALUE = dxget( NAME )   ; without quotes'
+    return, 0
   endif
 
-  if n_elements(level0) EQ 0 then level0=dblevel
-  level = floor(level0(0))
+  if n_elements(level0) eq 0 then level0 = dblevel
+  level = floor(level0[0])
 
   pass = 1
-  ;; Retrieve variable name
+  ; ; Retrieve variable name
   sz = size(vname)
-  if sz(sz(0)+1) EQ 7 then begin
-      name = vname(0)
+  if sz[sz[0] + 1] eq 7 then begin
+    name = vname[0]
   endif else begin
-      RETRY_NAME:
-      thislev = routine_names(/level)
-      name = routine_names(vname, arg_name=thislev-1)
-      if n_elements(name) LT 1 then goto, USAGE_MESSAGE
-      name = name(0)
+    retry_name:
+    thislev = routine_names(/level)
+    name = routine_names(vname, arg_name = thislev - 1)
+    if n_elements(name) lt 1 then goto, usage_message
+    name = name[0]
   endelse
-  if name EQ '' then goto, USAGE_MESSAGE
+  if name eq '' then goto, usage_message
   name = strupcase(name)
 
-  vars = routine_names(variables=level)
-  wh = where(name EQ vars, ct)
-  if ct EQ 0 then begin
-      if pass EQ 2 then begin
-          print, 'ERROR: Variable '+name+' does not exist at level '+ $
-            strtrim(level, 2)
-          return, 0
-      endif
-      pass = pass + 1
-      goto, RETRY_NAME
+  vars = routine_names(variables = level)
+  wh = where(name eq vars, ct)
+  if ct eq 0 then begin
+    if pass eq 2 then begin
+      print, 'ERROR: Variable ' + name + ' does not exist at level ' + $
+        strtrim(level, 2)
+      return, 0
+    endif
+    pass = pass + 1
+    goto, retry_name
   endif
 
   catch, catcherr
-  if catcherr NE 0 then begin
-      catch, /cancel
-      print, 'ERROR: '+name+' could not be set'
-      return, 0
+  if catcherr ne 0 then begin
+    catch, /cancel
+    print, 'ERROR: ' + name + ' could not be set'
+    return, 0
   endif
 
-  sz = size(routine_names(name, fetch=level))
-  if sz(sz(0)+1) EQ 0 then begin
-      print, 'ERROR: '+name+' is undefined'
-      return, 0
+  sz = size(routine_names(name, fetch = level))
+  if sz[sz[0] + 1] eq 0 then begin
+    print, 'ERROR: ' + name + ' is undefined'
+    return, 0
   endif
-  value = routine_names(name, fetch=level)
+  value = routine_names(name, fetch = level)
   status = 1
   return, value
 end

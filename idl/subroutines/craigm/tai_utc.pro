@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -22,7 +22,7 @@
 ;
 ;   The function TAI_UTC computes the difference between International
 ;   Atomic Time (TAI) and Universal Coordinated Time (UTC), in
-;   seconds.  
+;   seconds.
 ;
 ;   After 01 Jan 1972, the two time systems are synchronized, except
 ;   for a number of leap seconds added to account for the varying rate
@@ -59,7 +59,7 @@
 ;   message is printed.
 ;
 ;
-; PARAMETERS: 
+; PARAMETERS:
 ;
 ;   JD - time measured in Julian days.  The time being converted
 ;        *from*.
@@ -92,7 +92,7 @@
 ;
 ; SEE ALSO
 ;   TDB2TDT, SYSTIME, CALDAT, JULDAY
-;   
+;
 ; MODIFICATION HISTORY:
 ;   Written and Documented, CM, Dec 2001
 ;   Fixed array indexing errors when the requested time range falls in
@@ -112,149 +112,151 @@
 ; Permission to use, copy and distribute unmodified copies for
 ; non-commercial purposes, and to modify and use for personal or
 ; internal use, is granted.  All other rights are reserved.
-;-
+; -
 
 pro tai_utc_preload, strs, msg
+  compile_opt idl2
   msg = 'last leap second 2009 JAN 1'
   strs = [ $
-' 1961 JAN  1 =JD 2437300.5  TAI-UTC=   1.4228180 S + (MJD - 37300.) X 0.001296 S', $
-' 1961 AUG  1 =JD 2437512.5  TAI-UTC=   1.3728180 S + (MJD - 37300.) X 0.001296 S', $
-' 1962 JAN  1 =JD 2437665.5  TAI-UTC=   1.8458580 S + (MJD - 37665.) X 0.0011232S', $
-' 1963 NOV  1 =JD 2438334.5  TAI-UTC=   1.9458580 S + (MJD - 37665.) X 0.0011232S', $
-' 1964 JAN  1 =JD 2438395.5  TAI-UTC=   3.2401300 S + (MJD - 38761.) X 0.001296 S', $
-' 1964 APR  1 =JD 2438486.5  TAI-UTC=   3.3401300 S + (MJD - 38761.) X 0.001296 S', $
-' 1964 SEP  1 =JD 2438639.5  TAI-UTC=   3.4401300 S + (MJD - 38761.) X 0.001296 S', $
-' 1965 JAN  1 =JD 2438761.5  TAI-UTC=   3.5401300 S + (MJD - 38761.) X 0.001296 S', $
-' 1965 MAR  1 =JD 2438820.5  TAI-UTC=   3.6401300 S + (MJD - 38761.) X 0.001296 S', $
-' 1965 JUL  1 =JD 2438942.5  TAI-UTC=   3.7401300 S + (MJD - 38761.) X 0.001296 S', $
-' 1965 SEP  1 =JD 2439004.5  TAI-UTC=   3.8401300 S + (MJD - 38761.) X 0.001296 S', $
-' 1966 JAN  1 =JD 2439126.5  TAI-UTC=   4.3131700 S + (MJD - 39126.) X 0.002592 S', $
-' 1968 FEB  1 =JD 2439887.5  TAI-UTC=   4.2131700 S + (MJD - 39126.) X 0.002592 S', $
-' 1972 JAN  1 =JD 2441317.5  TAI-UTC=  10.0       S + (MJD - 41317.) X 0.0      S', $
-' 1972 JUL  1 =JD 2441499.5  TAI-UTC=  11.0       S + (MJD - 41317.) X 0.0      S', $
-' 1973 JAN  1 =JD 2441683.5  TAI-UTC=  12.0       S + (MJD - 41317.) X 0.0      S', $
-' 1974 JAN  1 =JD 2442048.5  TAI-UTC=  13.0       S + (MJD - 41317.) X 0.0      S', $
-' 1975 JAN  1 =JD 2442413.5  TAI-UTC=  14.0       S + (MJD - 41317.) X 0.0      S', $
-' 1976 JAN  1 =JD 2442778.5  TAI-UTC=  15.0       S + (MJD - 41317.) X 0.0      S', $
-' 1977 JAN  1 =JD 2443144.5  TAI-UTC=  16.0       S + (MJD - 41317.) X 0.0      S', $
-' 1978 JAN  1 =JD 2443509.5  TAI-UTC=  17.0       S + (MJD - 41317.) X 0.0      S', $
-' 1979 JAN  1 =JD 2443874.5  TAI-UTC=  18.0       S + (MJD - 41317.) X 0.0      S', $
-' 1980 JAN  1 =JD 2444239.5  TAI-UTC=  19.0       S + (MJD - 41317.) X 0.0      S', $
-' 1981 JUL  1 =JD 2444786.5  TAI-UTC=  20.0       S + (MJD - 41317.) X 0.0      S', $
-' 1982 JUL  1 =JD 2445151.5  TAI-UTC=  21.0       S + (MJD - 41317.) X 0.0      S', $
-' 1983 JUL  1 =JD 2445516.5  TAI-UTC=  22.0       S + (MJD - 41317.) X 0.0      S', $
-' 1985 JUL  1 =JD 2446247.5  TAI-UTC=  23.0       S + (MJD - 41317.) X 0.0      S', $
-' 1988 JAN  1 =JD 2447161.5  TAI-UTC=  24.0       S + (MJD - 41317.) X 0.0      S', $
-' 1990 JAN  1 =JD 2447892.5  TAI-UTC=  25.0       S + (MJD - 41317.) X 0.0      S', $
-' 1991 JAN  1 =JD 2448257.5  TAI-UTC=  26.0       S + (MJD - 41317.) X 0.0      S', $
-' 1992 JUL  1 =JD 2448804.5  TAI-UTC=  27.0       S + (MJD - 41317.) X 0.0      S', $
-' 1993 JUL  1 =JD 2449169.5  TAI-UTC=  28.0       S + (MJD - 41317.) X 0.0      S', $
-' 1994 JUL  1 =JD 2449534.5  TAI-UTC=  29.0       S + (MJD - 41317.) X 0.0      S', $
-' 1996 JAN  1 =JD 2450083.5  TAI-UTC=  30.0       S + (MJD - 41317.) X 0.0      S', $
-' 1997 JUL  1 =JD 2450630.5  TAI-UTC=  31.0       S + (MJD - 41317.) X 0.0      S', $
-' 1999 JAN  1 =JD 2451179.5  TAI-UTC=  32.0       S + (MJD - 41317.) X 0.0      S', $
-' 2006 JAN  1 =JD 2453736.5  TAI-UTC=  33.0       S + (MJD - 41317.) X 0.0      S', $
-' 2009 JAN  1 =JD 2454832.5  TAI-UTC=  34.0       S + (MJD - 41317.) X 0.0      S']
+    ' 1961 JAN  1 =JD 2437300.5  TAI-UTC=   1.4228180 S + (MJD - 37300.) X 0.001296 S', $
+    ' 1961 AUG  1 =JD 2437512.5  TAI-UTC=   1.3728180 S + (MJD - 37300.) X 0.001296 S', $
+    ' 1962 JAN  1 =JD 2437665.5  TAI-UTC=   1.8458580 S + (MJD - 37665.) X 0.0011232S', $
+    ' 1963 NOV  1 =JD 2438334.5  TAI-UTC=   1.9458580 S + (MJD - 37665.) X 0.0011232S', $
+    ' 1964 JAN  1 =JD 2438395.5  TAI-UTC=   3.2401300 S + (MJD - 38761.) X 0.001296 S', $
+    ' 1964 APR  1 =JD 2438486.5  TAI-UTC=   3.3401300 S + (MJD - 38761.) X 0.001296 S', $
+    ' 1964 SEP  1 =JD 2438639.5  TAI-UTC=   3.4401300 S + (MJD - 38761.) X 0.001296 S', $
+    ' 1965 JAN  1 =JD 2438761.5  TAI-UTC=   3.5401300 S + (MJD - 38761.) X 0.001296 S', $
+    ' 1965 MAR  1 =JD 2438820.5  TAI-UTC=   3.6401300 S + (MJD - 38761.) X 0.001296 S', $
+    ' 1965 JUL  1 =JD 2438942.5  TAI-UTC=   3.7401300 S + (MJD - 38761.) X 0.001296 S', $
+    ' 1965 SEP  1 =JD 2439004.5  TAI-UTC=   3.8401300 S + (MJD - 38761.) X 0.001296 S', $
+    ' 1966 JAN  1 =JD 2439126.5  TAI-UTC=   4.3131700 S + (MJD - 39126.) X 0.002592 S', $
+    ' 1968 FEB  1 =JD 2439887.5  TAI-UTC=   4.2131700 S + (MJD - 39126.) X 0.002592 S', $
+    ' 1972 JAN  1 =JD 2441317.5  TAI-UTC=  10.0       S + (MJD - 41317.) X 0.0      S', $
+    ' 1972 JUL  1 =JD 2441499.5  TAI-UTC=  11.0       S + (MJD - 41317.) X 0.0      S', $
+    ' 1973 JAN  1 =JD 2441683.5  TAI-UTC=  12.0       S + (MJD - 41317.) X 0.0      S', $
+    ' 1974 JAN  1 =JD 2442048.5  TAI-UTC=  13.0       S + (MJD - 41317.) X 0.0      S', $
+    ' 1975 JAN  1 =JD 2442413.5  TAI-UTC=  14.0       S + (MJD - 41317.) X 0.0      S', $
+    ' 1976 JAN  1 =JD 2442778.5  TAI-UTC=  15.0       S + (MJD - 41317.) X 0.0      S', $
+    ' 1977 JAN  1 =JD 2443144.5  TAI-UTC=  16.0       S + (MJD - 41317.) X 0.0      S', $
+    ' 1978 JAN  1 =JD 2443509.5  TAI-UTC=  17.0       S + (MJD - 41317.) X 0.0      S', $
+    ' 1979 JAN  1 =JD 2443874.5  TAI-UTC=  18.0       S + (MJD - 41317.) X 0.0      S', $
+    ' 1980 JAN  1 =JD 2444239.5  TAI-UTC=  19.0       S + (MJD - 41317.) X 0.0      S', $
+    ' 1981 JUL  1 =JD 2444786.5  TAI-UTC=  20.0       S + (MJD - 41317.) X 0.0      S', $
+    ' 1982 JUL  1 =JD 2445151.5  TAI-UTC=  21.0       S + (MJD - 41317.) X 0.0      S', $
+    ' 1983 JUL  1 =JD 2445516.5  TAI-UTC=  22.0       S + (MJD - 41317.) X 0.0      S', $
+    ' 1985 JUL  1 =JD 2446247.5  TAI-UTC=  23.0       S + (MJD - 41317.) X 0.0      S', $
+    ' 1988 JAN  1 =JD 2447161.5  TAI-UTC=  24.0       S + (MJD - 41317.) X 0.0      S', $
+    ' 1990 JAN  1 =JD 2447892.5  TAI-UTC=  25.0       S + (MJD - 41317.) X 0.0      S', $
+    ' 1991 JAN  1 =JD 2448257.5  TAI-UTC=  26.0       S + (MJD - 41317.) X 0.0      S', $
+    ' 1992 JUL  1 =JD 2448804.5  TAI-UTC=  27.0       S + (MJD - 41317.) X 0.0      S', $
+    ' 1993 JUL  1 =JD 2449169.5  TAI-UTC=  28.0       S + (MJD - 41317.) X 0.0      S', $
+    ' 1994 JUL  1 =JD 2449534.5  TAI-UTC=  29.0       S + (MJD - 41317.) X 0.0      S', $
+    ' 1996 JAN  1 =JD 2450083.5  TAI-UTC=  30.0       S + (MJD - 41317.) X 0.0      S', $
+    ' 1997 JUL  1 =JD 2450630.5  TAI-UTC=  31.0       S + (MJD - 41317.) X 0.0      S', $
+    ' 1999 JAN  1 =JD 2451179.5  TAI-UTC=  32.0       S + (MJD - 41317.) X 0.0      S', $
+    ' 2006 JAN  1 =JD 2453736.5  TAI-UTC=  33.0       S + (MJD - 41317.) X 0.0      S', $
+    ' 2009 JAN  1 =JD 2454832.5  TAI-UTC=  34.0       S + (MJD - 41317.) X 0.0      S']
   return
 end
 
-function tai_utc, jd, reset=reset, invert=invert, filename=filename0
+function tai_utc, jd, reset = reset, invert = invert, filename = filename0
+  compile_opt idl2
 
   common tai_utc_common, taiutc, timestamp
 
-  if n_params() EQ 0 OR n_elements(jd) EQ 0 then begin
-      message, 'USAGE: ', /info
-      message, ' TAI = UTC + TAI_UTC(JD_UTC)      ;; (or)', /info
-      message, ' UTC = TAI + TAI_UTC(JD_TAI, /INV)', /info
-      message, '  ;; (JD_UTC is Julian date referred to UTC)', /info
-      message, '  ;; (JD_TAI is Julian date referred to TAI)', /info
-      message, '', /info
-      message, 'Other timescales (all units in seconds; JD=Julian date):', $
-        /info
-      message, ' TT  = TAI + 32.184d     ;; TAI to Terrestrial Time', /info
-      message, ' TDT = TAI + 32.184d     ;; TAI to Terrestrial Dynamical Time',$
-        /info
-      message, ' TDB = TDT + TDB2TDT(JD) ;; TDT to Barycentric Dynamical Time',$
-        /info
-      message, '     ;; (JD referred to TDT or TDB)', /info
-      message, ' TAI = UTC + TAI_UTC(JD) ;; UTC to TAI (JD referred to UTC)', $
-        /info
-      message, ' UTC = TAI + TAI_UTC(JD, /INV) ;; UTC to TAI (JD referred to TAI)', /info
-      return, 0
+  if n_params() eq 0 or n_elements(jd) eq 0 then begin
+    message, 'USAGE: ', /info
+    message, ' TAI = UTC + TAI_UTC(JD_UTC)      ;; (or)', /info
+    message, ' UTC = TAI + TAI_UTC(JD_TAI, /INV)', /info
+    message, '  ;; (JD_UTC is Julian date referred to UTC)', /info
+    message, '  ;; (JD_TAI is Julian date referred to TAI)', /info
+    message, '', /info
+    message, 'Other timescales (all units in seconds; JD=Julian date):', $
+      /info
+    message, ' TT  = TAI + 32.184d     ;; TAI to Terrestrial Time', /info
+    message, ' TDT = TAI + 32.184d     ;; TAI to Terrestrial Dynamical Time', $
+      /info
+    message, ' TDB = TDT + TDB2TDT(JD) ;; TDT to Barycentric Dynamical Time', $
+      /info
+    message, '     ;; (JD referred to TDT or TDB)', /info
+    message, ' TAI = UTC + TAI_UTC(JD) ;; UTC to TAI (JD referred to UTC)', $
+      /info
+    message, ' UTC = TAI + TAI_UTC(JD, /INV) ;; UTC to TAI (JD referred to TAI)', /info
+    return, 0
   endif
 
-  if n_elements(taiutc) EQ 0 OR keyword_set(reset) then begin
-      RELOAD_COMMON:
-      root = {tai_utc_struct, jday: 0D, taiutc0: 0D, taiutc1: 0D, mjdoff: 0D}
+  if n_elements(taiutc) eq 0 or keyword_set(reset) then begin
+    reload_common:
+    root = {Tai_Utc_Struct, jday: 0d, taiutc0: 0d, taiutc1: 0d, mjdoff: 0d}
 
-      catch, catcherr
-      if catcherr EQ 0 then begin
-          forward_function get_xtecal
-          if n_elements(filename0) EQ 0 then $
-            filename = get_xtecal() + 'clock/tai-utc.dat' $
-          else $
-            filename = strtrim(filename0(0),2)
+    catch, catcherr
+    if catcherr eq 0 then begin
+      forward_function get_xtecal
+      if n_elements(filename0) eq 0 then $
+        filename = get_xtecal() + 'clock/tai-utc.dat' $
+      else $
+        filename = strtrim(filename0[0], 2)
 
-          get_lun, unit
-          openr, unit, filename, error=err
-          if err NE 0 then begin
-              free_lun, unit
-              message, 'WARNING: could not open '+filename, /info
-              catcherr = 1
-          endif
+      get_lun, unit
+      openr, unit, filename, error = err
+      if err ne 0 then begin
+        free_lun, unit
+        message, 'WARNING: could not open ' + filename, /info
+        catcherr = 1
       endif
-      catch, /cancel
-      
-      if keyword_set(catcherr) then begin
-          tai_utc_preload, strs, msg
-          nline = n_elements(strs)
-          message, 'WARNING: using canned data ('+msg+')', /info
-          goto, PARSE_STRS
-      endif
+    endif
+    catch, /cancel
 
-      strs = ['']
-      nline = 0L
-      while NOT eof(unit) do begin
-          line = ''
-          readf, unit, line
-          strs = [strs, line]
-          nline = nline + 1
-      endwhile
-      free_lun, unit
-      if nline LE 0 then begin
-          message, 'WARNING: no data was found in '+filename, /info
-          return, -1D
-      endif
-      strs = strs(1:*)
+    if keyword_set(catcherr) then begin
+      tai_utc_preload, strs, msg
+      nline = n_elements(strs)
+      message, 'WARNING: using canned data (' + msg + ')', /info
+      goto, parse_strs
+    endif
 
-      PARSE_STRS:
-      taiutc = replicate(root, nline)
-      taiutc.jday    = double(strmid(strs, 16,10))
-      taiutc.taiutc0 = double(strmid(strs, 36,12))
-      taiutc.mjdoff  = double(strmid(strs, 59,7))
-      taiutc.taiutc1 = double(strmid(strs, 69,10))
-      
-      timestamp = systime(1)
+    strs = ['']
+    nline = 0l
+    while not eof(unit) do begin
+      line = ''
+      readf, unit, line
+      strs = [strs, line]
+      nline = nline + 1
+    endwhile
+    free_lun, unit
+    if nline le 0 then begin
+      message, 'WARNING: no data was found in ' + filename, /info
+      return, -1d
+    endif
+    strs = strs[1 : *]
+
+    parse_strs:
+    taiutc = replicate(root, nline)
+    taiutc.jday = double(strmid(strs, 16, 10))
+    taiutc.taiutc0 = double(strmid(strs, 36, 12))
+    taiutc.mjdoff = double(strmid(strs, 59, 7))
+    taiutc.taiutc1 = double(strmid(strs, 69, 10))
+
+    timestamp = systime(1)
   endif
 
-  if systime(1) - timestamp GT 86400d then goto, RELOAD_COMMON
+  if systime(1) - timestamp gt 86400d then goto, reload_common
 
   jj = value_locate(taiutc.jday, jd)
   ii = jj > 0
-  leaps = taiutc(ii).taiutc0 + $
-          taiutc(ii).taiutc1 * (jd - 2400000.5D - taiutc(ii).mjdoff)
-  wh = where(jj LT 0, ct) 
-  if ct GT 0 then leaps(wh) = 0
+  leaps = taiutc[ii].taiutc0 + $
+    taiutc[ii].taiutc1 * (jd - 2400000.5d - taiutc[ii].mjdoff)
+  wh = where(jj lt 0, ct)
+  if ct gt 0 then leaps[wh] = 0
 
   if keyword_set(invert) then begin
-      ;; Special case where the leap second pushes us over a boundary
-      wh = where(jj GE 0 AND jd-leaps/86400d LT taiutc(ii).jday, ct)
-      if ct GT 0 then begin
-          ii = ii(wh) - 1
-          leaps(wh) = taiutc(ii).taiutc0 + $
-            taiutc(ii).taiutc1 * (jd(wh) - 2400000.5D - taiutc(ii).mjdoff)
-      endif
-      leaps = -leaps
+    ; ; Special case where the leap second pushes us over a boundary
+    wh = where(jj ge 0 and jd - leaps / 86400d lt taiutc[ii].jday, ct)
+    if ct gt 0 then begin
+      ii = ii[wh] - 1
+      leaps[wh] = taiutc[ii].taiutc0 + $
+        taiutc[ii].taiutc1 * (jd[wh] - 2400000.5d - taiutc[ii].mjdoff)
+    endif
+    leaps = -leaps
   endif
 
   return, leaps

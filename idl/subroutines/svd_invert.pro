@@ -1,4 +1,4 @@
-;---------------------------------------------------------------------------
+; ---------------------------------------------------------------------------
 ; Invert a matrix matA by Singular Value Decomposition (SVD)
 ; If m is the maximal singular values, only the singular values larger
 ; than m*eps are kept during the inversion
@@ -8,41 +8,41 @@
 ; matKernel is the coordinate transformation matrix from the original basis
 ; into the kernel basis (coordinate of the kernel vectors)
 ; vecWKernel is the singular values of the kernel vectors
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-function svd_invert, matA, eps, dimKernel=dimKernel, matKernel=matKernel,vecWKernel = vecWKernel, singVal=singVal,double=double
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+function svd_invert, matA, eps, dimkernel = dimKernel, matkernel = matKernel, vecwkernel = vecWKernel, singval = singVal, double = double
+  compile_opt idl2
 
-; Step 1
+  ; Step 1
 
-svdc, matA, vecW, matU, matV, /column, double=double ; /column is the trick !
+  svdc, matA, vecW, matU, matV, /column, double = double ; /column is the trick !
 
-; Step 2
+  ; Step 2
 
-n = n_elements(vecW)
-matWInv = dblarr(n,n)
-m = max(vecW)
-;print,'m',m
-for i=0,n-1 do begin
-    if vecW(i)/m ge eps then matWInv(i,i) = 1 / vecW(i)
-endfor
+  n = n_elements(vecW)
+  matWInv = dblarr(n, n)
+  m = max(vecW)
+  ; print,'m',m
+  for i = 0, n - 1 do begin
+    if vecW[i] / m ge eps then matWInv[i, i] = 1 / vecW[i]
+  endfor
 
-; Step 3
+  ; Step 3
 
-matAInv = matV # matWInv # transpose(matU)
-; checked !!!
+  matAInv = matV # matWInv # transpose(matU)
+  ; checked !!!
 
-; Step 4
+  ; Step 4
 
-singVal=vecW(reverse(sort(vecW)))
-w = where( vecW/m lt eps)
-if w(0) eq -1 then begin
+  singVal = vecW[reverse(sort(vecW))]
+  w = where(vecW / m lt eps)
+  if w[0] eq -1 then begin
     dimKernel = 0
     matKernel = 0d
-endif else begin
+  endif else begin
     dimKernel = n_elements(w)
-    matKernel = matV(*,w)
-    vecWKernel = vecW(w)
-endelse
+    matKernel = matV[*, w]
+    vecWKernel = vecW[w]
+  endelse
 
-return, matAInv
-
+  return, matAInv
 end

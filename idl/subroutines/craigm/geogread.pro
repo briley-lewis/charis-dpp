@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -57,7 +57,7 @@
 ;   rowstart: 4L, $               ;; Coefficient starting row (first row = 0)
 ;   nrows: 65338L, $              ;; Number of coefficient rows in file
 ;   ncolrange: [6,8], $           ;; Column range for degree (first col = 0)
-;   mcolrange: [9,11], $          ;;    "     "    "  order 
+;   mcolrange: [9,11], $          ;;    "     "    "  order
 ;   Ccolrange: [12,30], $         ;;    "     "    "  C coefficients
 ;   Scolrange: [31,49], $         ;;    "     "    "  S coefficients
 ;   dCcolrange: [50,62], $        ;;    "     "    "  C std deviation
@@ -76,7 +76,7 @@
 ;   they must be set to zero in the description file to avoid double
 ;   computations.  The coefficient rates can be used to extrapolate to
 ;   different epochs from the reference epoch (specified by EPOCH).
-; 
+;
 ;
 ; INPUTS:
 ;
@@ -118,140 +118,149 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
-pro geogread, rootfile, geogmod, status=status, errmsg=errmsg, $
-              coeff_err=cerr
+; -
+pro geogread, rootfile, geogmod, status = status, errmsg = errmsg, $
+  coeff_err = cerr
+  compile_opt idl2
 
   status = 0
   errmsg = ''
 
-  if n_params() EQ 0 then begin
-      message, 'USAGE: GEOGREAD, ROOTFILE, GEOGMOD [, STATUS=, ERRMSG=]', /info
-      return
+  if n_params() eq 0 then begin
+    message, 'USAGE: GEOGREAD, ROOTFILE, GEOGMOD [, STATUS=, ERRMSG=]', /info
+    return
   endif
 
-  openr, unit, rootfile, /get_lun, error=err
-  if err NE 0 then begin
-      errmsg = 'ERROR: could not open '+rootfile
-      return
+  openr, unit, rootfile, /get_lun, error = err
+  if err ne 0 then begin
+    errmsg = 'ERROR: could not open ' + rootfile
+    return
   endif
 
   rootstr = ''
-  on_ioerror, DONE_ROOTFILE
-  while NOT eof(unit) do begin
-      s = ''
-      readf, unit, s
-      s = strtrim(s,2)
-      if s NE '' then begin
-          p = strpos(s, '$')
-          if p GE 0 then s = strtrim(strmid(s,0,p),2)
-          p = strpos(s, ';')
-          if p GE 0 then s = strtrim(strmid(s,0,p),2)
+  on_ioerror, done_rootfile
+  while not eof(unit) do begin
+    s = ''
+    readf, unit, s
+    s = strtrim(s, 2)
+    if s ne '' then begin
+      p = strpos(s, '$')
+      if p ge 0 then s = strtrim(strmid(s, 0, p), 2)
+      p = strpos(s, ';')
+      if p ge 0 then s = strtrim(strmid(s, 0, p), 2)
 
-          if s NE '' then rootstr = rootstr + s
-      endif
+      if s ne '' then rootstr = rootstr + s
+    endif
   endwhile
-  DONE_ROOTFILE:
+  done_rootfile:
   free_lun, unit
 
-  if rootstr EQ '' then begin
-      errmsg = 'ERROR: no data found in '+rootfile
-      return
+  if rootstr eq '' then begin
+    errmsg = 'ERROR: no data found in ' + rootfile
+    return
   endif
 
   temp = strlowcase(rootstr)
-  if strpos(temp,'execute') GE 0 OR strpos(temp,'call_') GE 0 $
-    OR strpos(temp,'spawn') GE 0 OR strpos(temp,'openw') GE 0 then begin
-      errmsg = 'ERROR: '+rootfile+' contains insecure commands'
-      return
+  if strpos(temp, 'execute') ge 0 or strpos(temp, 'call_') ge 0 $
+  or strpos(temp, 'spawn') ge 0 or strpos(temp, 'openw') ge 0 then begin
+    errmsg = 'ERROR: ' + rootfile + ' contains insecure commands'
+    return
   endif
-  
-  cmdstr = 'geogmod = '+rootstr
+
+  cmdstr = 'geogmod = ' + rootstr
   dummy = execute(cmdstr)
-  if dummy NE 1 then begin
-      errmsg = 'ERROR: could not parse structure in '+rootfile
-      return
+  if dummy ne 1 then begin
+    errmsg = 'ERROR: could not parse structure in ' + rootfile
+    return
   endif
-  sz = size(geogmod) 
-  if sz(sz(0)+1) NE 8 then begin
-      errmsg = 'ERROR: structure not found in '+rootfile
-      return
+  sz = size(geogmod)
+  if sz[sz[0] + 1] ne 8 then begin
+    errmsg = 'ERROR: structure not found in ' + rootfile
+    return
   endif
 
   tn = strlowcase(tag_names(geogmod))
-  if max(tn EQ 'filename') EQ 0 OR max(tn EQ 'type') EQ 0 OR $
-    max(tn EQ 'a') EQ 0 OR max(tn EQ 'mu') EQ 0 OR $
-    max(tn EQ 'nmax') EQ 0 OR max(tn EQ 'mmax') EQ 0 OR $
-    max(tn EQ 'nrows') EQ 0 OR max(tn EQ 'rowstart') EQ 0 OR $
-    max(tn EQ 'ncolrange') EQ 0 OR max(tn EQ 'mcolrange') EQ 0 OR $
-    max(tn EQ 'ccolrange') EQ 0 OR max(tn EQ 'scolrange') EQ 0 then begin
-      errmsg = 'ERROR: structure did not contain required fields in '+rootfile
-      return
+  if max(tn eq 'filename') eq 0 or max(tn eq 'type') eq 0 or $
+    max(tn eq 'a') eq 0 or max(tn eq 'mu') eq 0 or $
+    max(tn eq 'nmax') eq 0 or max(tn eq 'mmax') eq 0 or $
+    max(tn eq 'nrows') eq 0 or max(tn eq 'rowstart') eq 0 or $
+    max(tn eq 'ncolrange') eq 0 or max(tn eq 'mcolrange') eq 0 or $
+    max(tn eq 'ccolrange') eq 0 or max(tn eq 'scolrange') eq 0 then begin
+    errmsg = 'ERROR: structure did not contain required fields in ' + rootfile
+    return
   endif
 
   ps = path_sep()
 
   p = rstrpos(rootfile, ps)
-  if p GE 0 then path = strmid(rootfile,0,p+1) $
-  else           path = ''
+  if p ge 0 then path = strmid(rootfile, 0, p + 1) $
+  else path = ''
 
   file = path + geogmod.filename
 
-  openr, unit, file, /get_lun, error=err
-  if err NE 0 then begin
-      errmsg = 'ERROR: could not open '+file
-      return
+  openr, unit, file, /get_lun, error = err
+  if err ne 0 then begin
+    errmsg = 'ERROR: could not open ' + file
+    return
   endif
 
   nrows = geogmod.nrows
 
   reading = 1
-  on_ioerror, DONE_READING
+  on_ioerror, done_reading
   str = strarr(geogmod.rowstart)
   readf, unit, str
 
   str = strarr(nrows)
   readf, unit, str
   reading = 0
-  
-  DONE_READING:
+
+  done_reading:
   free_lun, unit
   if reading then begin
-      errmsg = 'ERROR: could not read coefficient rows from '+file
-      return
+    errmsg = 'ERROR: could not read coefficient rows from ' + file
+    return
   endif
 
-  rng = geogmod.ncolrange & n = long(strmid(str,rng(0),rng(1)-rng(0)+1))
-  rng = geogmod.mcolrange & m = long(strmid(str,rng(0),rng(1)-rng(0)+1))
+  rng = geogmod.ncolrange
+  n = long(strmid(str, rng[0], rng[1] - rng[0] + 1))
+  rng = geogmod.mcolrange
+  m = long(strmid(str, rng[0], rng[1] - rng[0] + 1))
 
-  rng = geogmod.Ccolrange & C = double(strmid(str,rng(0), rng(1)-rng(0)+1))
-  rng = geogmod.Scolrange & S = double(strmid(str,rng(0), rng(1)-rng(0)+1))
+  rng = geogmod.ccolrange
+  C = double(strmid(str, rng[0], rng[1] - rng[0] + 1))
+  rng = geogmod.scolrange
+  s = double(strmid(str, rng[0], rng[1] - rng[0] + 1))
 
   if keyword_set(cerr) then begin
-      rng = geogmod.dCcolrange & dC = double(strmid(str,rng(0), rng(1)-rng(0)+1))
-      rng = geogmod.dScolrange & dS = double(strmid(str,rng(0), rng(1)-rng(0)+1))
+    rng = geogmod.dCcolrange
+    dC = double(strmid(str, rng[0], rng[1] - rng[0] + 1))
+    rng = geogmod.dScolrange
+    dS = double(strmid(str, rng[0], rng[1] - rng[0] + 1))
   endif
   str = 0
-  
-  Cnm = dblarr(geogmod.nmax+1,geogmod.mmax+1)
+
+  Cnm = dblarr(geogmod.nmax + 1, geogmod.mmax + 1)
   Snm = Cnm
 
   if keyword_set(cerr) then begin
-      dCnm = Cnm
-      dSnm = Cnm
-      dCnm(n,m) = temporary(dC) & dSnm(n,m) = temporary(dS)
+    dCnm = Cnm
+    dSnm = Cnm
+    dCnm[n, m] = temporary(dC)
+    dSnm[n, m] = temporary(dS)
   endif
 
-  Cnm(0,0) = 1
-  Cnm(n,m) = temporary(C)  &  Snm(n,m) = temporary(S)
+  Cnm[0, 0] = 1
+  Cnm[n, m] = temporary(C)
+  Snm[n, m] = temporary(s)
 
   geogmod = create_struct(geogmod, $
-                          'Cnm', ptr_new(Cnm, /no_copy), $
-                          'Snm', ptr_new(Snm, /no_copy))
+    'Cnm', ptr_new(Cnm, /no_copy), $
+    'Snm', ptr_new(Snm, /no_copy))
   if keyword_set(cerr) then begin
-      geogmod = create_struct(geogmod, $
-                              'dCnm', ptr_new(dCnm, /no_copy), $
-                              'dSnm', ptr_new(dSnm, /no_copy))
+    geogmod = create_struct(geogmod, $
+      'dCnm', ptr_new(dCnm, /no_copy), $
+      'dSnm', ptr_new(dSnm, /no_copy))
   endif
 
   return

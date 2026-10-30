@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -27,7 +27,7 @@
 ;  Given the data and their uncertainties, MPFITFUN finds the best set
 ;  of model parameters which match the data (in a least-squares
 ;  sense) and returns them in an array.
-;  
+;
 ;  The user must supply the following items:
 ;   - An array of independent variable values ("X").
 ;   - An array of "measured" *dependent* variable values ("Y").
@@ -95,31 +95,31 @@
 ;  Each parameter is associated with one element of the array, in
 ;  numerical order.  The structure can have the following entries
 ;  (none are required):
-;  
+;
 ;     .VALUE - the starting parameter value (but see the START_PARAMS
 ;              parameter for more information).
-;  
+;
 ;     .FIXED - a boolean value, whether the parameter is to be held
 ;              fixed or not.  Fixed parameters are not varied by
 ;              MPFIT, but are passed on to MYFUNCT for evaluation.
-;  
+;
 ;     .LIMITED - a two-element boolean array.  If the first/second
 ;                element is set, then the parameter is bounded on the
 ;                lower/upper side.  A parameter can be bounded on both
 ;                sides.  Both LIMITED and LIMITS must be given
 ;                together.
-;  
+;
 ;     .LIMITS - a two-element float or double array.  Gives the
 ;               parameter limits on the lower and upper sides,
 ;               respectively.  Zero, one or two of these values can be
 ;               set, depending on the values of LIMITED.  Both LIMITED
 ;               and LIMITS must be given together.
-;  
+;
 ;     .PARNAME - a string, giving the name of the parameter.  The
 ;                fitting code of MPFIT does not use this tag in any
 ;                way.  However, the default ITERPROC will print the
 ;                parameter name if available.
-;  
+;
 ;     .STEP - the step size to be used in calculating the numerical
 ;             derivatives.  If set to zero, then the step size is
 ;             computed automatically.  Ignored when AUTODERIVATIVE=0.
@@ -155,7 +155,7 @@
 ;                  one iteration.
 ;
 ;                  A value of 0 indicates no maximum.  Default: 0.
-;  
+;
 ;     .TIED - a string expression which "ties" the parameter to other
 ;             free or fixed parameters as an equality constraint.  Any
 ;             expression involving constants and the parameter array P
@@ -181,7 +181,7 @@
 ;  Therefore programmers are urged to avoid using tags starting with
 ;  "MP", but otherwise they are free to include their own fields
 ;  within the PARINFO structure, which will be ignored by MPFIT.
-;  
+;
 ;  PARINFO Example:
 ;  parinfo = replicate({value:0.D, fixed:0, limited:[0,0], $
 ;                       limits:[0.D,0]}, 5)
@@ -189,7 +189,7 @@
 ;  parinfo[4].limited[0] = 1
 ;  parinfo[4].limits[0]  = 50.D
 ;  parinfo[*].value = [5.7D, 2.2, 500., 1.5, 2000.]
-;  
+;
 ;  A total of 5 parameters, with starting values of 5.7,
 ;  2.2, 500, 1.5, and 2000 are given.  The first parameter
 ;  is fixed at a value of 5.7, and the last parameter is
@@ -198,7 +198,7 @@
 ; COMPATIBILITY
 ;
 ;  This function is designed to work with IDL 5.0 or greater.
-;  
+;
 ;  Because TIED parameters rely on the EXECUTE() function, they cannot
 ;  be used with the free version of the IDL Virtual Machine.
 ;
@@ -225,7 +225,7 @@
 ;                  is ignored
 ;                * if ERR is NaN or Infinite, and the NAN keyword is
 ;                  set, then the corresponding data point is ignored
-;                * if ERR is negative, then the absolute value of 
+;                * if ERR is negative, then the absolute value of
 ;                  ERR is used.
 ;
 ;   START_PARAMS - An array of starting values for each of the
@@ -241,7 +241,7 @@
 ;                  passed, then the starting *value* is taken from
 ;                  START_PARAMS, but the *constraints* are taken from
 ;                  PARINFO.
-; 
+;
 ;
 ; RETURNS:
 ;
@@ -314,11 +314,11 @@
 ;                PARINFO=parinfo, QUIET=quiet, ...
 ;                ; perform custom iteration update
 ;              END
-;         
+;
 ;              ITERPROC must either accept all three keyword
 ;              parameters (FUNCTARGS, PARINFO and QUIET), or at least
 ;              accept them via the _EXTRA keyword.
-;          
+;
 ;              MYFUNCT is the user-supplied function to be minimized,
 ;              P is the current set of model parameters, ITER is the
 ;              iteration number, and FUNCTARGS are the arguments to be
@@ -374,7 +374,7 @@
 ;   PARINFO - Provides a mechanism for more sophisticated constraints
 ;             to be placed on parameter values.  When PARINFO is not
 ;             passed, then it is assumed that all parameters are free
-;             and unconstrained.  Values in PARINFO are never 
+;             and unconstrained.  Values in PARINFO are never
 ;             modified during a call to MPFIT.
 ;
 ;             See description above for the structure of PARINFO.
@@ -389,7 +389,7 @@
 ;            If the fit is unweighted (i.e. no errors were given, or
 ;            the weights were uniformly set to unity), then PERROR
 ;            will probably not represent the true parameter
-;            uncertainties.  
+;            uncertainties.
 ;
 ;            *If* you can assume that the true reduced chi-squared
 ;            value is unity -- meaning that the fit is implicitly
@@ -408,27 +408,27 @@
 ;            following values:
 ;
 ;	   0  improper input parameters.
-;         
+;
 ;	   1  both actual and predicted relative reductions
 ;	      in the sum of squares are at most FTOL.
-;         
+;
 ;	   2  relative error between two consecutive iterates
 ;	      is at most XTOL
-;         
+;
 ;	   3  conditions for STATUS = 1 and STATUS = 2 both hold.
-;         
+;
 ;	   4  the cosine of the angle between fvec and any
 ;	      column of the jacobian is at most GTOL in
 ;	      absolute value.
-;         
+;
 ;	   5  the maximum number of iterations has been reached
-;         
+;
 ;	   6  FTOL is too small. no further reduction in
 ;	      the sum of squares is possible.
-;         
+;
 ;	   7  XTOL is too small. no further improvement in
 ;	      the approximate solution x is possible.
-;         
+;
 ;	   8  GTOL is too small. fvec is orthogonal to the
 ;	      columns of the jacobian to machine precision.
 ;
@@ -450,7 +450,7 @@
 ;                  is ignored
 ;                * if WEIGHTS is NaN or Infinite, and the NAN keyword is
 ;                  set, then the corresponding data point is ignored
-;                * if WEIGHTS is negative, then the absolute value of 
+;                * if WEIGHTS is negative, then the absolute value of
 ;                  WEIGHTS is used.
 ;
 ;   XTOL - a nonnegative input variable. Termination occurs when the
@@ -461,12 +461,12 @@
 ;
 ;   YFIT - the best-fit model function, as returned by MYFUNCT.
 ;
-;   
+;
 ; EXAMPLE:
 ;
 ;   ; First, generate some synthetic data
 ;   npts = 200
-;   x  = dindgen(npts) * 0.1 - 10.                  ; Independent variable 
+;   x  = dindgen(npts) * 0.1 - 10.                  ; Independent variable
 ;   yi = gauss1(x, [2.2D, 1.4, 3000.])              ; "Ideal" Y variable
 ;   y  = yi + randomn(seed, npts) * sqrt(1000. + yi); Measured, w/ noise
 ;   sy = sqrt(1000.D + y)                           ; Poisson errors
@@ -501,7 +501,7 @@
 ; REFERENCES:
 ;
 ;   MINPACK-1, Jorge More', available from netlib (www.netlib.org).
-;   "Optimization Software Guide," Jorge More' and Stephen Wright, 
+;   "Optimization Software Guide," Jorge More' and Stephen Wright,
 ;     SIAM, *Frontiers in Applied Mathematics*, Number 14.
 ;
 ; MODIFICATION HISTORY:
@@ -550,199 +550,207 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-FORWARD_FUNCTION mpfitfun_eval, mpfitfun, mpfit
+forward_function mpfitfun_eval, mpfitfun, mpfit
 
 ; This is the call-back function for MPFIT.  It evaluates the
 ; function, subtracts the data, and returns the residuals.
-function mpfitfun_eval, p, dp, _EXTRA=extra
-
-  COMPILE_OPT strictarr
+function mpfitfun_eval, p, dp, _extra = extra
+  compile_opt strictarr
   common mpfitfun_common, fcn, x, y, err, wts, f, fcnargs
 
-  ;; Save the original DP matrix for later use
-  if n_params() GT 1 then if n_elements(dp) GT 0 then dp0 = dp
+  ; ; Save the original DP matrix for later use
+  if n_params() gt 1 then if n_elements(dp) gt 0 then dp0 = dp
 
-  ;; The function is evaluated here.  There are four choices,
-  ;; depending on whether (a) FUNCTARGS was passed to MPFITFUN, which
-  ;; is passed to this function as "hf"; or (b) the derivative
-  ;; parameter "dp" is passed, meaning that derivatives should be
-  ;; calculated analytically by the function itself.
-  if n_elements(fcnargs) GT 0 then begin
-      if n_params() GT 1 then f = call_function(fcn, x, p, dp, _EXTRA=fcnargs)$
-      else                    f = call_function(fcn, x, p, _EXTRA=fcnargs)
+  ; ; The function is evaluated here.  There are four choices,
+  ; ; depending on whether (a) FUNCTARGS was passed to MPFITFUN, which
+  ; ; is passed to this function as "hf"; or (b) the derivative
+  ; ; parameter "dp" is passed, meaning that derivatives should be
+  ; ; calculated analytically by the function itself.
+  if n_elements(fcnargs) gt 0 then begin
+    if n_params() gt 1 then f = call_function(fcn, x, p, dp, _extra = fcnargs) $
+    else f = call_function(fcn, x, p, _extra = fcnargs)
   endif else begin
-      if n_params() GT 1 then f = call_function(fcn, x, p, dp) $
-      else                    f = call_function(fcn, x, p)
+    if n_params() gt 1 then f = call_function(fcn, x, p, dp) $
+    else f = call_function(fcn, x, p)
   endelse
 
   np = n_elements(p)
   nf = n_elements(f)
 
-  ;; Compute the deviates, applying either errors or weights
-  if n_elements(wts) GT 0 then begin
-      result = (y-f)*wts
-      if n_elements(dp0) GT 0 AND n_elements(dp) EQ np*nf then begin
-          for j = 0L, np-1 do dp[j*nf] = dp[j*nf:j*nf+nf-1] * wts
-      endif
-  endif else if n_elements(err) GT 0 then begin
-      result = (y-f)/err
-      if n_elements(dp0) GT 0 AND n_elements(dp) EQ np*nf then begin
-          for j = 0L, np-1 do dp[j*nf] = dp[j*nf:j*nf+nf-1] / err
-      endif
+  ; ; Compute the deviates, applying either errors or weights
+  if n_elements(wts) gt 0 then begin
+    result = (y - f) * wts
+    if n_elements(dp0) gt 0 and n_elements(dp) eq np * nf then begin
+      for j = 0l, np - 1 do dp[j * nf] = dp[j * nf : j * nf + nf - 1] * wts
+    endif
+  endif else if n_elements(err) gt 0 then begin
+    result = (y - f) / err
+    if n_elements(dp0) gt 0 and n_elements(dp) eq np * nf then begin
+      for j = 0l, np - 1 do dp[j * nf] = dp[j * nf : j * nf + nf - 1] / err
+    endif
   endif else begin
-      result = (y-f)
+    result = (y - f)
   endelse
-      
-  ;; Make sure the returned result is one-dimensional.
+
+  ; ; Make sure the returned result is one-dimensional.
   result = reform(result, n_elements(result), /overwrite)
   return, result
-  
 end
 
-;; Implement residual and gradient scaling according to the
-;; prescription of Cash (ApJ, 228, 939)
+; ; Implement residual and gradient scaling according to the
+; ; prescription of Cash (ApJ, 228, 939)
 pro mpfitfun_cash, resid, dresid
-  COMPILE_OPT strictarr
+  compile_opt strictarr
   common mpfitfun_common, fcn, x, y, err, wts, f, fcnargs
 
   sz = size(dresid)
   m = sz[1]
   n = sz[2]
 
-  ;; Do rudimentary dimensions checks, so we don't do something stupid
-  if n_elements(y) NE m OR n_elements(f) NE m OR n_elements(resid) NE m then begin
-      DIM_ERROR:
-      message, 'ERROR: dimensions of Y, F, RESID or DRESID are not consistent'
+  ; ; Do rudimentary dimensions checks, so we don't do something stupid
+  if n_elements(y) ne m or n_elements(f) ne m or n_elements(resid) ne m then begin
+    dim_error:
+    message, 'ERROR: dimensions of Y, F, RESID or DRESID are not consistent'
   endif
 
-  ;; Scale gradient by sqrt(y)/f
-  gfact = temporary(dresid) * rebin(reform(sqrt(y)/f,m,1),m,n)
+  ; ; Scale gradient by sqrt(y)/f
+  gfact = temporary(dresid) * rebin(reform(sqrt(y) / f, m, 1), m, n)
   dresid = reform(dresid, m, n, /overwrite)
-  
-  ;; Scale residuals by 1/sqrt(y)
-  resid = temporary(resid)/sqrt(y)
+
+  ; ; Scale residuals by 1/sqrt(y)
+  resid = temporary(resid) / sqrt(y)
 
   return
 end
 
-function mpfitfun, fcn, x, y, err, p, WEIGHTS=wts, FUNCTARGS=fa, $
-                   BESTNORM=bestnorm, nfev=nfev, STATUS=status, $
-                   parinfo=parinfo, query=query, CASH=cash, $
-                   covar=covar, perror=perror, yfit=yfit, $
-                   niter=niter, nfree=nfree, npegged=npegged, dof=dof, $
-                   quiet=quiet, ERRMSG=errmsg, NAN=NAN, _EXTRA=extra
-
-  COMPILE_OPT strictarr
-  status = 0L
+function mpfitfun, fcn, x, y, err, p, weights = wts, functargs = fa, $
+  bestnorm = bestnorm, nfev = nfev, status = status, $
+  parinfo = parinfo, query = query, cash = cash, $
+  covar = covar, perror = perror, yfit = yfit, $
+  niter = niter, nfree = nfree, npegged = npegged, dof = dof, $
+  quiet = quiet, errmsg = errmsg, nan = NAN, _extra = extra
+  compile_opt strictarr
+  status = 0l
   errmsg = ''
 
-  ;; Detect MPFIT and crash if it was not found
+  ; ; Detect MPFIT and crash if it was not found
   catch, catcherror
-  if catcherror NE 0 then begin
-      MPFIT_NOTFOUND:
-      catch, /cancel
-      message, 'ERROR: the required function MPFIT must be in your IDL path', /info
-      return, !values.d_nan
+  if catcherror ne 0 then begin
+    mpfit_notfound:
+    catch, /cancel
+    message, 'ERROR: the required function MPFIT must be in your IDL path', /info
+    return, !values.d_nan
   endif
-  if mpfit(/query) NE 1 then goto, MPFIT_NOTFOUND
+  if mpfit(/query) ne 1 then goto, mpfit_notfound
   catch, /cancel
   if keyword_set(query) then return, 1
 
-  if n_params() EQ 0 then begin
-      message, "USAGE: PARMS = MPFITFUN('MYFUNCT', X, Y, ERR, "+ $
-        "START_PARAMS, ... )", /info
-      return, !values.d_nan
+  if n_params() eq 0 then begin
+    message, 'USAGE: PARMS = MPFITFUN(''MYFUNCT'', X, Y, ERR, ' + $
+      'START_PARAMS, ... )', /info
+    return, !values.d_nan
   endif
-  if n_elements(x) EQ 0 OR n_elements(y) EQ 0 then begin
-      message, 'ERROR: X and Y must be defined', /info
-      return, !values.d_nan
+  if n_elements(x) eq 0 or n_elements(y) eq 0 then begin
+    message, 'ERROR: X and Y must be defined', /info
+    return, !values.d_nan
   endif
 
-  if n_elements(err) GT 0 OR n_elements(wts) GT 0 AND keyword_set(cash) then begin
-      message, 'ERROR: WEIGHTS or ERROR cannot be specified with CASH', /info
-      return, !values.d_nan
+  if n_elements(err) gt 0 or n_elements(wts) gt 0 and keyword_set(cash) then begin
+    message, 'ERROR: WEIGHTS or ERROR cannot be specified with CASH', /info
+    return, !values.d_nan
   endif
   if keyword_set(cash) then begin
-      scalfcn = 'mpfitfun_cash'
+    scalfcn = 'mpfitfun_cash'
   endif
 
-  ;; Use common block to pass data back and forth
+  ; ; Use common block to pass data back and forth
   common mpfitfun_common, fc, xc, yc, ec, wc, mc, ac
-  fc = fcn & xc = x & yc = y & mc = 0L
-  ;; These optional parameters must be undefined first
-  ac = 0 & dummy = size(temporary(ac))
-  ec = 0 & dummy = size(temporary(ec))
-  wc = 0 & dummy = size(temporary(wc))
+  fc = fcn
+  xc = x
+  yc = y
+  mc = 0l
+  ; ; These optional parameters must be undefined first
+  ac = 0
+  dummy = size(temporary(ac))
+  ec = 0
+  dummy = size(temporary(ec))
+  wc = 0
+  dummy = size(temporary(wc))
 
-  ;; FUNCTARGS
-  if n_elements(fa) GT 0 then ac = fa
+  ; ; FUNCTARGS
+  if n_elements(fa) gt 0 then ac = fa
 
-  ;; WEIGHTS or ERROR
-  if n_elements(wts) GT 0 then begin
-      wc = sqrt(abs(wts))
-  endif else if n_elements(err) GT 0 then begin
-      wh = where(err EQ 0, ct)
-      if ct GT 0 then begin
-          errmsg = 'ERROR: ERROR value must not be zero.  Use WEIGHTS instead.'
-          message, errmsg, /info
-          return, !values.d_nan
-      endif
-      ;; Appropriate weight for gaussian errors
-      wc = 1/abs(err)
-  endif
-
-  ;; Check for weights/errors which do not match the dimension
-  ;; of the data points
-  if n_elements(wc) GT 0 AND $
-    n_elements(wc) NE 1 AND $
-    n_elements(wc) NE n_elements(yc) then begin
-      errmsg = 'ERROR: ERROR/WEIGHTS must either be a scalar or match the number of Y values'
+  ; ; WEIGHTS or ERROR
+  if n_elements(wts) gt 0 then begin
+    wc = sqrt(abs(wts))
+  endif else if n_elements(err) gt 0 then begin
+    wh = where(err eq 0, ct)
+    if ct gt 0 then begin
+      errmsg = 'ERROR: ERROR value must not be zero.  Use WEIGHTS instead.'
       message, errmsg, /info
       return, !values.d_nan
+    endif
+    ; ; Appropriate weight for gaussian errors
+    wc = 1 / abs(err)
   endif
 
-  ;; If the weights/errors are a scalar value, and not finite, then 
-  ;; the fit will surely fail
-  if n_elements(wc) EQ 1 then begin
-      if finite(wc[0]) EQ 0 then begin
-          errmsg = 'ERROR: the supplied scalar WEIGHT/ERROR value was not finite'
-          message, errmsg, /info
-          return, !values.d_nan
-      endif
+  ; ; Check for weights/errors which do not match the dimension
+  ; ; of the data points
+  if n_elements(wc) gt 0 and $
+    n_elements(wc) ne 1 and $
+    n_elements(wc) ne n_elements(yc) then begin
+    errmsg = 'ERROR: ERROR/WEIGHTS must either be a scalar or match the number of Y values'
+    message, errmsg, /info
+    return, !values.d_nan
   endif
 
-  ;; Handle the cases of non-finite data points or weights
-  if keyword_set(nan) then begin
-      ;; Non-finite data points
-      wh = where(finite(yc) EQ 0, ct)
-      if ct GT 0 then begin
-          yc[wh] = 0
-          ;; Careful: handle case when weights were a scalar...
-          ;;   ... promote to a vector
-          if n_elements(wc) EQ 1 then wc = replicate(wc[0], n_elements(yc))
-          wc[wh] = 0
-      endif
-
-      ;; Non-finite weights
-      wh = where(finite(wc) EQ 0, ct)
-      if ct GT 0 then wc[wh] = 0
+  ; ; If the weights/errors are a scalar value, and not finite, then
+  ; ; the fit will surely fail
+  if n_elements(wc) eq 1 then begin
+    if finite(wc[0]) eq 0 then begin
+      errmsg = 'ERROR: the supplied scalar WEIGHT/ERROR value was not finite'
+      message, errmsg, /info
+      return, !values.d_nan
+    endif
   endif
 
-  result = mpfit('mpfitfun_eval', p, SCALE_FCN=scalfcn, $
-                 parinfo=parinfo, STATUS=status, nfev=nfev, BESTNORM=bestnorm,$
-                 covar=covar, perror=perror, $
-                 niter=niter, nfree=nfree, npegged=npegged, dof=dof, $
-                 ERRMSG=errmsg, quiet=quiet, _EXTRA=extra)
+  ; ; Handle the cases of non-finite data points or weights
+  if keyword_set(NAN) then begin
+    ; ; Non-finite data points
+    wh = where(finite(yc) eq 0, ct)
+    if ct gt 0 then begin
+      yc[wh] = 0
+      ; ; Careful: handle case when weights were a scalar...
+      ; ;   ... promote to a vector
+      if n_elements(wc) eq 1 then wc = replicate(wc[0], n_elements(yc))
+      wc[wh] = 0
+    endif
 
-  ;; Retrieve the fit value
+    ; ; Non-finite weights
+    wh = where(finite(wc) eq 0, ct)
+    if ct gt 0 then wc[wh] = 0
+  endif
+
+  result = mpfit('mpfitfun_eval', p, scale_fcn = scalfcn, $
+    parinfo = parinfo, status = status, nfev = nfev, bestnorm = bestnorm, $
+    covar = covar, perror = perror, $
+    niter = niter, nfree = nfree, npegged = npegged, dof = dof, $
+    errmsg = errmsg, quiet = quiet, _extra = extra)
+
+  ; ; Retrieve the fit value
   yfit = temporary(mc)
-  ;; Some cleanup
-  xc = 0 & yc = 0 & wc = 0 & ec = 0 & mc = 0 & ac = 0
+  ; ; Some cleanup
+  xc = 0
+  yc = 0
+  wc = 0
+  ec = 0
+  mc = 0
+  ac = 0
 
-  ;; Print error message if there is one.
-  if NOT keyword_set(quiet) AND errmsg NE '' then $
+  ; ; Print error message if there is one.
+  if not keyword_set(quiet) and errmsg ne '' then $
     message, errmsg, /info
 
   return, result

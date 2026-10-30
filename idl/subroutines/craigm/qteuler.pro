@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -77,7 +77,7 @@
 ;
 ; EXAMPLE:
 ;
-;    ;;              Precession        Nutation    
+;    ;;              Precession        Nutation
 ;    qtot = qteuler(['z','y','z',      'x','z','x'        ], $
 ;                    -zeta, +theta, -z, +eps0, -dpsi, -eps)
 ;
@@ -101,74 +101,78 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-;; Extract axis ei and angle angi
+; ; Extract axis ei and angle angi
 pro qteuler_extract, ax, i, ei, angi, $
-                     ang0, ang1, ang2, ang3, ang4, $
-                     ang5, ang6, ang7, ang8, ang9, $
-                     status=status, errmsg=errmsg
-                     
+  ang0, ang1, ang2, ang3, ang4, $
+  ang5, ang6, ang7, ang8, ang9, $
+  status = status, errmsg = errmsg
+  compile_opt idl2
+
   status = 0
-  zero = ang0(0)*0
-  ex = [1,zero,zero] & ey = [zero,1,zero] & ez = [zero,zero,1]
+  zero = ang0[0] * 0
+  ex = [1, zero, zero]
+  ey = [zero, 1, zero]
+  ez = [zero, zero, 1]
 
-  ei = [0D, 0D, 0D]
+  ei = [0d, 0d, 0d]
 
-  if execute('ei = e'+ax(i)+' & angi = ang'+strtrim(i,2)) NE 1 then begin
-      stop
-      errmsg = 'Invalid axis specification'
-      return
+  if execute('ei = e' + ax[i] + ' & angi = ang' + strtrim(i, 2)) ne 1 then begin
+    stop
+    errmsg = 'Invalid axis specification'
+    return
   endif
 
   status = 1
   return
 end
 
-function qteuler, axes, block=block, $
-            ang0, ang1, ang2, ang3, ang4, ang5, ang6, ang7, ang8, ang9, $
-            ang10, ang11, ang12, ang13, ang14, ang15
+function qteuler, axes, block = block, $
+  ang0, ang1, ang2, ang3, ang4, ang5, ang6, ang7, ang8, ang9, $
+  ang10, ang11, ang12, ang13, ang14, ang15
+  compile_opt idl2
 
-  if n_params() EQ 0 then begin
-      info = 1
-      USAGE_ERR:
-      message, 'USAGE: Q = QTEULER(AXES, ANG0, ...)', /info
-      message, '  AXES = ["X",...]    ("X" or "Y" or "Z")', /info
-      message, '  ANGn = rotation angle (radians)', info=info
-      return, 0
+  if n_params() eq 0 then begin
+    info = 1
+    usage_err:
+    message, 'USAGE: Q = QTEULER(AXES, ANG0, ...)', /info
+    message, '  AXES = ["X",...]    ("X" or "Y" or "Z")', /info
+    message, '  ANGn = rotation angle (radians)', info = info
+    return, 0
   endif
-  if n_elements(axes) LT 1 OR n_elements(ang0) LT 1 then $
-    goto, USAGE_ERR
-  nang = n_params()-1
+  if n_elements(axes) lt 1 or n_elements(ang0) lt 1 then $
+    goto, usage_err
+  nang = n_params() - 1
 
-  ;; Check to be sure each axis label is 'X' 'Y' or 'Z'
-  ax = strupcase(strmid(strtrim(axes,2),0,1))
-  wh = where(ax NE 'X' AND ax NE 'Y' AND ax NE 'Z', ct)
-  if ct GT 0 then begin
-      errmsg = 'AXES must be one of "X", "Y" or "Z"'
-      goto, BAD_AXIS
+  ; ; Check to be sure each axis label is 'X' 'Y' or 'Z'
+  ax = strupcase(strmid(strtrim(axes, 2), 0, 1))
+  wh = where(ax ne 'X' and ax ne 'Y' and ax ne 'Z', ct)
+  if ct gt 0 then begin
+    errmsg = 'AXES must be one of "X", "Y" or "Z"'
+    goto, bad_axis
   endif
-  if n_elements(ax) NE nang then begin
-      errmsg = 'Number of AXES and rotations ANGi must agree'
-      goto, BAD_AXIS
+  if n_elements(ax) ne nang then begin
+    errmsg = 'Number of AXES and rotations ANGi must agree'
+    goto, bad_axis
   endif
 
-  qteuler_extract, ax, 0, ev, angv, status=status, errmsg=errmsg, $
+  qteuler_extract, ax, 0, ev, angv, status = status, errmsg = errmsg, $
     ang0, ang1, ang2, ang3, ang4, ang5, ang6, ang7, ang8, ang9
 
-  if status EQ 0 then begin
-      BAD_AXIS:
-      message, 'ERROR: '+errmsg, /info
-      goto, USAGE_ERR
+  if status eq 0 then begin
+    bad_axis:
+    message, 'ERROR: ' + errmsg, /info
+    goto, usage_err
   endif
 
   qq = qtcompose(ev, angv)
-  for i = 1, nang-1 do begin
-      qteuler_extract, ax, i, ev, angv, status=status, errmsg=errmsg, $
-        ang0, ang1, ang2, ang3, ang4, ang5, ang6, ang7, ang8, ang9
-      if status EQ 0 then goto, BAD_AXIS
-      
-      qq = qtmult(qq, qtcompose(ev, angv))
+  for i = 1, nang - 1 do begin
+    qteuler_extract, ax, i, ev, angv, status = status, errmsg = errmsg, $
+      ang0, ang1, ang2, ang3, ang4, ang5, ang6, ang7, ang8, ang9
+    if status eq 0 then goto, bad_axis
+
+    qq = qtmult(qq, qtcompose(ev, angv))
   endfor
 
   return, qq

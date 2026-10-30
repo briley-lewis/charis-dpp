@@ -12,7 +12,7 @@
 ; CALLING SEQUENCE:
 ;   DXUP [ , NLEVELS ]
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   DXUP moves the debugging "focus" higher up the IDL call stack.  By
 ;   using this procedure and DXDOWN, one can navigate up and down an
@@ -53,18 +53,18 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 pro dxup, nlevels0
-@dxcommon.pro
+  compile_opt idl2
+  @dxcommon.pro
 
-  ;; Be sure we are on the same level as last time... otherwise reset
+  ; ; Be sure we are on the same level as last time... otherwise reset
   dxlreset
-  
-  if n_elements(nlevels0) EQ 0 then nlevels0 = 1L
-  nlevels = floor(nlevels0(0)) > 1
-  if (dblevel - nlevels) LT 1 then $
+
+  if n_elements(nlevels0) eq 0 then nlevels0 = 1l
+  nlevels = floor(nlevels0[0]) > 1
+  if (dblevel - nlevels) lt 1 then $
     print, 'WARNING: uppermost level is 1'
   dblevel = (dblevel - nlevels) > 1
   dxplevel, /current
-
 end

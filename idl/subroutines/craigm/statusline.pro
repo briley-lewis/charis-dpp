@@ -16,7 +16,7 @@
 ;   STATUSLINE, string, column, LENGTH=length, [/CLOSE,]
 ;      [/CLEAR,] [/LEFT,] [/RIGHT,] [/QUIET,] [/ENABLE,] [/DISABLE]
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   STATUSLINE maintains the current line of a VT100- or
 ;   ANSI-compatible terminal, usually as a status line.
@@ -55,7 +55,7 @@
 ; INPUT KEYWORD PARAMETERS:
 ;
 ;   LENGTH - the record length, an integer.  Strings longer than this
-;            length will be truncated.  
+;            length will be truncated.
 ;            Default: strlen(STRING)
 ;
 ;   CLEAR - if set, clear the current line to the end.  Control
@@ -120,19 +120,20 @@
 ; Permission to use, copy and distribute unmodified copies for
 ; non-commercial purposes, and to modify and use for personal or
 ; internal use, is granted.  All other rights are reserved.
-;-
-pro statusline, str, col, length=length, clear=clear, $
-                left=left, right=right, quiet=quiet, close=close,$
-	        enable=enable, disable=disable, nocr=nocr
+; -
+pro statusline, str, col, length = length, clear = clear, $
+  left = left, right = right, quiet = quiet, close = close, $
+  enable = enable, disable = disable, nocr = nocr
+  compile_opt idl2
 
   common statusline_common, statusline_enabled, statusline_unit
-  if n_elements(statusline_enabled) EQ 0 then begin
-      termtype = getenv("TERM")
-      statusline_enabled = 0
-      if strmid(termtype,0,2) EQ 'vt' OR $
-        strmid(termtype,0,5) EQ 'xterm' OR $
-        strmid(termtype,0,3) EQ 'dec' OR termtype EQ 'ansi' then $
-        statusline_enabled = 1
+  if n_elements(statusline_enabled) eq 0 then begin
+    termtype = getenv('TERM')
+    statusline_enabled = 0
+    if strmid(termtype, 0, 2) eq 'vt' or $
+      strmid(termtype, 0, 5) eq 'xterm' or $
+      strmid(termtype, 0, 3) eq 'dec' or termtype eq 'ansi' then $
+      statusline_enabled = 1
   endif
   if keyword_set(enable) then begin
     statusline_enabled = 1
@@ -143,84 +144,81 @@ pro statusline, str, col, length=length, clear=clear, $
     return
   endif
 
-  if keyword_set(quiet) OR statusline_enabled EQ 0 then return
+  if keyword_set(quiet) or statusline_enabled eq 0 then return
 
   do_open = 0
-  if n_elements(statusline_unit) EQ 0 then do_open = 1
-  if n_elements(statusline_unit) GT 0 then begin
-      if statusline_unit(0) LT 0 then do_open = 1
+  if n_elements(statusline_unit) eq 0 then do_open = 1
+  if n_elements(statusline_unit) gt 0 then begin
+    if statusline_unit[0] lt 0 then do_open = 1
 
-      ;; If the user closes the file behind our back (eg. CLOSE, /ALL)
-      if statusline_unit(0) GE 0 then begin
-          fs = fstat(statusline_unit(0))
-          if fs.open EQ 0 then do_open = 1
-      endif
+    ; ; If the user closes the file behind our back (eg. CLOSE, /ALL)
+    if statusline_unit[0] ge 0 then begin
+      fs = fstat(statusline_unit[0])
+      if fs.open eq 0 then do_open = 1
+    endif
   endif
 
   if do_open then begin
-      statusline_unit = -1L
-      if keyword_set(close) then return
-      openw, unit, '/dev/tty', /get_lun, error=open_error
-      if open_error NE 0 then return
-      statusline_unit = unit
+    statusline_unit = -1l
+    if keyword_set(close) then return
+    openw, unit, '/dev/tty', /get_lun, error = open_error
+    if open_error ne 0 then return
+    statusline_unit = unit
   endif
 
-  if keyword_set(close) AND n_elements(statusline_unit) GE 1 then begin
-      if statusline_unit(0) LT 0 then return
-      free_lun, statusline_unit(0)
-      statusline_unit = -1L
-      return
+  if keyword_set(close) and n_elements(statusline_unit) ge 1 then begin
+    if statusline_unit[0] lt 0 then return
+    free_lun, statusline_unit[0]
+    statusline_unit = -1l
+    return
   endif
 
-  ;; ASCII carriage return, used for printing the status line
+  ; ; ASCII carriage return, used for printing the status line
   cr = string(13b)
-  esc = string(27b)  ;; Escape char
+  esc = string(27b) ; ; Escape char
 
   if keyword_set(clear) then begin
-      outstring = string(' ', cr, format='(A79,A,$)')
-      ;; Prevent errors from stopping the show
-      catch, catcherr
-      if catcherr EQ 0 then writeu, statusline_unit, outstring
-      return
+    outstring = string(' ', cr, format = '(A79,A,$)')
+    ; ; Prevent errors from stopping the show
+    catch, catcherr
+    if catcherr eq 0 then writeu, statusline_unit, outstring
+    return
   endif
 
-  if NOT keyword_set(right) then left = 1
+  if not keyword_set(right) then left = 1
 
-  if n_params() EQ 0 then begin
-      message, 'USAGE: STATUSLINE, str, col, [length=length,]', /info
-      message, '       [/clear,] [/left,] [/right,] [/quiet,] [/close]', /info
-      return
+  if n_params() eq 0 then begin
+    message, 'USAGE: STATUSLINE, str, col, [length=length,]', /info
+    message, '       [/clear,] [/left,] [/right,] [/quiet,] [/close]', /info
+    return
   endif
 
-  if n_elements(str) EQ 0 then return
-  if n_elements(length) EQ 0 then length = strlen(str)
-  if n_elements(col) EQ 0 then col = 0L
-  if col LT 0 then col = 0L
+  if n_elements(str) eq 0 then return
+  if n_elements(length) eq 0 then length = strlen(str)
+  if n_elements(col) eq 0 then col = 0l
+  if col lt 0 then col = 0l
 
   newstr = str
   slen = strlen(str)
-  if slen GT length then begin
-      if keyword_set(left) then $
-        newstr = strmid(newstr, 0, length) $
-      else $
-        newstr = strmid(newstr, slen-length, length)
+  if slen gt length then begin
+    if keyword_set(left) then $
+      newstr = strmid(newstr, 0, length) $
+    else $
+      newstr = strmid(newstr, slen - length, length)
   endif else begin
-      blanks = '                                                         '
-      if keyword_set(right) then $
-        newstr = strmid(blanks, 0, length-slen) + newstr
+    blanks = '                                                         '
+    if keyword_set(right) then $
+      newstr = strmid(blanks, 0, length - slen) + newstr
   endelse
 
   outstring = ''
-  if col GT 0 then $
-    outstring = outstring + esc + '['+strtrim(col,2) + 'C'
-  outstring = outstring + newstr 
-  if NOT keyword_set(nocr) then outstring = outstring + cr
+  if col gt 0 then $
+    outstring = outstring + esc + '[' + strtrim(col, 2) + 'C'
+  outstring = outstring + newstr
+  if not keyword_set(nocr) then outstring = outstring + cr
 
-  ;; Prevent errors from stopping the show
+  ; ; Prevent errors from stopping the show
   catch, catcherr
-  if catcherr EQ 0 then writeu, statusline_unit, outstring
+  if catcherr eq 0 then writeu, statusline_unit, outstring
   return
-
 end
-
-  

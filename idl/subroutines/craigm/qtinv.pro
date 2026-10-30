@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -25,7 +25,7 @@
 ;
 ;   The inverse is also defined mathematically such that
 ;
-;     QTMULT( Q, QTINV(Q) )   
+;     QTMULT( Q, QTINV(Q) )
 ;
 ;   becomes [0, 0, 0, 1], which is the identity quaternion.
 ;
@@ -90,19 +90,20 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
 function qtinv, q
+  compile_opt idl2
 
-  if n_params() EQ 0 then begin
-      info = 1
-      USAGE:
-      message, 'USAGE:', /info
-      message, 'QNEW = QTINV(Q)', info=info
-      return, 0
+  if n_params() eq 0 then begin
+    info = 1
+    usage:
+    message, 'USAGE:', /info
+    message, 'QNEW = QTINV(Q)', info = info
+    return, 0
   endif
-  nq = n_elements(q)/4
-  if nq LT 1 then goto, USAGE
+  nq = n_elements(q) / 4
+  if nq lt 1 then goto, usage
 
-  return, [-q(0:2,*), q(3,*)]
+  return, [-q[0 : 2, *], q[3, *]]
 end

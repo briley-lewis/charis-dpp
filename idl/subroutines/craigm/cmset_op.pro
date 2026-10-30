@@ -12,7 +12,7 @@
 ; CALLING SEQUENCE:
 ;   SET      = CMSET_OP(A, OP, B)
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   SET_OP performs three common operations between two sets.  The
 ;   three supported functions of OP are:
@@ -20,7 +20,7 @@
 ;        OP          Meaning
 ;      'AND' - to find the intersection of A and B;
 ;      'OR'  - to find the union of A and B;
-;      'XOR' - to find the those elements who are members of A or B 
+;      'XOR' - to find the those elements who are members of A or B
 ;              but not both;
 ;
 ;   Sets as defined here are one dimensional arrays composed of
@@ -140,293 +140,306 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-;; Utility function, similar to UNIQ, but allowing choice of taking
-;; first or last unique element, or non-unique elements.
-;; Unfortunately this doesn't work because of implementation dependent
-;; versions of the SORT() function.
+; ; Utility function, similar to UNIQ, but allowing choice of taking
+; ; first or last unique element, or non-unique elements.
+; ; Unfortunately this doesn't work because of implementation dependent
+; ; versions of the SORT() function.
 
 ; function cmset_op_uniq, a, first=first, non=non, count=ct, sort=sortit
-;   if n_elements(a) LE 1 then return, 0L
-;   sh = (2L*keyword_set(first)-1L)*(-2L*keyword_set(non)+1)
+; if n_elements(a) LE 1 then return, 0L
+; sh = (2L*keyword_set(first)-1L)*(-2L*keyword_set(non)+1)
 ;
-;   if keyword_set(sortit) then begin
-;       ;; Sort it manually
-;       ii = sort(a) & b = a(ii)
-;       if keyword_set(non) then wh = where(b EQ shift(b, sh), ct) $
-;       else                     wh = where(b NE shift(b, sh), ct)
-;       if ct GT 0 then return, ii(wh)
-;   endif else begin
-;       ;; Use the user's values directly
-;       if keyword_set(non) then wh = where(a EQ shift(a, sh), ct) $
-;       else                     wh = where(a NE shift(a, sh), ct)
-;       if ct GT 0 then return, wh
-;   endelse
+; if keyword_set(sortit) then begin
+; ;; Sort it manually
+; ii = sort(a) & b = a(ii)
+; if keyword_set(non) then wh = where(b EQ shift(b, sh), ct) $
+; else                     wh = where(b NE shift(b, sh), ct)
+; if ct GT 0 then return, ii(wh)
+; endif else begin
+; ;; Use the user's values directly
+; if keyword_set(non) then wh = where(a EQ shift(a, sh), ct) $
+; else                     wh = where(a NE shift(a, sh), ct)
+; if ct GT 0 then return, wh
+; endelse
 ;
-;   if keyword_set(first) then return, 0L else return, n_elements(a)-1
+; if keyword_set(first) then return, 0L else return, n_elements(a)-1
 ; end
 
-;; Simplified version of CMSET_OP_UNIQ which sorts, and takes the
-;; "first" value, whatever that may mean.
+; ; Simplified version of CMSET_OP_UNIQ which sorts, and takes the
+; ; "first" value, whatever that may mean.
 function cmset_op_uniq, a
-  if n_elements(a) LE 1 then return, 0L
+  compile_opt idl2
+  if n_elements(a) le 1 then return, 0l
 
-  ii = sort(a) & b = a(ii)
-  wh = where(b NE shift(b, +1L), ct)
-  if ct GT 0 then return, ii(wh)
+  ii = sort(a)
+  b = a[ii]
+  wh = where(b ne shift(b, + 1l), ct)
+  if ct gt 0 then return, ii[wh]
 
-  return, 0L
+  return, 0l
 end
 
-function cmset_op, a, op0, b, not1=not1, not2=not2, count=count, $
-              empty1=empty1, empty2=empty2, maxarray=ma, index=index
+function cmset_op, a, op0, b, not1 = not1, not2 = not2, count = count, $
+  empty1 = empty1, empty2 = empty2, maxarray = ma, index = index
+  compile_opt idl2
 
-  on_error, 2 ;; return on error
-  count = 0L
-  index0 = -1L
-  ;; Histogram technique is used for array sizes < 32,000 elements
-  if n_elements(ma) EQ 0 then ma = 32L*1024L
+  on_error, 2 ; ; return on error
+  count = 0l
+  index0 = -1l
+  ; ; Histogram technique is used for array sizes < 32,000 elements
+  if n_elements(ma) eq 0 then ma = 32l * 1024l
 
-  ;; Check the number of arguments
-  if n_params() LT 3 then begin
-      ARG_ERR:
-      message, 'USAGE: SET = CMSET_OP(A, OP, B [, COUNT=ct])', /info
-      message, '  KEYWORDS: /NOT1, /NOT2, /EMPTY1, /EMPTY2, INDEX', /info
-      return, -1L
+  ; ; Check the number of arguments
+  if n_params() lt 3 then begin
+    arg_err:
+    message, 'USAGE: SET = CMSET_OP(A, OP, B [, COUNT=ct])', /info
+    message, '  KEYWORDS: /NOT1, /NOT2, /EMPTY1, /EMPTY2, INDEX', /info
+    return, -1l
   endif
-  if n_elements(op0) EQ 0 then goto, ARG_ERR
+  if n_elements(op0) eq 0 then goto, arg_err
   kind = keyword_set(index)
-  fst = 1L
-  if keyword_set(last) then fst = 0L
-  if keyword_set(first) then fst = 1L
+  fst = 1l
+  if keyword_set(last) then fst = 0l
+  if keyword_set(first) then fst = 1l
 
-  ;; Check the operation
+  ; ; Check the operation
   sz = size(op0)
-  if sz(sz(0)+1) NE 7 then begin
-      OP_ERR:
-      message, "ERROR: OP must be 'AND', 'OR' or 'XOR'"
-      return, -1L
+  if sz[sz[0] + 1] ne 7 then begin
+    op_err:
+    message, 'ERROR: OP must be ''AND'', ''OR'' or ''XOR'''
+    return, -1l
   endif
   op = strupcase(op0)
-  if op NE 'AND' AND op NE 'OR' AND op NE 'XOR' then goto, OP_ERR
+  if op ne 'AND' and op ne 'OR' and op ne 'XOR' then goto, op_err
 
-  ;; Check NOT1 and NOT2
-  if keyword_set(not1) AND keyword_set(not2) then begin
-      message, "ERROR: NOT1 and NOT2 cannot be set simultaneously"
-      return, -1L
+  ; ; Check NOT1 and NOT2
+  if keyword_set(not1) and keyword_set(not2) then begin
+    message, 'ERROR: NOT1 and NOT2 cannot be set simultaneously'
+    return, -1l
   endif
-  if (keyword_set(not1) OR keyword_set(not2)) AND $
-    (op EQ 'OR' OR op EQ 'XOR') then begin
-      message, "ERROR: NOT1 and NOT2 cannot be set with 'OR' or 'XOR'"
-      return, -1L
-  endif
-
-  ;; Special cases for empty set
-  n1 = n_elements(a) & n2 = n_elements(b)
-  if keyword_set(empty1) then n1 = 0L
-  if keyword_set(empty2) then n2 = 0L
-  if n1 EQ 0 OR n2 EQ 0 then begin
-      ;; Eliminate duplicates
-      if n1 GT 0 then a1 = cmset_op_uniq(a)
-      if n2 GT 0 then b1 = cmset_op_uniq(b)
-      n1 = n_elements(a1) < n1 & n2 = n_elements(b1) < n2
-      case op of 
-          'OR': if n1 EQ 0 then goto, RET_A1 else goto, RET_B1
-         'XOR': if n1 EQ 0 then goto, RET_B1 else goto, RET_A1
-         'AND': begin
-             if keyword_set(not1) AND n1 EQ 0 then goto, RET_B1
-             if keyword_set(not2) AND n2 EQ 0 then goto, RET_A1
-             return, -1L
-         end
-     endcase
-     return, -1L
-     RET_A1:
-     count = n1
-     if kind then begin
-         if count GT 0 then return, a1 else return, -1L
-     endif
-     if count GT 0 then return, a(a1) else return, -1L
-     RET_B1:
-     count = n2
-     if kind then begin
-         if count GT 0 then return, b1+n1 else return, -1L
-     endif         
-     if count GT 0 then return, b(b1) else return, -1L
- endif
-
-  ;; Allow data to have different types, but they must be at least of
-  ;; the same "base" type.  That is, you can't combine a number with a
-  ;; string, etc.
-  ;; basetype 0:undefined 1:real number 6:complex number 7:string
-  ;;     8:structure 10:pointer 11:object
-
-  ;;          0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
-  basetype = [0, 1, 1, 1, 1, 1, 6, 7, 8, 6,10,11, 1, 1, 1, 1]
-
-  ;; Check types of operands
-  sz1 = size(a) & tp1 = sz1(sz1(0)+1)
-  sz2 = size(b) & tp2 = sz2(sz2(0)+1)
-  if tp1 LT 0 OR tp1 GE 16 OR tp2 LT 0 OR tp2 GE 16 then begin
-      message, 'ERROR: unrecognized data types for operands'
-      return, -1
-  endif
-  if basetype(tp1) NE basetype(tp2) then begin
-      TYPE1_ERR:
-      message, 'ERROR: both A and B must be of the same type'
-      return, -1L
-  endif
-  if tp1 EQ 8 OR tp1 EQ 10 OR tp1 EQ 11 then begin
-      TYPE2_ERR:
-      message, 'ERROR: operands must be a numeric or string type'
-      return, -1L
+  if (keyword_set(not1) or keyword_set(not2)) and $
+    (op eq 'OR' or op eq 'XOR') then begin
+    message, 'ERROR: NOT1 and NOT2 cannot be set with ''OR'' or ''XOR'''
+    return, -1l
   endif
 
-  ;; Now use two different kinds of algorithms: a slower but more
-  ;; general algorithm for generic types, and the histogram technique
-  ;; for integer types.  Even for integer types, if there is too much
-  ;; dynamic range, then the slow method is used.
+  ; ; Special cases for empty set
+  n1 = n_elements(a)
+  n2 = n_elements(b)
+  if keyword_set(empty1) then n1 = 0l
+  if keyword_set(empty2) then n2 = 0l
+  if n1 eq 0 or n2 eq 0 then begin
+    ; ; Eliminate duplicates
+    if n1 gt 0 then a1 = cmset_op_uniq(a)
+    if n2 gt 0 then b1 = cmset_op_uniq(b)
+    n1 = n_elements(a1) < n1
+    n2 = n_elements(b1) < n2
+    case op of
+      'OR': if n1 eq 0 then goto, ret_a1 else goto, ret_b1
+      'XOR': if n1 eq 0 then goto, ret_b1 else goto, ret_a1
+      'AND': begin
+        if keyword_set(not1) and n1 eq 0 then goto, ret_b1
+        if keyword_set(not2) and n2 eq 0 then goto, ret_a1
+        return, -1l
+      end
+    endcase
+    return, -1l
+    ret_a1:
+    count = n1
+    if kind then begin
+      if count gt 0 then return, a1 else return, -1l
+    endif
+    if count gt 0 then return, a[a1] else return, -1l
+    ret_b1:
+    count = n2
+    if kind then begin
+      if count gt 0 then return, b1 + n1 else return, -1l
+    endif
+    if count gt 0 then return, b[b1] else return, -1l
+  endif
 
-  if tp1 GE 4 AND tp1 LE 9 then begin
-      ;; String and real types, or large int arrays
-      SLOW_SET_OP:
-      case op of 
-          'OR': begin
-              uu = [a,b]    ;; OR is simple; just take unique values
-              index0 = cmset_op_uniq(uu)
-              count = n_elements(index0)
-              if kind then return, index0
-              return, uu(index0)
-          end
+  ; ; Allow data to have different types, but they must be at least of
+  ; ; the same "base" type.  That is, you can't combine a number with a
+  ; ; string, etc.
+  ; ; basetype 0:undefined 1:real number 6:complex number 7:string
+  ; ;     8:structure 10:pointer 11:object
 
-          'XOR': begin
-              ;; Make ordered list of set union
-              ai = cmset_op_uniq(a) & na = n_elements(ai)
-              bi = cmset_op_uniq(b) & nb = n_elements(bi)
-              ui = [ai, bi+n1]
-              uu = [a,b]    & uu = uu(ui) ;; Raw union...
-              us = sort(uu) & uu = uu(us) ;; ...and sort
-              if kind then ui = ui(temporary(us)) else ui = 0
+  ; ;          0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
+  basetype = [0, 1, 1, 1, 1, 1, 6, 7, 8, 6, 10, 11, 1, 1, 1, 1]
 
-              ;; Values in one set only will not have duplicates
-              wh1 = where(uu NE shift(uu, -1), count1)
-              if count1 EQ 0 then return, -1L
-              wh = where(wh1(1:*)-wh1 EQ 1, count)
-              if wh1(0) EQ 0 then begin
-                  if count GT 0 then wh = [-1L, wh] else wh = [-1L]
-                  count = n_elements(wh)
-              endif
-              if count EQ 0 then return, -1
-              if kind then return, ui(wh1(wh+1))
-              return, uu(wh1(wh+1))
-          end
+  ; ; Check types of operands
+  sz1 = size(a)
+  tp1 = sz1[sz1[0] + 1]
+  sz2 = size(b)
+  tp2 = sz2[sz2[0] + 1]
+  if tp1 lt 0 or tp1 ge 16 or tp2 lt 0 or tp2 ge 16 then begin
+    message, 'ERROR: unrecognized data types for operands'
+    return, -1
+  endif
+  if basetype[tp1] ne basetype[tp2] then begin
+    type1_err:
+    message, 'ERROR: both A and B must be of the same type'
+    return, -1l
+  endif
+  if tp1 eq 8 or tp1 eq 10 or tp1 eq 11 then begin
+    type2_err:
+    message, 'ERROR: operands must be a numeric or string type'
+    return, -1l
+  endif
 
-          'AND': begin
-              ;; Make ordered list of set union
-              ai = cmset_op_uniq(a) & na = n_elements(ai)
-              bi = cmset_op_uniq(b) & nb = n_elements(bi)
-              ui = [ai, bi+n1]
-              uu = [a,b]    & uu = uu(ui)  ;; Raw union...
-              us = sort(uu) & uu = uu(us)  ;; ...and sort
-              if kind then ui = ui(us) else ui = 0
+  ; ; Now use two different kinds of algorithms: a slower but more
+  ; ; general algorithm for generic types, and the histogram technique
+  ; ; for integer types.  Even for integer types, if there is too much
+  ; ; dynamic range, then the slow method is used.
 
-              if NOT keyword_set(not1) AND NOT keyword_set(not2) then begin
+  if tp1 ge 4 and tp1 le 9 then begin
+    ; ; String and real types, or large int arrays
+    slow_set_op:
+    case op of
+      'OR': begin
+        uu = [a, b] ; ; OR is simple; just take unique values
+        index0 = cmset_op_uniq(uu)
+        count = n_elements(index0)
+        if kind then return, index0
+        return, uu[index0]
+      end
 
-                  ;; Special case: if there are one in each set, and
-                  ;; they are equal, then the SHIFT() technique below
-                  ;; fails.  Do this one by hand.
-                  if na EQ 1 AND nb EQ 1 AND uu(0) EQ uu(1) then begin
-                      count = 1L
-                      if kind then return, 0L
-                      return, [uu(0)]
-                  endif
+      'XOR': begin
+        ; ; Make ordered list of set union
+        ai = cmset_op_uniq(a)
+        na = n_elements(ai)
+        bi = cmset_op_uniq(b)
+        nb = n_elements(bi)
+        ui = [ai, bi + n1]
+        uu = [a, b]
+        uu = uu[ui] ; ; Raw union...
+        us = sort(uu)
+        uu = uu[us] ; ; ...and sort
+        if kind then ui = ui[temporary(us)] else ui = 0
 
-                  ;; If neither "NOT" is set, then find duplicates
-                  us = 0L  ;; Save memory
-                  wh = where(uu EQ shift(uu, -1L), count) ;; Find non-unique
-                  if count EQ 0 then return, -1L
-                  ;; This should always select the element from A
-                  ;; rather than B (the smaller of the two)
-                  if kind then return, (ui(wh) < ui(wh+1))
-                  return, uu(wh)
-              endif
+        ; ; Values in one set only will not have duplicates
+        wh1 = where(uu ne shift(uu, -1), count1)
+        if count1 eq 0 then return, -1l
+        wh = where(wh1[1 : *] - wh1 eq 1, count)
+        if wh1[0] eq 0 then begin
+          if count gt 0 then wh = [-1l, wh] else wh = [-1l]
+          count = n_elements(wh)
+        endif
+        if count eq 0 then return, -1
+        if kind then return, ui[wh1[wh + 1]]
+        return, uu[wh1[wh + 1]]
+      end
 
-              ;; For "NOT" cases, we need to identify by set
-              ii = make_array(na+nb, value=1b)
-              if keyword_set(not1) then ii(0:na-1) = 0
-              if keyword_set(not2) then ii(na:*)   = 0
-              ii = ii(temporary(us))
+      'AND': begin
+        ; ; Make ordered list of set union
+        ai = cmset_op_uniq(a)
+        na = n_elements(ai)
+        bi = cmset_op_uniq(b)
+        nb = n_elements(bi)
+        ui = [ai, bi + n1]
+        uu = [a, b]
+        uu = uu[ui] ; ; Raw union...
+        us = sort(uu)
+        uu = uu[us] ; ; ...and sort
+        if kind then ui = ui[us] else ui = 0
 
-              ;; Remove any duplicates
-              wh1 = where(uu EQ shift(uu, -1L), count1) ;; Find non-unique
-              if count1 GT 0 then ii([wh1, wh1+1]) = 0
-              ;; Remainder is the desired set
-              wh = where(ii, count)
-              if count EQ 0 then return, -1L
-              if kind then return, ui(wh)
-              return, uu(wh)
-          end
+        if not keyword_set(not1) and not keyword_set(not2) then begin
+          ; ; Special case: if there are one in each set, and
+          ; ; they are equal, then the SHIFT() technique below
+          ; ; fails.  Do this one by hand.
+          if na eq 1 and nb eq 1 and uu[0] eq uu[1] then begin
+            count = 1l
+            if kind then return, 0l
+            return, [uu[0]]
+          endif
 
-      endcase
-      return, -1L  ;; DEFAULT CASE
+          ; ; If neither "NOT" is set, then find duplicates
+          us = 0l ; ; Save memory
+          wh = where(uu eq shift(uu, -1l), count) ; ; Find non-unique
+          if count eq 0 then return, -1l
+          ; ; This should always select the element from A
+          ; ; rather than B (the smaller of the two)
+          if kind then return, (ui[wh] < ui[wh + 1])
+          return, uu[wh]
+        endif
+
+        ; ; For "NOT" cases, we need to identify by set
+        ii = make_array(na + nb, value = 1b)
+        if keyword_set(not1) then ii[0 : na - 1] = 0
+        if keyword_set(not2) then ii[na : *] = 0
+        ii = ii[temporary(us)]
+
+        ; ; Remove any duplicates
+        wh1 = where(uu eq shift(uu, -1l), count1) ; ; Find non-unique
+        if count1 gt 0 then ii[[wh1, wh1 + 1]] = 0
+        ; ; Remainder is the desired set
+        wh = where(ii, count)
+        if count eq 0 then return, -1l
+        if kind then return, ui[wh]
+        return, uu[wh]
+      end
+    endcase
+    return, -1l ; ; DEFAULT CASE
   endif else begin
+    ; ; INDEX keyword forces the "slow" operation
+    if kind then goto, slow_set_op
 
-      ;; INDEX keyword forces the "slow" operation
-      if kind then goto, SLOW_SET_OP
+    ; ; Integer types - use histogram technique if the data range
+    ; ; is small enough, otherwise use the "slow" technique above
+    min1 = min(a, max = max1)
+    min2 = min(b, max = max2)
+    minn = min1 < min2
+    maxx = max1 > max2
+    nbins = maxx - minn + 1
+    if (maxx - minn) gt floor(ma[0]) then goto, slow_set_op
 
-      ;; Integer types - use histogram technique if the data range
-      ;; is small enough, otherwise use the "slow" technique above
-      min1 = min(a, max=max1) & min2 = min(b, max=max2)
-      minn = min1 < min2 & maxx = max1 > max2
-      nbins = maxx-minn+1
-      if (maxx-minn) GT floor(ma(0)) then goto, SLOW_SET_OP
+    ; ; Work around a stupidity in the built-in IDL HISTOGRAM routine
+    if (tp1 eq 2 or tp2 eq 2) and (minn lt -32768 or maxx gt 32767) then $
+      goto, slow_set_op
 
-      ;; Work around a stupidity in the built-in IDL HISTOGRAM routine
-      if (tp1 EQ 2 OR tp2 EQ 2) AND (minn LT -32768 OR maxx GT 32767) then $
-        goto, SLOW_SET_OP
+    ; ; Following operations create a histogram of the integer values.
+    ha = histogram(a, min = minn, max = maxx) < 1
+    hb = histogram(b, min = minn, max = maxx) < 1
 
-      ;; Following operations create a histogram of the integer values.
-      ha = histogram(a, min=minn, max=maxx) < 1
-      hb = histogram(b, min=minn, max=maxx) < 1
+    ; ; Compute NOT cases
+    if keyword_set(not1) then ha = 1b - ha
+    if keyword_set(not2) then hb = 1b - hb
+    case op of
+      ; ; Boolean operations
+      'AND': mask = temporary(ha) and temporary(hb)
+      'OR': mask = temporary(ha) or temporary(hb)
+      'XOR': mask = temporary(ha) xor temporary(hb)
+    endcase
 
-      ;; Compute NOT cases
-      if keyword_set(not1) then ha = 1b - ha  
-      if keyword_set(not2) then hb = 1b - hb
-      case op of 
-          ;; Boolean operations
-          'AND': mask = temporary(ha) AND temporary(hb) 
-           'OR': mask = temporary(ha)  OR temporary(hb)
-          'XOR': mask = temporary(ha) XOR temporary(hb)
-      endcase
+    wh = where(temporary(mask), count)
+    if count eq 0 then return, -1l
 
-      wh = where(temporary(mask), count)
-      if count EQ 0 then return, -1L
-      
-      result = temporary(wh+minn)
-      if tp1 NE tp2 then return, result
-      szr = size(result) & tpr = szr(szr(0)+1)
+    result = temporary(wh + minn)
+    if tp1 ne tp2 then return, result
+    szr = size(result)
+    tpr = szr[szr[0] + 1]
 
-      ;; Cast to the original type if necessary
-      if tpr NE tp1 then begin
-          fresult = make_array(n_elements(result), type=tp1)
-          fresult(0) = temporary(result)
-          result = temporary(fresult)
-      endif
+    ; ; Cast to the original type if necessary
+    if tpr ne tp1 then begin
+      fresult = make_array(n_elements(result), type = tp1)
+      fresult[0] = temporary(result)
+      result = temporary(fresult)
+    endif
 
-      return, result
-
+    return, result
   endelse
 
-  return, -1L  ;; DEFAULT CASE
+  return, -1l ; ; DEFAULT CASE
 end
 
-;     Here is how I did the INDEX stuff with fast histogramming.  It
-;     works, but is complicated, so I forced it to go to SLOW_SET_OP.
-;     ha = histogram(a, min=minn, max=maxx, reverse=ra) < 1
-;     rr = ra(0:nbins) & mask = rr NE rr(1:*) & ra = ra(rr)*mask-1L+mask
-;     hb = histogram(b, min=minn, max=maxx, reverse=rb) < 1
-;     rr = rb(0:nbins) & mask = rr NE rr(1:*) & rb = rb(rr)*mask-1L+mask
-;     ...  AND/OR/XOR NOT masking here ...
-;     ra = ra(wh) & rb = rb(wh)
-;     return, ra*(ra GE 0) + (rb+n1)*(ra LT 0) ;; is last 'ra' right?
-
+; Here is how I did the INDEX stuff with fast histogramming.  It
+; works, but is complicated, so I forced it to go to SLOW_SET_OP.
+; ha = histogram(a, min=minn, max=maxx, reverse=ra) < 1
+; rr = ra(0:nbins) & mask = rr NE rr(1:*) & ra = ra(rr)*mask-1L+mask
+; hb = histogram(b, min=minn, max=maxx, reverse=rb) < 1
+; rr = rb(0:nbins) & mask = rr NE rr(1:*) & rb = rb(rr)*mask-1L+mask
+; ...  AND/OR/XOR NOT masking here ...
+; ra = ra(wh) & rb = rb(wh)
+; return, ra*(ra GE 0) + (rb+n1)*(ra LT 0) ;; is last 'ra' right?

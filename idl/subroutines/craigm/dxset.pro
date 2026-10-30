@@ -13,7 +13,7 @@
 ;   DXSET, 'NAME', VALUE    ; quoted variable name (OR)
 ;   DXSET,  NAME,  VALUE    ; unquoted variable name
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   DXSET sets a variable value at any point in the IDL call stack.
 ;   The DXGET and DXSET routines allow any variable at any level to be
@@ -60,61 +60,62 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
-pro dxset, vname, value, level=level0
-@dxcommon.pro
+; -
+pro dxset, vname, value, level = level0
+  compile_opt idl2
+  @dxcommon.pro
 
-  if n_params() LT 2 then begin
-      USAGE_MESSAGE:
-      print, "USAGE:"
-      print, "  dxset, 'NAME', VALUE   ; named variable"
-      print, "  dxset,  NAME,  VALUE   ; without quotes"
-      return
+  if n_params() lt 2 then begin
+    usage_message:
+    print, 'USAGE:'
+    print, '  dxset, ''NAME'', VALUE   ; named variable'
+    print, '  dxset,  NAME,  VALUE   ; without quotes'
+    return
   endif
 
-  if n_elements(level0) EQ 0 then level0=dblevel
-  level = floor(level0(0))
+  if n_elements(level0) eq 0 then level0 = dblevel
+  level = floor(level0[0])
 
   pass = 1
-  ;; Retrieve variable name
+  ; ; Retrieve variable name
   sz = size(vname)
-  if sz(sz(0)+1) EQ 7 then begin
-      name = vname(0)
+  if sz[sz[0] + 1] eq 7 then begin
+    name = vname[0]
   endif else begin
-      RETRY_NAME:
-      thislev = routine_names(/level)
-      name = routine_names(vname, arg_name=thislev-1)
-      if n_elements(name) LT 1 then goto, USAGE_MESSAGE
-      name = name(0)
+    retry_name:
+    thislev = routine_names(/level)
+    name = routine_names(vname, arg_name = thislev - 1)
+    if n_elements(name) lt 1 then goto, usage_message
+    name = name[0]
   endelse
-  if name EQ '' then begin
-      if pass GE 2 then goto, NO_EXIST_ERROR
-      goto, USAGE_MESSAGE
+  if name eq '' then begin
+    if pass ge 2 then goto, no_exist_error
+    goto, usage_message
   endif
   name = strupcase(name)
 
-  vars = routine_names(variables=level)
-  wh = where(name EQ vars, ct)
-  if ct EQ 0 then begin
-      NO_EXIST_ERROR:
-      if pass EQ 2 then begin
-          if n_elements(name0) EQ 0 then name0 = name
-          print, 'ERROR: Variable '+name0+' does not exist at level '+ $
-            strtrim(level, 2)
-          return
-      endif
-      name0 = name
-      pass = pass + 1
-      goto, RETRY_NAME
+  vars = routine_names(variables = level)
+  wh = where(name eq vars, ct)
+  if ct eq 0 then begin
+    no_exist_error:
+    if pass eq 2 then begin
+      if n_elements(name0) eq 0 then name0 = name
+      print, 'ERROR: Variable ' + name0 + ' does not exist at level ' + $
+        strtrim(level, 2)
+      return
+    endif
+    name0 = name
+    pass = pass + 1
+    goto, retry_name
   endif
 
   catch, catcherr
-  if catcherr NE 0 then begin
-      catch, /cancel
-      print, 'ERROR: '+name+' could not be set'
-      return
+  if catcherr ne 0 then begin
+    catch, /cancel
+    print, 'ERROR: ' + name + ' could not be set'
+    return
   endif
 
-  dummy = routine_names(name, value, store=level)
+  dummy = routine_names(name, value, store = level)
   return
 end

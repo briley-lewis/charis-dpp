@@ -192,910 +192,904 @@
 ;           make widgets MODAL-safe.
 ;-
 
-PRO NULL_EVENTS, event
-END ; of NULL_EVENTS event handler *****************************************
+pro NULL_EVENTS, event
+  compile_opt idl2
+end
+; of NULL_EVENTS event handler *****************************************
 
+function XWINDOW_ALERT, message, xoffset = xoff, yoffset = yoff
+  compile_opt idl2
 
+  ; Put up a message box
 
-FUNCTION XWINDOW_ALERT, message, XOffSet=xoff, YOffSet=yoff
+  if n_params() eq 0 then message = 'Please wait...'
+  device, get_screen_size = screenSize
+  if n_elements(xoff) eq 0 then xoff = (screenSize[0] / 2.0 - 100)
+  if n_elements(yoff) eq 0 then yoff = (screenSize[1] / 2.0 - 75)
 
-   ; Put up a message box
+  tlb = widget_base(title = 'Writing a File...', xoffset = xoff, yoffset = yoff)
+  label = widget_label(tlb, value = message)
+  widget_control, tlb, /realize
+  RETURN, tlb
+end
+; *******************************************************************
 
-IF N_PARAMS() EQ 0 THEN message = 'Please wait...'
-Device, Get_Screen_Size=screenSize
-IF N_ELEMENTS(xoff) EQ 0 THEN xoff = (screenSize(0)/2.0 - 100)
-IF N_ELEMENTS(yoff) EQ 0 THEN yoff = (screenSize(1)/2.0 - 75)
+pro XWINDOW_COLOR_PROTECTION, event
+  compile_opt idl2
+  widget_control, event.top, get_uvalue = info, /no_copy
+  widget_control, event.id, get_uvalue = buttonValue
+  case buttonValue of
+    'ON': begin
+      info.protect = 1
+      widget_control, info.cprotectOff, sensitive = 1
+      widget_control, info.cprotectOn, sensitive = 0
+      widget_control, info.drawId, tracking_events = 1
+    end
+    'OFF': begin
+      info.protect = 0
+      widget_control, info.cprotectOff, sensitive = 0
+      widget_control, info.cprotectOn, sensitive = 1
+      widget_control, info.drawId, tracking_events = 0
+    end
+  endcase
+  widget_control, event.top, set_uvalue = info, /no_copy
+end
+; *******************************************************************
 
-tlb = Widget_Base(Title='Writing a File...', XOffSet=xoff, YOffSet=yoff)
-label = Widget_Label(tlb, Value=message)
-Widget_Control, tlb, /Realize
-RETURN, tlb
-END ;*******************************************************************
+pro XWINDOW_CONFIGURATION_EVENTS, event
+  compile_opt idl2
 
+  widget_control, event.top, get_uvalue = info, /no_copy
+  widget_control, event.id, get_uvalue = thisEvent
+  case thisEvent of
+    'SELECT_FILE': begin
+      ; Start in the current directory.
 
+      cd, current = startDirectory
 
-PRO XWINDOW_COLOR_PROTECTION, event
-WIDGET_CONTROL, event.top, GET_UVALUE=info, /NO_COPY
-WIDGET_CONTROL, event.id, GET_UVALUE=buttonValue
-CASE buttonValue OF
-   'ON':  BEGIN
-          info.protect = 1
-          WIDGET_CONTROL, info.cprotectOFF, Sensitive=1
-          WIDGET_CONTROL, info.cprotectON, Sensitive=0
-          WIDGET_CONTROL, info.drawID, Tracking_Events=1
-          END
-   'OFF': BEGIN
-          info.protect = 0
-          WIDGET_CONTROL, info.cprotectOFF, Sensitive=0
-          WIDGET_CONTROL, info.cprotectON, Sensitive=1
-          WIDGET_CONTROL, info.drawID, Tracking_Events=0
-          END
-ENDCASE
-WIDGET_CONTROL, event.top, SET_UVALUE=info, /NO_COPY
-END ;*******************************************************************
+      ; Use PICKFILE to pick a filename for writing.
 
+      pick = Pickfile(path = startDirectory, /noconfirm, $
+        get_path = path, /write)
 
+      ; Make sure the user didn't cancel out of PICKFILE.
 
-PRO XWINDOW_CONFIGURATION_EVENTS, event
+      if pick ne '' then widget_control, info.filenameId, set_value = pick
+    end ; of the Select Filename button case
 
-WIDGET_CONTROL, event.top, GET_UVALUE=info, /NO_COPY
-WIDGET_CONTROL, event.id, GET_UVALUE=thisEvent
-CASE thisEvent OF
+    'CANCEL': begin
+      ; Have to exit here gracefully. Set CANCEL field in structure.
 
-   'SELECT_FILE': BEGIN
+      formdata = {cancel: 1, create: 0}
+      Handle_Value, info.ptr, formdata, /set
 
-         ; Start in the current directory.
+      ; Out of here!
 
-      CD, Current=startDirectory
-
-         ; Use PICKFILE to pick a filename for writing.
-
-      pick = Pickfile(Path=startDirectory, /NoConfirm, $
-         Get_Path=path, /Write)
-
-         ; Make sure the user didn't cancel out of PICKFILE.
-
-      IF pick NE '' THEN Widget_Control, info.filenameID, Set_Value=pick
-      END ; of the Select Filename button case
-
-    'CANCEL': BEGIN
-
-         ; Have to exit here gracefully. Set CANCEL field in structure.
-
-       formdata = {cancel:1, create:0}
-       Handle_Value, info.ptr, formdata, /Set
-
-         ; Out of here!
-
-       Widget_Control, event.top, /Destroy
-       RETURN
-       END ; of the Cancel button case
-
-    'ACCEPT': BEGIN  ; Gather the form information.
-
-          ; Get the filename.
-
-       Widget_Control, info.filenameID, Get_Value=filename
-
-       filename = filename(0)
-
-          ; Get the size info.
-
-       Widget_Control, info.xsizeID, Get_Value=xsize
-       Widget_Control, info.ysizeID, Get_Value=ysize
-
-          ; Get the color info from the droplist widget.
-
-       listIndex = Widget_Info(info.colordropID, /Droplist_Select)
-       colortype = FIX(ABS(1-listindex))
-
-          ; Get the order info from the droplist widget.
-
-       order = Widget_Info(info.orderdropID, /Droplist_Select)
-       order = FIX(order)
-
-          ; Get the quality fromt he slider widget, if needed
-
-       IF info.sliderID NE -1 THEN $
-          Widget_Control, info.sliderID, Get_Value=quality ELSE quality=-1
-
-          ; Create the formdata structure from the information you collected.
-
-       formdata = {filename:filename, xsize:xsize, ysize:ysize, $
-          color:colortype, order:order, quality:quality, create:0}
-
-          ; Store the formdata in the pointer location.
-
-       Handle_Value, info.ptr, formdata, /Set
-
-         ; Out of here!
-
-      Widget_Control, event.top, /Destroy
+      widget_control, event.top, /destroy
       RETURN
-      END ; of the Accept button case
+    end ; of the Cancel button case
 
-    'CREATE': BEGIN  ; Gather the form information.
+    'ACCEPT': begin ; Gather the form information.
 
-          ; Get the filename.
+      ; Get the filename.
 
-       Widget_Control, info.filenameID, Get_Value=filename
+      widget_control, info.filenameId, get_value = filename
 
-       filename = filename(0)
+      filename = filename[0]
 
-          ; Get the size info.
+      ; Get the size info.
 
-       Widget_Control, info.xsizeID, Get_Value=xsize
-       Widget_Control, info.ysizeID, Get_Value=ysize
+      widget_control, info.xsizeId, get_value = xsize
+      widget_control, info.ysizeId, get_value = ysize
 
-          ; Get the color info from the droplist widget.
+      ; Get the color info from the droplist widget.
 
-       listIndex = Widget_Info(info.colordropID, /Droplist_Select)
-       colortype = FIX(ABS(1-listindex))
+      listIndex = widget_info(info.colordropId, /droplist_select)
+      colortype = fix(abs(1 - listIndex))
 
-          ; Get the order info from the droplist widget.
+      ; Get the order info from the droplist widget.
 
-       order = Widget_Info(info.orderdropID, /Droplist_Select)
-       order = FIX(order)
+      order = widget_info(info.orderdropId, /droplist_select)
+      order = fix(order)
 
-          ; Get the quality fromt he slider widget, if needed
+      ; Get the quality fromt he slider widget, if needed
 
-       IF info.sliderID NE -1 THEN $
-          Widget_Control, info.sliderID, Get_Value=quality ELSE quality=-1
+      if info.sliderId ne -1 then $
+        widget_control, info.sliderId, get_value = quality else quality = -1
 
-          ; Create the formdata structure from the information you collected.
+      ; Create the formdata structure from the information you collected.
 
-       formdata = {filename:filename, xsize:xsize, ysize:ysize, $
-          color:colortype, order:order, quality:quality, create:1}
+      formdata = {filename: filename, xsize: xsize, ysize: ysize, $
+        color: colortype, order: order, quality: quality, create: 0}
 
-          ; Store the formdata in the pointer location.
+      ; Store the formdata in the pointer location.
 
-       Handle_Value, info.ptr, formdata, /Set
+      Handle_Value, info.ptr, formdata, /set
 
-         ; Out of here!
+      ; Out of here!
 
-      Widget_Control, event.top, /Destroy
+      widget_control, event.top, /destroy
       RETURN
-      END ; of the Create button case
+    end ; of the Accept button case
 
-   ELSE:
-ENDCASE
+    'CREATE': begin ; Gather the form information.
 
-WIDGET_CONTROL, event.top, SET_UVALUE=info, /NO_COPY
-END ; of XWINDOW_CONFIGURATION_EVENTS event handler ************************
+      ; Get the filename.
 
+      widget_control, info.filenameId, get_value = filename
 
+      filename = filename[0]
 
-FUNCTION XWINDOW_CONFIGURATION, filetype, config, TITLE=title, $
-   XOFFSET=xoffset, YOFFSET=yoffset, Cancel=cancel, Create=create, $
-   PARENT=parent
+      ; Get the size info.
 
-CATCH, error
-IF error NE 0 THEN BEGIN
-ok = WIDGET_MESSAGE(!Err_String)
-RETURN, -1
-ENDIF
+      widget_control, info.xsizeId, get_value = xsize
+      widget_control, info.ysizeId, get_value = ysize
 
+      ; Get the color info from the droplist widget.
 
-IF N_ELEMENTS(filetype) EQ 0 THEN filetype = 'GIF'
-IF N_ELEMENTS(config) EQ 0 THEN config = {XSIZE:400, YSIZE:400, $
-   COLOR:1, FILENAME:'xwindow.gif', NCOLORS:(!D.N_Colors < 256)}
-filetype = STRUPCASE(filetype)
-IF N_ELEMENTS(title) EQ 0 THEN title = 'Configure ' + $
-   filetype + ' Output File'
+      listIndex = widget_info(info.colordropId, /droplist_select)
+      colortype = fix(abs(1 - listIndex))
 
-   ; Check for placement offsets. Define defaults.
+      ; Get the order info from the droplist widget.
 
-IF (N_ELEMENTS(xoffset) EQ 0) THEN BEGIN
-   DEVICE, GET_SCREEN_SIZE=screenSize
-   xoffset = (screenSize(0) - 200) / 2.
-ENDIF
-IF (N_ELEMENTS(yoffset) EQ 0) THEN BEGIN
-   DEVICE, GET_SCREEN_SIZE=screenSize
-   yoffset = (screenSize(1) - 100) / 2.
-ENDIF
+      order = widget_info(info.orderdropId, /droplist_select)
+      order = fix(order)
 
-   ; Create widgets.
+      ; Get the quality fromt he slider widget, if needed
 
-thisRelease = StrMid(!Version.Release, 0, 1)
-if thisRelease EQ '5' AND n_elements(parent) GT 0 THEN $
-  extra_modal = { Modal: 1, Group_Leader:parent(0) }
-tlb = WIDGET_BASE(Column=1, Title=title, XOffset=xoffset, $
-   YOffset=yoffset, Base_Align_Center=1, _extra=extra_modal)
+      if info.sliderId ne -1 then $
+        widget_control, info.sliderId, get_value = quality else quality = -1
 
-bigbox = WIDGET_BASE(tlb, Column=1, Frame=1, Base_Align_Center=1)
+      ; Create the formdata structure from the information you collected.
 
-   ; Create the filename widgets.
-filebox = Widget_Base(bigbox, Column=1, Base_Align_Center=1)
-filename = config.filename
-filenamebase = Widget_Base(filebox, Row=1)
-   filenamelabel = Widget_Label(filenamebase, Value='Filename:')
-   filenameID = Widget_Text(filenamebase, Value=filename, /Editable, $
-      Event_Pro='NULL_EVENTS', SCR_XSIZE=320)
+      formdata = {filename: filename, xsize: xsize, ysize: ysize, $
+        color: colortype, order: order, quality: quality, create: 1}
 
-   ; Create a button to allow user to pick a filename.
+      ; Store the formdata in the pointer location.
 
-pickbutton = Widget_Button(filebox, Value='Select Filename', $
-   UVALUE='SELECT_FILE')
+      Handle_Value, info.ptr, formdata, /set
 
-   ; Create size widgets
-sizebox = Widget_Base(bigbox, Column=1, Base_Align_Left=1)
-sizebase = Widget_Base(sizebox, Row=1)
-xsizeID = CW_FIELD(sizebase, Value=config.xsize, Title='XSize: ', $
-   /Integer)
-ysizeID = CW_FIELD(sizebase, Value=config.ysize, Title='YSize: ', $
-   /Integer)
+      ; Out of here!
 
-   ; File type and order.
+      widget_control, event.top, /destroy
+      RETURN
+    end ; of the Create button case
 
-orderbase = Widget_Base(sizebox, Row=1)
-type = ['Color', 'Grayscale']
-order = ['0', '1']
-colordropID = Widget_Droplist(orderbase, Value=type, $
-   Title='File Type: ', EVENT_PRO='NULL_EVENTS')
-orderdropID = Widget_Droplist(orderbase, Value=order, $
-   Title='Display Order: ', EVENT_PRO='NULL_EVENTS')
+    else:
+  endcase
 
-Widget_Control, colordropID, Set_Droplist_Select=FIX(ABS(config.color-1))
-Widget_Control, orderdropID, Set_Droplist_Select=config.order
+  widget_control, event.top, set_uvalue = info, /no_copy
+end
+; of XWINDOW_CONFIGURATION_EVENTS event handler ************************
 
-   ; Quality Slider if needed.
+function XWINDOW_CONFIGURATION, filetype, config, title = title, $
+  xoffset = xoffset, yoffset = yoffset, cancel = cancel, create = create, $
+  parent = parent
+  compile_opt idl2
 
-IF filetype EQ 'JPEG' THEN $
-   sliderID = Widget_Slider(bigbox, Value=config.quality, Max=100, Min=0, $
-      Title='Compression Quality', EVENT_PRO='NULL_EVENTS', $
-      SCR_XSize=350) ELSE sliderID = -1
+  catch, error
+  if error ne 0 then begin
+    ok = WIDGET_MESSAGE(!err_string)
+    RETURN, -1
+  endif
 
-   ; Cancel and Accept buttons.
+  if n_elements(filetype) eq 0 then filetype = 'GIF'
+  if n_elements(config) eq 0 then config = {xsize: 400, ysize: 400, $
+    color: 1, filename: 'xwindow.gif', ncolors: (!d.n_colors < 256)}
+  filetype = strupcase(filetype)
+  if n_elements(title) eq 0 then title = 'Configure ' + $
+    filetype + ' Output File'
 
-buttonbase = Widget_Base(tlb, Row=1)
-cancelID = Widget_Button(buttonbase, Value='Cancel', UValue='CANCEL')
-createID = Widget_Button(buttonbase, Value='Create File', UValue='CREATE')
-ok = Widget_Button(buttonbase, Value='Accept', UValue='ACCEPT')
+  ; Check for placement offsets. Define defaults.
 
-Widget_Control, tlb, /Realize
+  if (n_elements(xoffset) eq 0) then begin
+    device, get_screen_size = screenSize
+    xoffset = (screenSize[0] - 200) / 2.
+  endif
+  if (n_elements(yoffset) eq 0) then begin
+    device, get_screen_size = screenSize
+    yoffset = (screenSize[1] - 100) / 2.
+  endif
 
-ptr = HANDLE_CREATE()
+  ; Create widgets.
 
-info = { filenameID:filenameID, xsizeID:xsizeID, $
-         ysizeID:ysizeID, colordropID:colordropID, $
-         orderdropID:orderdropID, ptr:ptr, sliderID:sliderID}
+  thisRelease = strmid(!version.release, 0, 1)
+  if thisRelease eq '5' and n_elements(parent) gt 0 then $
+    extra_modal = {modal: 1, group_leader: parent[0]}
+  tlb = widget_base(column = 1, title = title, xoffset = xoffset, $
+    yoffset = yoffset, base_align_center = 1, _extra = extra_modal)
 
-Widget_Control, tlb, Set_UValue=info, /No_Copy
-if thisRelease EQ '4' THEN xmanager_modal = {Modal:1}
-XManager, 'xwindow_configuration', tlb, $
-  Event_Handler='XWINDOW_CONFIGURATION_EVENTS', _EXTRA=xmanager_modal
+  bigbox = widget_base(tlb, column = 1, frame = 1, base_align_center = 1)
 
-Handle_Value, ptr, formdata
-Handle_Free, ptr
+  ; Create the filename widgets.
+  filebox = widget_base(bigbox, column = 1, base_align_center = 1)
+  filename = config.filename
+  filenamebase = widget_base(filebox, row = 1)
+  filenamelabel = widget_label(filenamebase, value = 'Filename:')
+  filenameID = widget_text(filenamebase, value = filename, /editable, $
+    event_pro = 'NULL_EVENTS', scr_xsize = 320)
 
-IF N_ELEMENTS(formdata) EQ 0 THEN BEGIN
-   cancel = 1
-   create = 0
-   RETURN, -1
-ENDIF
+  ; Create a button to allow user to pick a filename.
 
-fields = TAG_NAMES(formdata)
-create = formdata.create
-cancel = WHERE(fields EQ 'CANCEL')
-IF cancel(0) EQ -1 THEN BEGIN
-   cancel = 0
-   newConfiguration = Create_Struct('XSIZE', formdata.xsize, $
+  pickbutton = widget_button(filebox, value = 'Select Filename', $
+    uvalue = 'SELECT_FILE')
+
+  ; Create size widgets
+  sizebox = widget_base(bigbox, column = 1, base_align_left = 1)
+  sizebase = widget_base(sizebox, row = 1)
+  xsizeID = cw_field(sizebase, value = config.xsize, title = 'XSize: ', $
+    /integer)
+  ysizeID = cw_field(sizebase, value = config.ysize, title = 'YSize: ', $
+    /integer)
+
+  ; File type and order.
+
+  orderbase = widget_base(sizebox, row = 1)
+  type = ['Color', 'Grayscale']
+  order = ['0', '1']
+  colordropID = widget_droplist(orderbase, value = type, $
+    title = 'File Type: ', event_pro = 'NULL_EVENTS')
+  orderdropID = widget_droplist(orderbase, value = order, $
+    title = 'Display Order: ', event_pro = 'NULL_EVENTS')
+
+  widget_control, colordropID, set_droplist_select = fix(abs(config.color - 1))
+  widget_control, orderdropID, set_droplist_select = config.order
+
+  ; Quality Slider if needed.
+
+  if filetype eq 'JPEG' then $
+    sliderID = widget_slider(bigbox, value = config.quality, max = 100, min = 0, $
+      title = 'Compression Quality', event_pro = 'NULL_EVENTS', $
+      scr_xsize = 350) else sliderID = -1
+
+  ; Cancel and Accept buttons.
+
+  buttonbase = widget_base(tlb, row = 1)
+  cancelID = widget_button(buttonbase, value = 'Cancel', uvalue = 'CANCEL')
+  createID = widget_button(buttonbase, value = 'Create File', uvalue = 'CREATE')
+  ok = widget_button(buttonbase, value = 'Accept', uvalue = 'ACCEPT')
+
+  widget_control, tlb, /realize
+
+  ptr = HANDLE_CREATE()
+
+  info = {filenameId: filenameID, xsizeId: xsizeID, $
+    ysizeId: ysizeID, colordropId: colordropID, $
+    orderdropId: orderdropID, ptr: ptr, sliderId: sliderID}
+
+  widget_control, tlb, set_uvalue = info, /no_copy
+  if thisRelease eq '4' then xmanager_modal = {modal: 1}
+  xmanager, 'xwindow_configuration', tlb, $
+    event_handler = 'XWINDOW_CONFIGURATION_EVENTS', _extra = xmanager_modal
+
+  Handle_Value, ptr, formdata
+  Handle_Free, ptr
+
+  if n_elements(formdata) eq 0 then begin
+    cancel = 1
+    create = 0
+    RETURN, -1
+  endif
+
+  fields = tag_names(formdata)
+  create = formdata.create
+  cancel = where(fields eq 'CANCEL')
+  if cancel[0] eq -1 then begin
+    cancel = 0
+    newConfiguration = create_struct('XSIZE', formdata.xsize, $
       'YSIZE', formdata.ysize, 'COLOR', formdata.color, $
       'FILENAME', formdata.filename, 'ORDER', formdata.order, $
-      'QUALITY', formdata.quality, NAME='XWINDOW_' + filetype)
-   RETURN, newConfiguration
-ENDIF ELSE BEGIN
-   cancel = 1
-   create = 0
-   RETURN, -1
-ENDELSE
-END ; of XWINDOW_CONFIGURATION event handler *******************************
+      'QUALITY', formdata.quality, name = 'XWINDOW_' + filetype)
+    RETURN, newConfiguration
+  endif else begin
+    cancel = 1
+    create = 0
+    RETURN, -1
+  endelse
+end
+; of XWINDOW_CONFIGURATION event handler *******************************
 
+function XWindow_WhatTypeVariable, variable
+  compile_opt idl2
 
+  ; Use SIZE function to get variable info.
 
-FUNCTION XWindow_WhatTypeVariable, variable
+  varInfo = size(variable)
 
-   ; Use SIZE function to get variable info.
+  ; The next to last element in varInfo has the data type.
 
-varInfo = Size(variable)
+  typeIndex = varInfo[varInfo[0] + 1]
+  dataTypes = ['UNDEFINED', 'BYTE', 'INTEGER', 'LONG', 'FLOATING', $
+    'DOUBLE', 'COMPLEX', 'STRING', 'STRUCTURE', 'DCOMPLEX']
+  thisType = dataTypes[typeIndex]
 
-   ; The next to last element in varInfo has the data type.
+  RETURN, thisType
+end
+; of XWindow_WhatTypeVariable utility routine **************************
 
-typeIndex = varInfo(varInfo(0) + 1)
-dataTypes = ['UNDEFINED', 'BYTE', 'INTEGER', 'LONG', 'FLOATING', $
-     'DOUBLE', 'COMPLEX', 'STRING', 'STRUCTURE', 'DCOMPLEX']
-thisType = dataTypes(typeIndex)
+pro XWINDOW_QUIT, event
+  compile_opt idl2
+  widget_control, event.top, /destroy
+end
+; of XWINDOW_QUIT procedure *********************************************
 
- RETURN, thisType
- END ; of XWindow_WhatTypeVariable utility routine **************************
+pro XWINDOW_CLEANUP, id
+  compile_opt idl2
+  widget_control, id, get_uvalue = info, /no_copy
+  if n_elements(info) eq 0 then RETURN
+  HANDLE_FREE, info.plotObjPtr
+end
+; of XWINDOW_CLEANUP cleanup procedure ***********************************
 
+pro XWINDOW_CONFIGURE_FILES, event
+  compile_opt idl2
+  widget_control, event.top, get_uvalue = info, /no_copy
 
+  ; What kind of file to configure?
 
-PRO XWINDOW_QUIT, event
-WIDGET_CONTROL, event.top, /DESTROY
-END ; of XWINDOW_QUIT procedure *********************************************
+  widget_control, event.id, get_value = whichFile
+  case whichFile of
+    'Configure PostScript File...': begin
+      newkeywords = ps_form(defaults = info.ps, parent = info.top, $
+        localdefaults = info.pslocal, cancel = cancel, create = create)
+      if not cancel then info.ps = newkeywords
+      if create then widget_control, info.psId, send_event = {id: info.psId, $
+        top: event.top, handler: 0l}
+    end
 
-
-
-PRO XWINDOW_CLEANUP, id
-WIDGET_CONTROL, id, GET_UVALUE=info, /NO_COPY
-IF N_ELEMENTS(info) EQ 0 THEN RETURN
-HANDLE_FREE, info.plotObjPtr
-END ; of XWINDOW_CLEANUP cleanup procedure ***********************************
-
-
-
-PRO XWINDOW_CONFIGURE_FILES, event
-WIDGET_CONTROL, event.top, GET_UVALUE=info, /NO_COPY
-
-   ; What kind of file to configure?
-
-WIDGET_CONTROL, event.id, GET_VALUE=whichFile
-CASE whichFile OF
-
-   'Configure PostScript File...': BEGIN
-      newkeywords = PS_FORM(DEFAULTS=info.ps, Parent=info.top, $
-         LocalDefaults=info.pslocal, Cancel=cancel, Create=create)
-      IF NOT cancel THEN info.ps = newkeywords
-      IF create THEN WIDGET_CONTROL, info.psID, SEND_EVENT={ID:info.psID, $
-         TOP:event.top, HANDLER:0L}
-      END
-
-   'Configure GIF File...': BEGIN
+    'Configure GIF File...': begin
       config = info.gif
       newConfiguration = XWINDOW_CONFIGURATION('GIF', config, $
-         Cancel=cancel, Create=create, Parent=info.top)
-      IF NOT cancel THEN info.gif = newConfiguration
-      IF create THEN WIDGET_CONTROL, info.gifID, SEND_EVENT={ID:info.gifID, $
-         TOP:event.top, HANDLER:0L}
-      END
+        cancel = cancel, create = create, parent = info.top)
+      if not cancel then info.gif = newConfiguration
+      if create then widget_control, info.gifId, send_event = {id: info.gifId, $
+        top: event.top, handler: 0l}
+    end
 
-   'Configure TIFF File...': BEGIN
+    'Configure TIFF File...': begin
       config = info.tiff
       newConfiguration = XWINDOW_CONFIGURATION('TIFF', config, $
-         Cancel=cancel, Create=create, Parent=info.top)
-      IF NOT cancel THEN info.tiff = newConfiguration
-      IF create THEN WIDGET_CONTROL, info.tiffID, SEND_EVENT={ID:info.tiffID, $
-         TOP:event.top, HANDLER:0L}
-      END
+        cancel = cancel, create = create, parent = info.top)
+      if not cancel then info.tiff = newConfiguration
+      if create then widget_control, info.tiffId, send_event = {id: info.tiffId, $
+        top: event.top, handler: 0l}
+    end
 
-   'Configure JPEG File...': BEGIN
+    'Configure JPEG File...': begin
       config = info.jpeg
       newConfiguration = XWINDOW_CONFIGURATION('JPEG', config, $
-         Cancel=cancel, Create=create, Parent=info.top)
-      IF NOT cancel THEN info.jpeg = newConfiguration
-      IF create THEN WIDGET_CONTROL, info.jpegID, SEND_EVENT={ID:info.jpegID, $
-         TOP:event.top, HANDLER:0L}
-      END
-ENDCASE
+        cancel = cancel, create = create, parent = info.top)
+      if not cancel then info.jpeg = newConfiguration
+      if create then widget_control, info.jpegId, send_event = {id: info.jpegId, $
+        top: event.top, handler: 0l}
+    end
+  endcase
 
-WIDGET_CONTROL, event.top, SET_UVALUE=info, /NO_COPY
-END ; of XWINDOW_CONFIGURE_FILES event handler ***********************************
+  widget_control, event.top, set_uvalue = info, /no_copy
+end
+; of XWINDOW_CONFIGURE_FILES event handler ***********************************
 
+pro XWINDOW_CREATE_FILES, event
+  compile_opt idl2
+  widget_control, event.top, get_uvalue = info, /no_copy
 
+  ; There can be all kinds of problems writing a file.
+  ; Trap errors here and try to get out of here.
 
-PRO XWINDOW_CREATE_FILES, event
-WIDGET_CONTROL, event.top, GET_UVALUE=info, /NO_COPY
-
-   ; There can be all kinds of problems writing a file.
-   ; Trap errors here and try to get out of here.
-
-CATCH, error
-IF error NE 0 THEN BEGIN
-junk=widget_message(!err_string)
-   ok = WIDGET_MESSAGE(['Problem writing file. The most', $
+  catch, error
+  if error ne 0 then begin
+    junk = widget_message(!err_string)
+    ok = WIDGET_MESSAGE(['Problem writing file. The most', $
       'common problem is a mis-spelled filename.', 'Returning...'])
-   IF WIDGET_INFO(id, /Valid_ID) THEN WIDGET_CONTROL, id, /Destroy
-   IF N_ELEMENTS(thisDevice) GT 0 THEN SET_PLOT, thisDevice
-   IF N_ELEMENTS(info) NE 0 THEN WIDGET_CONTROL, event.top, $
-      SET_UVALUE=info, /NO_COPY
-   RETURN
-ENDIF
+    if widget_info(id, /valid_id) then widget_control, id, /destroy
+    if n_elements(thisDevice) gt 0 then set_plot, thisDevice
+    if n_elements(info) ne 0 then widget_control, event.top, $
+      set_uvalue = info, /no_copy
+    RETURN
+  endif
 
-id = XWINDOW_ALERT('Please be patient while writing a file...')
+  id = XWINDOW_ALERT('Please be patient while writing a file...')
 
-   ; Get the Plot Object.
+  ; Get the Plot Object.
 
-HANDLE_VALUE, info.plotObjPtr, plotObj, /NO_COPY
+  HANDLE_VALUE, info.plotObjPtr, plotObj, /no_copy
 
-   ; What kind of file to create?
+  ; What kind of file to create?
 
-WIDGET_CONTROL, event.id, GET_VALUE=whichFile
-CASE whichFile OF
-
-   'Create PostScript File': BEGIN
+  widget_control, event.id, get_value = whichFile
+  case whichFile of
+    'Create PostScript File': begin
       keywords = info.ps
-      thisDevice = !D.NAME
-      TVLCT, r, g, b, /GET
-      SET_PLOT, 'PS'
-      TVLCT, info.r, info.g, info.b, info.bottom
-      DEVICE, _EXTRA=keywords
-      ok = EXECUTE(plotObj.thisCommand)
-      DEVICE, /CLOSE_FILE
-      SET_PLOT, thisDevice
-      TVLCT, r, g, b
-      END
+      thisDevice = !d.name
+      tvlct, r, g, b, /get
+      set_plot, 'PS'
+      tvlct, info.r, info.g, info.b, info.bottom
+      device, _extra = keywords
+      ok = execute(plotObj.thisCommand)
+      device, /close_file
+      set_plot, thisDevice
+      tvlct, r, g, b
+    end
 
-   'Create GIF File': BEGIN
+    'Create GIF File': begin
       config = info.gif
 
-         ; Render graphic in Z-buffer.
+      ; Render graphic in Z-buffer.
 
-      thisDevice = !D.NAME
-      TVLCT, rr, gg, bb, /GET
-      SET_PLOT, 'Z'
-      ERASE
-      DEVICE, SET_RESOLUTION=[config.xsize, config.ysize], $
-         SET_COLORS=info.ncolors
-      ok = EXECUTE(plotObj.thisCommand)
-      thisImage = TVRD()
-      IF config.color NE 1 THEN LOADCT, 0, NColors=info.wcolors, $
-         Bottom=info.bottom ELSE $
-         TVLCT, info.r, info.g, info.b, info.bottom
-      TVLCT, r, g, b, /GET
-      SET_PLOT, thisDevice
-      TVLCT, rr, gg, bb
+      thisDevice = !d.name
+      tvlct, rr, gg, bb, /get
+      set_plot, 'Z'
+      erase
+      device, set_resolution = [config.xsize, config.ysize], $
+        set_colors = info.ncolors
+      ok = execute(plotObj.thisCommand)
+      thisImage = tvrd()
+      if config.color ne 1 then loadct, 0, ncolors = info.wcolors, $
+        bottom = info.bottom else $
+        tvlct, info.r, info.g, info.b, info.bottom
+      tvlct, r, g, b, /get
+      set_plot, thisDevice
+      tvlct, rr, gg, bb
 
-         ; Write GIF file.
+      ; Write GIF file.
 
-      WRITE_GIF, config.filename, thisImage, r, g, b
-      END ; of GIF file creation.
+      write_gif, config.filename, thisImage, r, g, b
+    end ; of GIF file creation.
 
-   'Create TIFF File': BEGIN
+    'Create TIFF File': begin
       config = info.tiff
 
-         ; Render graphic in Z-buffer.
+      ; Render graphic in Z-buffer.
 
-      thisDevice = !D.NAME
-      TVLCT, rr, gg, bb, /GET
-      SET_PLOT, 'Z'
-      TVLCT, info.r, info.g, info.b, info.bottom
-      ERASE
-      DEVICE, SET_RESOLUTION=[config.xsize, config.ysize], $
-         SET_COLORS=info.ncolors
-      ok = EXECUTE(plotObj.thisCommand)
-      thisImage = TVRD()
-      TVLCT, r, g, b, /GET
-      SET_PLOT, thisDevice
-      TVLCT, rr, gg, bb
+      thisDevice = !d.name
+      tvlct, rr, gg, bb, /get
+      set_plot, 'Z'
+      tvlct, info.r, info.g, info.b, info.bottom
+      erase
+      device, set_resolution = [config.xsize, config.ysize], $
+        set_colors = info.ncolors
+      ok = execute(plotObj.thisCommand)
+      thisImage = tvrd()
+      tvlct, r, g, b, /get
+      set_plot, thisDevice
+      tvlct, rr, gg, bb
 
-         ; Write TIFF file. Use screen resolution.
+      ; Write TIFF file. Use screen resolution.
 
-      IF config.color EQ 1 THEN $
-         TIFF_WRITE, config.filename, thisImage, config.order, $
-            RED=r, GREEN=g, BLUE=b, XRESOL=ROUND(!D.X_PX_CM * 2.54), $
-            YRESOL=ROUND(!D.X_PX_CM * 2.54) ELSE $
-         TIFF_WRITE, config.filename, thisImage, config.order, $
-            XRESOL=ROUND(!D.X_PX_CM * 2.54), YRESOL=ROUND(!D.X_PX_CM * 2.54)
-      END
+      if config.color eq 1 then $
+        TIFF_WRITE, config.filename, thisImage, config.order, $
+        red = r, green = g, blue = b, xresol = round(!d.x_px_cm * 2.54), $
+        yresol = round(!d.x_px_cm * 2.54) else $
+        TIFF_WRITE, config.filename, thisImage, config.order, $
+        xresol = round(!d.x_px_cm * 2.54), yresol = round(!d.x_px_cm * 2.54)
+    end
 
-   'Create JPEG File': BEGIN
+    'Create JPEG File': begin
       config = info.jpeg
 
-         ; Render graphic in Z-buffer.
+      ; Render graphic in Z-buffer.
 
-      thisDevice = !D.NAME
-      TVLCT, rr, gg, bb, /GET
-      SET_PLOT, 'Z'
-      ERASE
-      DEVICE, SET_RESOLUTION=[config.xsize, config.ysize], $
-         SET_COLORS=info.ncolors
-      TVLCT, info.r, info.g, info.b, info.bottom
-      ok = EXECUTE(plotObj.thisCommand)
-      thisImage = TVRD()
-      TVLCT, r, g, b, /GET
-      SET_PLOT, thisDevice
-      TVLCT, rr, gg, bb
+      thisDevice = !d.name
+      tvlct, rr, gg, bb, /get
+      set_plot, 'Z'
+      erase
+      device, set_resolution = [config.xsize, config.ysize], $
+        set_colors = info.ncolors
+      tvlct, info.r, info.g, info.b, info.bottom
+      ok = execute(plotObj.thisCommand)
+      thisImage = tvrd()
+      tvlct, r, g, b, /get
+      set_plot, thisDevice
+      tvlct, rr, gg, bb
 
-         ; Write JPEG file.
+      ; Write JPEG file.
 
-      IF config.color EQ 1 THEN BEGIN
-         image24 = BYTARR(3, config.xsize, config.ysize)
-         image24(0,*,*) = r(thisImage)
-         image24(1,*,*) = g(thisImage)
-         image24(2,*,*) = b(thisImage)
-         WRITE_JPEG, config.filename, image24, TRUE=1, $
-            QUALITY=config.quality, ORDER=config.order
-      ENDIF ELSE $
-          WRITE_JPEG, config.filename, thisimage, $
-            QUALITY=config.quality, ORDER=config.order
-      END
-ENDCASE
+      if config.color eq 1 then begin
+        image24 = bytarr(3, config.xsize, config.ysize)
+        image24[0, *, *] = r[thisImage]
+        image24[1, *, *] = g[thisImage]
+        image24[2, *, *] = b[thisImage]
+        write_jpeg, config.filename, image24, true = 1, $
+          quality = config.quality, order = config.order
+      endif else $
+        write_jpeg, config.filename, thisImage, $
+        quality = config.quality, order = config.order
+    end
+  endcase
 
-   ; Put the Plot Object back.
+  ; Put the Plot Object back.
 
-HANDLE_VALUE, info.plotObjPtr, plotObj, /SET, /NO_COPY
-WIDGET_CONTROL, id, /Destroy
-WIDGET_CONTROL, event.top, SET_UVALUE=info, /NO_COPY
-END ; of XWINDOW_CREATE_FILES event handler ***********************************
+  HANDLE_VALUE, info.plotObjPtr, plotObj, /set, /no_copy
+  widget_control, id, /destroy
+  widget_control, event.top, set_uvalue = info, /no_copy
+end
+; of XWINDOW_CREATE_FILES event handler ***********************************
 
+pro XWINDOW_COLORS, event
+  compile_opt idl2
+  widget_control, event.top, get_uvalue = info, /no_copy
+  widget_control, event.id, get_uvalue = colors
 
+  XCOLORS, group = event.top, ncolors = colors[0], bottom = colors[1], $
+    title = 'Window ' + strtrim(info.wid, 2) + ' Colors', $
+    notifyid = [info.drawId, event.top]
 
-PRO XWINDOW_COLORS, event
-WIDGET_CONTROL, event.top, GET_UVALUE=info, /NO_COPY
-WIDGET_CONTROL, event.id, GET_UVALUE=colors
+  widget_control, event.top, set_uvalue = info, /no_copy
+end
+; of XWINDOW_COLORS event handler ****************************************
 
-XCOLORS, Group=event.top, NColors=colors(0), Bottom=colors(1), $
-   Title='Window ' + STRTRIM(info.wid, 2) + ' Colors', $
-   NotifyID=[info.drawID, event.top]
+pro XWINDOW_DRAW_EVENT, event
+  compile_opt idl2
+  widget_control, event.top, get_uvalue = info, /no_copy
 
-WIDGET_CONTROL, event.top, SET_UVALUE=info, /NO_COPY
-END ; of XWINDOW_COLORS event handler ****************************************
+  ; Get the Plot Object.
 
+  HANDLE_VALUE, info.plotObjPtr, plotObj, /no_copy
 
+  ; Need to respond to WIDGET_TRACKING events and
+  ; XCOLORS_LOAD events.
 
-PRO XWINDOW_DRAW_EVENT, event
-WIDGET_CONTROL, event.top, GET_UVALUE=info, /NO_COPY
+  thisEvent = tag_names(event, /structure)
 
-   ; Get the Plot Object.
+  if thisEvent eq 'WIDGET_TRACKING' then begin
+    if event.enter eq 1 then $
+      tvlct, info.r, info.g, info.b, info.bottom
+  endif
 
-HANDLE_VALUE, info.plotObjPtr, plotObj, /NO_COPY
+  if thisEvent eq 'XCOLORS_LOAD' then begin
+    info.r = event.r[info.bottom : info.bottom + info.wcolors - 1]
+    info.g = event.g[info.bottom : info.bottom + info.wcolors - 1]
+    info.b = event.b[info.bottom : info.bottom + info.wcolors - 1]
+  endif
 
-   ; Need to respond to WIDGET_TRACKING events and
-   ; XCOLORS_LOAD events.
+  ; Redisplay the command in the window if needed.
 
-thisEvent = TAG_NAMES(event, /Structure)
+  ncolors = !d.n_colors
+  if ncolors gt 256 then begin
+    wset, info.wid
+    if info.erase then erase
+    ok = execute(plotObj.thisCommand)
+  endif
 
-IF thisEvent EQ 'WIDGET_TRACKING' THEN BEGIN
-   IF event.enter EQ 1 THEN $
-   TVLCT, info.r, info.g, info.b, info.bottom
-ENDIF
+  ; Put the Plot Object back.
 
-IF thisEvent EQ 'XCOLORS_LOAD' THEN BEGIN
-   info.r = event.r(info.bottom:info.bottom+info.wcolors-1)
-   info.g = event.g(info.bottom:info.bottom+info.wcolors-1)
-   info.b = event.b(info.bottom:info.bottom+info.wcolors-1)
-ENDIF
+  HANDLE_VALUE, info.plotObjPtr, plotObj, /set, /no_copy
 
-   ; Redisplay the command in the window if needed.
+  widget_control, event.top, set_uvalue = info, /no_copy
+end
+; of XWINDOW_DRAW_EVENT event handler **********************************
 
-ncolors = !D.N_Colors
-IF ncolors GT 256 THEN BEGIN
-   WSET, info.wid
-   IF info.erase THEN ERASE
-   ok = EXECUTE(plotObj.thisCommand)
-ENDIF
+pro XWINDOW_RESIZE_EVENTS, event
+  compile_opt idl2
+  widget_control, event.top, get_uvalue = info, /no_copy
 
-   ; Put the Plot Object back.
+  ; Resize the draw widget.
 
-HANDLE_VALUE, info.plotObjPtr, plotObj, /SET, /NO_COPY
+  widget_control, info.drawid, xsize = event.x, ysize = event.y
 
-WIDGET_CONTROL, event.top, SET_UVALUE=info, /NO_COPY
-END ; of XWINDOW_DRAW_EVENT event handler **********************************
+  ; Get the Plot Object.
 
+  HANDLE_VALUE, info.plotObjPtr, plotObj, /no_copy
 
+  ; Redisplay the command in the window.
 
-PRO XWINDOW_RESIZE_EVENTS, event
-WIDGET_CONTROL, event.top, GET_UVALUE=info, /NO_COPY
+  widget_control, info.drawId, get_value = wid
+  wset, wid
+  if info.erase eq 1 then erase
+  ok = execute(plotObj.thisCommand)
 
-   ; Resize the draw widget.
+  ; Update file output configuration structures in necessary.
 
-WIDGET_CONTROL, info.drawid, XSIZE=event.x, YSIZE=event.y
-
-   ; Get the Plot Object.
-
-HANDLE_VALUE, info.plotObjPtr, plotObj, /NO_COPY
-
-   ; Redisplay the command in the window.
-
-WIDGET_CONTROL, info.drawID, GET_VALUE=wid
-WSET, wid
-IF info.erase EQ 1 THEN ERASE
- ok = EXECUTE(plotObj.thisCommand)
-
-   ; Update file output configuration structures in necessary.
-
-IF (info.output) AND (NOT info.nochange) THEN BEGIN
-   info.gif.xsize = event.x
-   info.gif.ysize = event.y
-   info.tiff.xsize = event.x
-   info.tiff.ysize = event.y
-   info.jpeg.xsize = event.x
-   info.jpeg.ysize = event.y
-   IF info.ps.inches EQ 0 THEN newsizes = PSWINDOW(/CM) ELSE $
+  if (info.output) and (not info.nochange) then begin
+    info.gif.xsize = event.x
+    info.gif.ysize = event.y
+    info.tiff.xsize = event.x
+    info.tiff.ysize = event.y
+    info.jpeg.xsize = event.x
+    info.jpeg.ysize = event.y
+    if info.ps.inches eq 0 then newsizes = PSWINDOW(/cm) else $
       newsizes = PSWINDOW()
-   info.ps.xsize = newsizes.xsize
-   info.ps.ysize = newsizes.ysize
-   info.ps.xoff = newsizes.xoffset
-   info.ps.yoff = newsizes.yoffset
-ENDIF
+    info.ps.xsize = newsizes.xsize
+    info.ps.ysize = newsizes.ysize
+    info.ps.xoff = newsizes.xoffset
+    info.ps.yoff = newsizes.yoffset
+  endif
 
-   ; Put the Plot Object back.
+  ; Put the Plot Object back.
 
-HANDLE_VALUE, info.plotObjPtr, plotObj, /SET, /NO_COPY
+  HANDLE_VALUE, info.plotObjPtr, plotObj, /set, /no_copy
 
-WIDGET_CONTROL, event.top, SET_UVALUE=info, /NO_COPY
-END ; of XWINDOW_RESIZE_EVENTS event handler *********************************
+  widget_control, event.top, set_uvalue = info, /no_copy
+end
+; of XWINDOW_RESIZE_EVENTS event handler *********************************
 
+pro XWINDOW, proName, $
+  param1, param2, param3, param4, param5, $
+  param6, param7, param8, param9, param10, $
+  group_leader = group, $
+  _extra = extra, wxsize = xsize, wysize = ysize, wid = wid, xcolors = colors, $
+  drawid = drawid, wtitle = wtitle, just_register = justRegister, $
+  output = output, no_change_config = nochange, erase = erase, $
+  top = tlb, protect = protect, nomenu = nomenu, cpmenu = cpmenu, $
+  wxpos = wxpos, wypos = wypos
+  compile_opt idl2
 
+  ; Return to main-level on error.
 
-PRO XWINDOW, proName, $
-   param1, param2, param3, param4, param5, $
-   param6, param7, param8, param9, param10, $
-   GROUP_LEADER=group, $
-   _EXTRA=extra, WXSIZE=xsize, WYSIZE=ysize, WID=wid, XCOLORS=colors, $
-   DRAWID=drawid, WTITLE=wtitle, JUST_REGISTER=justRegister, $
-   OUTPUT=output, NO_CHANGE_CONFIG=nochange, ERASE=erase, $
-   TOP=tlb, PROTECT=protect, NOMENU=nomenu, CPMENU=cpmenu, $
-   WXPOS=wxpos, WYPOS=wypos
+  on_error, 1
 
-   ; Return to main-level on error.
+  ; Check keywords.
 
-ON_ERROR, 1
+  if n_elements(xsize) eq 0 then xsize = 400
+  if n_elements(ysize) eq 0 then ysize = 400
+  nochange = keyword_set(nochange)
+  extraFlag = keyword_set(extra)
+  justRegister = keyword_set(justRegister)
+  protect = keyword_set(protect)
+  needColors = keyword_set(colors)
+  needOutput = keyword_set(output)
+  cpmenu = keyword_set(cpmenu)
+  nomenu = keyword_set(nomenu)
+  if nomenu then begin
+    needOutput = 0
+    cpmenu = 0
+    cprotectON = -1l
+    cprotectOFF = -1l
+    psID = -1l
+    gifID = -1l
+    tiffID = -1l
+    jpegID = -1l
+  endif
 
-   ; Check keywords.
+  ; Make sure a window has been opened.
 
-IF N_ELEMENTS(xsize) EQ 0 THEN xsize = 400
-IF N_ELEMENTS(ysize) EQ 0 THEN ysize = 400
-nochange = KEYWORD_SET(nochange)
-extraFlag = KEYWORD_SET(extra)
-justRegister = KEYWORD_SET(justRegister)
-protect = KEYWORD_SET(protect)
-needColors = KEYWORD_SET(colors)
-needOutput = KEYWORD_SET(output)
-cpmenu = KEYWORD_SET(cpmenu)
-nomenu = KEYWORD_SET(nomenu)
-IF nomenu THEN BEGIN
-   needOutput = 0
-   cpmenu = 0
-   cprotectON = -1L
-   cprotectOFF = -1L
-   psID = -1L
-   gifID = -1L
-   tiffID = -1L
-   jpegID = -1L
-ENDIF
+  thisWindowID = !d.window
+  Window, xsize = 10, ysize = 10, /free, /pixmap
+  wdelete, !d.window
+  if thisWindowID ge 0 then wset, thisWindowID
 
-   ; Make sure a window has been opened.
+  ; Set up color variables. If the user typed "/Colors"
+  ; then use *all* colors!
 
-thisWindowID = !D.Window
-Window, XSize=10, YSize=10, /Free, /Pixmap
-WDelete, !D.Window
-IF thisWindowID GE 0 THEN WSet, thisWindowID
+  if needColors then begin
+    if n_elements(colors) eq 1l and (colors[0] eq 1) then $
+      colors = fix([(!d.n_colors < 256), 0])
+    if (n_elements(colors) eq 1l) then colors = [colors[0] < 256l, 0]
+  endif else colors = [(!d.n_colors < 256l), 0]
 
-   ; Set up color variables. If the user typed "/Colors"
-   ; then use *all* colors!
+  colors = fix([(colors[0] < 256), colors[1]])
+  wcolors = colors[0]
+  bottom = colors[1]
+  tvlct, r, g, b, /get
+  r = r[bottom : bottom + wcolors - 1]
+  g = g[bottom : bottom + wcolors - 1]
+  b = b[bottom : bottom + wcolors - 1]
+  if nomenu then needColors = 0
 
-IF needcolors THEN BEGIN
-   IF N_ELEMENTS(colors) EQ 1L AND (colors(0) EQ 1) THEN $
-      colors = FIX([(!D.N_Colors < 256), 0])
-   IF (N_ELEMENTS(colors) EQ 1L) THEN colors = [colors(0) < 256L, 0]
-ENDIF ELSE colors = [(!D.N_Colors < 256L), 0]
+  ; Check for positional parameters. One parameter required.
 
-colors = FIX([(colors(0) < 256), colors(1)])
-wcolors = colors(0)
-bottom = colors(1)
-TVLCT, r, g, b, /GET
-r = r(bottom:bottom+wcolors-1)
-g = g(bottom:bottom+wcolors-1)
-b = b(bottom:bottom+wcolors-1)
-IF nomenu THEN needcolors = 0
+  np = n_params()
 
-   ; Check for positional parameters. One parameter required.
+  if np eq 0 then message, 'Sorry, at least one argument is required.'
 
-np = N_PARAMS()
+  ; The first positional argument must be a string.
 
-IF np EQ 0 THEN MESSAGE, 'Sorry, at least one argument is required.'
+  if np gt 0 then begin
+    thisType = XWindow_WhatTypeVariable(proName)
+    if thisType ne 'STRING' then $
+      message, 'First argument must be STRING type. Returning...'
+  endif
 
-   ; The first positional argument must be a string.
+  if n_elements(wtitle) eq 0 then $
+    wtitle = 'Resizeable ' + strupcase(proName) + ' Window'
 
-IF np GT 0 THEN BEGIN
-   thisType = XWindow_WhatTypeVariable(proName)
-   IF thisType NE 'STRING' THEN $
-      MESSAGE, 'First argument must be STRING type. Returning...'
-ENDIF
+  ; Set up the Plot Object based on number of parameters and
+  ; the extraFlag variable.
 
-IF N_ELEMENTS(wtitle) EQ 0 THEN $
-   wtitle = 'Resizeable ' + STRUPCASE(proName) + ' Window'
+  if np eq 0 then $
+    message, 'Must call XWINDOW with at least one argument.'
 
-   ; Set up the Plot Object based on number of parameters and
-   ; the extraFlag variable.
+  if np gt 10 then $
+    message, 'Must have fewer than 10 parameters in call to XWINDOW.'
 
-IF np EQ 0 then $
-  MESSAGE, 'Must call XWINDOW with at least one argument.'
+  ; Compose the command
+  thisCommand = proName
+  for i = 2, np do $
+    thisCommand = thisCommand + ', plotObj.param' + strtrim(i - 1, 2)
 
-IF np GT 10 then $
-  MESSAGE, 'Must have fewer than 10 parameters in call to XWINDOW.'
+  ; If any extra keywords are present, put them on the command line
+  if extraFlag then $
+    thisCommand = thisCommand + ', _EXTRA=plotObj.extra' else $
+    extra = 0
 
-; Compose the command
-thisCommand = proName
-FOR i = 2, np DO $
-  thisCommand = thisCommand + ', plotObj.param' +STRTRIM(i-1, 2)
+  ; We need to make sure that all of the parameters are set, at least to 0,
+  ; so that they can be entered into the plotobj structure.
+  if not keyword_set(param1) then param1 = 0
+  if not keyword_set(param2) then param2 = 0
+  if not keyword_set(param3) then param3 = 0
+  if not keyword_set(param4) then param4 = 0
+  if not keyword_set(param5) then param5 = 0
+  if not keyword_set(param6) then param6 = 0
+  if not keyword_set(param7) then param7 = 0
+  if not keyword_set(param8) then param8 = 0
+  if not keyword_set(param9) then param9 = 0
+  if not keyword_set(param10) then param10 = 0
 
-; If any extra keywords are present, put them on the command line
-IF extraFlag THEN $
-  thisCommand = thisCommand + ', _EXTRA=plotObj.extra' ELSE $
-  extra = 0
+  plotObj = {thisCommand: thisCommand, extra: extra, $
+    param1: param1, param2: param2, param3: param3, param4: param4, $
+    param5: param5, param6: param6, param7: param7, param8: param8, $
+    param9: param9, param10: param10}
 
-; We need to make sure that all of the parameters are set, at least to 0,
-; so that they can be entered into the plotobj structure.
-IF NOT KEYWORD_SET(param1) then param1 = 0
-IF NOT KEYWORD_SET(param2) then param2 = 0
-IF NOT KEYWORD_SET(param3) then param3 = 0
-IF NOT KEYWORD_SET(param4) then param4 = 0
-IF NOT KEYWORD_SET(param5) then param5 = 0
-IF NOT KEYWORD_SET(param6) then param6 = 0
-IF NOT KEYWORD_SET(param7) then param7 = 0
-IF NOT KEYWORD_SET(param8) then param8 = 0
-IF NOT KEYWORD_SET(param9) then param9 = 0
-IF NOT KEYWORD_SET(param10) then param10 = 0
+  ; Store the Plot Object at a pointer location.
 
-plotObj = { thisCommand:thisCommand, extra:extra, $
-            param1:param1, param2:param2, param3:param3, param4:param4, $
-            param5:param5, param6:param6, param7:param7, param8:param8, $
-            param9:param9, param10:param10 }
+  plotObjPtr = HANDLE_CREATE()
 
-   ; Store the Plot Object at a pointer location.
+  ; Create the widgets for this program.
 
-plotObjPtr = HANDLE_CREATE()
+  device, get_screen_size = screenSize
+  if n_elements(wxpos) eq 0 then wxpos = (screenSize[0] - xsize) / 2.
+  if n_elements(wypos) eq 0 then wypos = (screenSize[1] - ysize) / 2.
+  if not nomenu then begin
+    tlb = widget_base(tlb_size_events = 1, $
+      xoffset = wxpos, yoffset = wypos, mbar = menubase)
 
-   ; Create the widgets for this program.
+    controls = widget_button(menubase, value = 'Controls', /menu)
 
-DEVICE, GET_SCREEN_SIZE=screenSize
-IF N_ELEMENTS(wxpos) EQ 0 THEN wxpos = (screenSize(0) - xsize) / 2.
-IF N_ELEMENTS(wypos) EQ 0 THEN wypos = (screenSize(1) - ysize) / 2.
-IF NOT nomenu THEN BEGIN
+    ; Need a COLORS button?
 
-   tlb = WIDGET_BASE(TLB_SIZE_EVENTS=1, $
-      XOFFSET=wxpos, YOFFSET=wypos, MBar=menubase)
+    if needColors then begin
+      colorsID = widget_button(controls, value = 'Change Colors...', $
+        event_pro = 'XWINDOW_COLORS', uvalue = colors)
+    endif
 
-   controls = Widget_Button(menubase, Value='Controls', /Menu)
+    ; Need color protection buttons?
 
-      ; Need a COLORS button?
+    if cpmenu then begin
+      cprotect = widget_button(controls, value = 'Color Protection', $
+        /menu, event_pro = 'XWindow_Color_Protection')
+      cprotectON = widget_button(cprotect, value = 'ON', uvalue = 'ON')
+      cprotectOFF = widget_button(cprotect, value = 'OFF', uvalue = 'OFF')
+    endif else begin
+      cprotectON = -1l
+      cprotectOFF = -1l
+    endelse
 
-   IF needColors THEN BEGIN
-      colorsID = WIDGET_BUTTON(controls, Value='Change Colors...', $
-         Event_Pro='XWINDOW_COLORS', UValue=colors)
-   ENDIF
+    ; Need FILE OUTPUT button?
 
-         ; Need color protection buttons?
+    if needOutput then begin
+      outputButton = widget_button(menubase, value = 'File Output', $
+        /menu, event_pro = 'XWindow_Create_Files')
+      psID = widget_button(outputButton, value = 'Create PostScript File')
+      gifID = widget_button(outputButton, value = 'Create GIF File')
+      tiffID = widget_button(outputButton, value = 'Create TIFF File')
+      jpegID = widget_button(outputButton, value = 'Create JPEG File')
+      configure = widget_button(outputButton, value = 'Configure Output File', $
+        /menu, /separator, event_pro = 'XWindow_Configure_Files')
+      ps_config = widget_button(configure, value = 'Configure PostScript File...')
+      gif_config = widget_button(configure, value = 'Configure GIF File...')
+      tiff_config = widget_button(configure, value = 'Configure TIFF File...')
+      jpeg_config = widget_button(configure, value = 'Configure JPEG File...')
+    endif else begin
+      psID = -1l
+      gifID = -1l
+      tiffID = -1l
+      jpegID = -1l
+    endelse
+    quit = widget_button(controls, value = 'Quit', event_pro = 'XWindow_Quit')
+  endif else tlb = widget_base(tlb_size_events = 1, $
+    xoffset = wxpos, yoffset = wypos)
 
-  IF cpmenu THEN BEGIN
-      cprotect = Widget_Button(controls, Value='Color Protection', $
-         /Menu, Event_Pro='XWindow_Color_Protection')
-      cprotectON = Widget_Button(cprotect, Value='ON', UVALUE='ON')
-      cprotectOFF = Widget_Button(cprotect, Value='OFF', UVALUE='OFF')
-   ENDIF ELSE BEGIN
-      cprotectON = -1L
-      cprotectOFF = -1L
-   ENDELSE
+  drawid = widget_draw(tlb, xsize = xsize, ysize = ysize, $
+    event_pro = 'XWindow_Draw_Event', tracking_events = protect)
 
-      ; Need FILE OUTPUT button?
+  widget_control, tlb, /realize
+  widget_control, drawid, get_value = wid
+  wset, wid
 
-   IF needOutput THEN BEGIN
-      outputButton = WIDGET_BUTTON(menubase, Value='File Output', $
-         /Menu, Event_Pro='XWindow_Create_Files')
-      psID = WIDGET_BUTTON(outputButton, Value='Create PostScript File')
-      gifID = WIDGET_BUTTON(outputButton, Value='Create GIF File')
-      tiffID = WIDGET_BUTTON(outputButton, Value='Create TIFF File')
-      jpegID = WIDGET_BUTTON(outputButton, Value='Create JPEG File')
-      configure = WIDGET_BUTTON(outputButton, Value='Configure Output File', $
-         /Menu, /Separator, Event_Pro='XWindow_Configure_Files')
-      ps_config = WIDGET_BUTTON(configure, Value='Configure PostScript File...')
-      gif_config = WIDGET_BUTTON(configure, Value='Configure GIF File...')
-      tiff_config = WIDGET_BUTTON(configure, Value='Configure TIFF File...')
-      jpeg_config = WIDGET_BUTTON(configure, Value='Configure JPEG File...')
-   ENDIF ELSE BEGIN
-      psID = -1L
-      gifID = -1L
-      tiffID = -1L
-      jpegID = -1L
-   ENDELSE
-   quit = Widget_Button(controls, Value='Quit', Event_Pro='XWindow_Quit')
-ENDIF ELSE tlb = WIDGET_BASE(TLB_SIZE_EVENTS=1, $
-      XOFFSET=wxpos, YOFFSET=wypos)
+  ; Give each window a unique title.
 
-drawID = WIDGET_DRAW(tlb, XSIZE=xsize, YSIZE=ysize, $
-   Event_Pro='XWindow_Draw_Event', Tracking_Events=protect)
+  wtitle = wtitle + ' (' + strtrim(wid, 2) + ')'
+  widget_control, tlb, tlb_set_title = wtitle
 
-WIDGET_CONTROL, tlb, /REALIZE
-WIDGET_CONTROL, drawID, GET_VALUE=wid
-WSET, wid
+  ; Set color protection button sensitivity.
 
-   ; Give each window a unique title.
+  if cpmenu then begin
+    if protect then begin
+      widget_control, cprotectON, sensitive = 0
+      widget_control, cprotectOFF, sensitive = 1
+    endif else begin
+      widget_control, cprotectON, sensitive = 1
+      widget_control, cprotectOFF, sensitive = 0
+    endelse
+  endif
 
-wtitle = wtitle + ' (' + STRTRIM(wid,2) + ')'
-Widget_Control, tlb, TLB_SET_TITLE=wtitle
+  ; If something goes wrong executing the command, trap it.
 
-   ; Set color protection button sensitivity.
+  catch, error
+  if error ne 0 then begin
+    ok = WIDGET_MESSAGE(['There is a problem executing the command', $
+      'string in XWINDOW. Please check keyword', $
+      'spelling and command syntax. Returning...'])
+    HANDLE_FREE, plotObjPtr
+    widget_control, tlb, /destroy
+    RETURN
+  endif
 
-IF cpmenu THEN BEGIN
-   IF protect THEN BEGIN
-      WIDGET_CONTROL, cprotectON, Sensitive=0
-      WIDGET_CONTROL, cprotectOFF, Sensitive=1
-   ENDIF ELSE BEGIN
-      WIDGET_CONTROL, cprotectON, Sensitive=1
-      WIDGET_CONTROL, cprotectOFF, Sensitive=0
-   ENDELSE
-ENDIF
+  ok = execute(plotObj.thisCommand)
+  if not ok then begin
+    ok = WIDGET_MESSAGE(['There is a problem executing the command', $
+      'string in XWINDOW. Please check keyword', $
+      'spelling and command syntax. Returning...'])
+    HANDLE_FREE, plotObjPtr
+    widget_control, tlb, /destroy
+    RETURN
+  endif
 
-   ; If something goes wrong executing the command, trap it.
+  catch, /cancel
 
-CATCH, error
-   IF error NE 0 THEN BEGIN
-      ok = WIDGET_MESSAGE(["There is a problem executing the command", $
-                           "string in XWINDOW. Please check keyword", $
-                           "spelling and command syntax. Returning..."])
-      HANDLE_FREE, plotObjPtr
-      WIDGET_CONTROL, tlb, /DESTROY
-      RETURN
-   ENDIF
+  ; Store the Plot Object in its pointer.
 
-   ok = EXECUTE(plotObj.thisCommand)
-   IF NOT ok THEN BEGIN
-      ok = WIDGET_MESSAGE(["There is a problem executing the command", $
-                           "string in XWINDOW. Please check keyword", $
-                           "spelling and command syntax. Returning..."])
-      HANDLE_FREE, plotObjPtr
-      WIDGET_CONTROL, tlb, /DESTROY
-      RETURN
-   ENDIF
+  HANDLE_VALUE, plotObjPtr, plotObj, /set, /no_copy
 
-CATCH, /CANCEL
+  ; Create an info structure.
 
-   ; Store the Plot Object in its pointer.
+  info = {top: tlb, $ ; Top level widget
+    xsize: xsize, $ ; X size of window.
+    ysize: ysize, $ ; Y size of window.
+    wid: wid, $ ; Window index number.
+    drawId: drawid, $ ; Draw widget identifier.
+    cprotectOn: cprotectON, $ ; Color protection ON button.
+    cprotectOff: cprotectOFF, $ ; Color protection OFF button.
+    wtitle: wtitle, $ ; Window title.
+    r: r, $ ; Red colors in window.
+    g: g, $ ; Green colors in window.
+    b: b, $ ; Blue colors in window.
+    wcolors: wcolors, $ ; Number of window colors.
+    gifId: gifID, $ ; ID of Create GIF file button.
+    tiffId: tiffID, $ ; ID of Create TIFF file button.
+    jpegId: jpegID, $ ; ID of Create JPEG file button.
+    psId: psID, $ ; ID of Create PS file button.
+    bottom: bottom, $ ; Starting color index.
+    protect: protect, $ ; Protect colors flag.
+    nomenu: nomenu, $ ; No menu flag.
+    nochange: nochange, $ ; No change flag.
+    erase: keyword_set(erase), $ ; Need erasure flag.
+    ncolors: (!d.n_colors < 256), $ ; Size of color table.
+    plotObjPtr: plotObjPtr, $ ; Pointer to plot object.
+    output: needOutput} ; File Output menu flag.
 
-HANDLE_VALUE, plotObjPtr, plotObj, /SET, /NO_COPY
+  ; File Output configuration structures, if needed.
 
-   ; Create an info structure.
+  if keyword_set(output) then begin
+    cd, current = thisDir
+    ps = ps_form(/init, filename = filepath(root_dir = thisDir, 'xwindow.ps'))
+    pslocal = ps_form(/init, filename = filepath(root_dir = thisDir, 'xwindow.ps'), $
+      xsize = 10., xoff = 0.5, ysize = 7.5, yoff = 0.5, color = 1, $
+      landscape = 1)
+    gif = {Xwindow_Gif, xsize: 400, ysize: 400, color: 1, $
+      filename: filepath(root_dir = thisDir, 'xwindow.gif'), $
+      order: 0, quality: -1}
+    jpeg = {Xwindow_Jpeg, xsize: 400, ysize: 400, color: 1, $
+      filename: filepath(root_dir = thisDir, 'xwindow.jpg'), $
+      order: 0, quality: 75}
+    tiff = {Xwindow_Tiff, xsize: 400, ysize: 400, color: 1, $
+      filename: filepath(root_dir = thisDir, 'xwindow.tif'), $
+      order: 1, quality: -1}
+    info = create_struct(info, 'PS', ps, 'PSLOCAL', pslocal, 'GIF', gif, $
+      'JPEG', jpeg, 'TIFF', tiff)
+  endif
 
-info = { top:tlb, $                         ; Top level widget
-         xsize:xsize, $                     ; X size of window.
-         ysize:ysize, $                     ; Y size of window.
-         wid:wid, $                         ; Window index number.
-         drawID:drawID, $                   ; Draw widget identifier.
-         cprotectON:cprotectON, $           ; Color protection ON button.
-         cprotectOFF:cprotectOFF, $         ; Color protection OFF button.
-         wtitle:wtitle, $                   ; Window title.
-         r:r, $                             ; Red colors in window.
-         g:g, $                             ; Green colors in window.
-         b:b, $                             ; Blue colors in window.
-         wcolors:wcolors, $                 ; Number of window colors.
-         gifID:gifID, $                     ; ID of Create GIF file button.
-         tiffID:tiffID, $                   ; ID of Create TIFF file button.
-         jpegID:jpegID, $                   ; ID of Create JPEG file button.
-         psID:psID, $                       ; ID of Create PS file button.
-         bottom:bottom, $                   ; Starting color index.
-         protect:protect, $                 ; Protect colors flag.
-         nomenu:nomenu, $                   ; No menu flag.
-         nochange:nochange, $               ; No change flag.
-         erase:Keyword_Set(erase), $        ; Need erasure flag.
-         ncolors:(!D.N_Colors < 256), $     ; Size of color table.
-         plotObjPtr:plotObjPtr, $           ; Pointer to plot object.
-         output:needOutput }                ; File Output menu flag.
+  ; Store the info structure in the TLB.
 
-   ; File Output configuration structures, if needed.
+  widget_control, tlb, set_uvalue = info, /no_copy
 
-IF Keyword_Set(output) THEN BEGIN
-CD, Current=thisDir
-ps = ps_form(/init, filename=FilePath(Root_Dir=thisDir,'xwindow.ps'))
-pslocal = ps_form(/init, filename=FilePath(Root_Dir=thisDir,'xwindow.ps'), $
-                  xsize=10., xoff=0.5, ysize=7.5, yoff=0.5, color=1, $
-                  landscape=1)
-gif =  {XWINDOW_GIF,XSIZE:400, YSIZE:400, COLOR:1, $
-       FILENAME:FilePath(Root_Dir=thisDir,'xwindow.gif'), $
-       ORDER:0, QUALITY:-1}
-jpeg = {XWINDOW_JPEG,XSIZE:400, YSIZE:400, COLOR:1, $
-       FILENAME:FilePath(Root_Dir=thisDir,'xwindow.jpg'), $
-       ORDER:0, QUALITY:75}
-tiff = {XWINDOW_TIFF,XSIZE:400, YSIZE:400, COLOR:1, $
-       FILENAME:FilePath(Root_Dir=thisDir,'xwindow.tif'), $
-       ORDER:1, QUALITY:-1}
-info = CREATE_STRUCT(info, 'PS', ps, 'PSLOCAL', pslocal, 'GIF', gif, $
-                     'JPEG', jpeg, 'TIFF', tiff)
-ENDIF
+  ; Register the program as on-blocking in 5.0.
 
-   ; Store the info structure in the TLB.
-
-WIDGET_CONTROL, tlb, SET_UVALUE=info, /NO_COPY
-
-   ; Register the program as on-blocking in 5.0.
-
-thisRelease = StrMid(!Version.Release, 0, 1)
-IF thisRelease EQ '5' THEN $
-   XManager, 'xwindow', tlb, EVENT_HANDLER='XWINDOW_RESIZE_EVENTS', $
-      CLEANUP='XWINDOW_CLEANUP', GROUP_LEADER=group, $
-      JUST_REG=justRegister, /No_Block ELSE $
-   XManager, 'xwindow', tlb, EVENT_HANDLER='XWINDOW_RESIZE_EVENTS', $
-      CLEANUP='XWINDOW_CLEANUP', GROUP_LEADER=group, JUST_REG=justRegister
-END
+  thisRelease = strmid(!version.release, 0, 1)
+  if thisRelease eq '5' then $
+    xmanager, 'xwindow', tlb, event_handler = 'XWINDOW_RESIZE_EVENTS', $
+    cleanup = 'XWINDOW_CLEANUP', group_leader = group, $
+    just_reg = justRegister, /no_block else $
+    xmanager, 'xwindow', tlb, event_handler = 'XWINDOW_RESIZE_EVENTS', $
+    cleanup = 'XWINDOW_CLEANUP', group_leader = group, just_reg = justRegister
+end

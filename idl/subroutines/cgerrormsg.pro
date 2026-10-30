@@ -1,43 +1,43 @@
 ; docformat = 'rst'
 ;
 ; NAME:
-;   cgErrorMsg
+; cgErrorMsg
 ;
 ; PURPOSE:
-;   The purpose of this function is to have a device-independent error messaging function. 
-;   The error message is reported to the user by using DIALOG_MESSAGE if widgets are
-;    supported. Otherwise, it is just printed to standard out.
+; The purpose of this function is to have a device-independent error messaging function.
+; The error message is reported to the user by using DIALOG_MESSAGE if widgets are
+; supported. Otherwise, it is just printed to standard out.
 ;
-;******************************************************************************************;
-;                                                                                          ;
-;  Copyright (c) 2013, by Fanning Software Consulting, Inc. All rights reserved.           ;
-;                                                                                          ;
-;  Redistribution and use in source and binary forms, with or without                      ;
-;  modification, are permitted provided that the following conditions are met:             ;
-;                                                                                          ;
-;      * Redistributions of source code must retain the above copyright                    ;
-;        notice, this list of conditions and the following disclaimer.                     ;
-;      * Redistributions in binary form must reproduce the above copyright                 ;
-;        notice, this list of conditions and the following disclaimer in the               ;
-;        documentation and/or other materials provided with the distribution.              ;
-;      * Neither the name of Fanning Software Consulting, Inc. nor the names of its        ;
-;        contributors may be used to endorse or promote products derived from this         ;
-;        software without specific prior written permission.                               ;
-;                                                                                          ;
-;  THIS SOFTWARE IS PROVIDED BY FANNING SOFTWARE CONSULTING, INC. ''AS IS'' AND ANY        ;
-;  EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES    ;
-;  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT     ;
-;  SHALL FANNING SOFTWARE CONSULTING, INC. BE LIABLE FOR ANY DIRECT, INDIRECT,             ;
-;  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED    ;
-;  TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;         ;
-;  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND             ;
-;  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT              ;
-;  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS           ;
-;  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                            ;
-;******************************************************************************************;
+; ******************************************************************************************;
+; ;
+; Copyright (c) 2013, by Fanning Software Consulting, Inc. All rights reserved.           ;
+; ;
+; Redistribution and use in source and binary forms, with or without                      ;
+; modification, are permitted provided that the following conditions are met:             ;
+; ;
+; * Redistributions of source code must retain the above copyright                    ;
+; notice, this list of conditions and the following disclaimer.                     ;
+; * Redistributions in binary form must reproduce the above copyright                 ;
+; notice, this list of conditions and the following disclaimer in the               ;
+; documentation and/or other materials provided with the distribution.              ;
+; * Neither the name of Fanning Software Consulting, Inc. nor the names of its        ;
+; contributors may be used to endorse or promote products derived from this         ;
+; software without specific prior written permission.                               ;
+; ;
+; THIS SOFTWARE IS PROVIDED BY FANNING SOFTWARE CONSULTING, INC. ''AS IS'' AND ANY        ;
+; EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES    ;
+; OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT     ;
+; SHALL FANNING SOFTWARE CONSULTING, INC. BE LIABLE FOR ANY DIRECT, INDIRECT,             ;
+; INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED    ;
+; TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;         ;
+; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND             ;
+; ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT              ;
+; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS           ;
+; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                            ;
+; ******************************************************************************************;
 ;
 ;+
-; The purpose of this function is to have a device-independent error messaging function.  
+; The purpose of this function is to have a device-independent error messaging function.
 ; The error message is reported to the user by using DIALOG_MESSAGE if widgets are
 ; supported. Otherwise, the error message is just printed to standard out.
 ;
@@ -46,17 +46,17 @@
 ;
 ; :Params:
 ;    themessage: in, optional, type=string
-;       This is a string argument containing the error message you want reported. If undefined, 
+;       This is a string argument containing the error message you want reported. If undefined,
 ;       this variable is set to the string in the !Error_State.Msg system variable.
-;       
+;
 ; :Keywords:
 ;    error: in, optional, type=boolean, default=1
-;       Set this keyword to cause Dialog_Message to use the ERROR reporting dialog. 
-;       Note that a longstanding bug in IDL causes the ERROR dialog to be used whether 
+;       Set this keyword to cause Dialog_Message to use the ERROR reporting dialog.
+;       Note that a longstanding bug in IDL causes the ERROR dialog to be used whether
 ;       this keyword is set to 0 or 1!
 ;    informational: in, optional, type=boolean, default=0
-;       Set this keyword to cause Dialog_Message to use the INFORMATION dialog instead of the 
-;       WARNING dialog. Note that a bug in IDL causes the ERROR dialog to be used if this keyword 
+;       Set this keyword to cause Dialog_Message to use the INFORMATION dialog instead of the
+;       WARNING dialog. Note that a bug in IDL causes the ERROR dialog to be used if this keyword
 ;       is set to 0!
 ;    noname: in, optional, type=boolean, default=0
 ;       Normally, the name of the routine in which the error occurs is prepended to the error
@@ -64,16 +64,16 @@
 ;    quiet: in, optional, type=boolean, default=0
 ;       Set this keyword to suppress the DIALOG_MESSAGE pop-up dialog.
 ;    title: in, optional, type=string
-;       Set this keyword to the title of the DIALOG_MESSAGE window. By default the keyword is set to 
-;       'System Error' unless !ERROR_STATE.NAME equals "IDL_M_USER_ERR", in which case it is set to 
+;       Set this keyword to the title of the DIALOG_MESSAGE window. By default the keyword is set to
+;       'System Error' unless !ERROR_STATE.NAME equals "IDL_M_USER_ERR", in which case it is set to
 ;       "Trapped Error'.
 ;     traceback: in, optional, type=boolean, default=1
-;        Setting this keyword results in an error traceback being printed to standard output with the 
+;        Setting this keyword results in an error traceback being printed to standard output with the
 ;        PRINT command. Use TRACEBACK=0 to turn this functionality off.
-;        
+;
 ; :Examples:
-;   In general, the cgErrorMsg function is not called directly. Rather, it is used in a 
-;   CATCH error handler. Errors are thrown to cgErrorMsg with the MESSAGE command. A typical 
+;   In general, the cgErrorMsg function is not called directly. Rather, it is used in a
+;   CATCH error handler. Errors are thrown to cgErrorMsg with the MESSAGE command. A typical
 ;   CATCH error handler is shown below::
 ;
 ;       Catch, theError
@@ -83,7 +83,7 @@
 ;          RETURN
 ;       ENDIF
 ;
-;   Error messages will get into the cgErrorMsg function by throwing an error with the 
+;   Error messages will get into the cgErrorMsg function by throwing an error with the
 ;   MESSAGE command, like this::
 ;
 ;       IF test NE 1 THEN Message, 'The test failed.'
@@ -126,140 +126,131 @@
 ; :Copyright:
 ;     Copyright (c) 2013, Fanning Software Consulting, Inc.
 ;-
-FUNCTION cgErrorMsg, theMessage, Error=error, Informational=information, $
-   Traceback=traceback, NoName=noname, Title=title, Quiet=quiet, _Extra=extra
+function cgErrorMsg, theMessage, error = error, informational = information, $
+  traceback = traceback, noname = noname, title = title, quiet = quiet, _extra = extra
+  compile_opt idl2
 
-   On_Error, 2
-   
-   ; Check for presence and type of message.
-   
-   IF N_Elements(theMessage) EQ 0 THEN theMessage = !Error_State.Msg
-   s = Size(theMessage)
-   messageType = s[s[0]+1]
-   IF messageType NE 7 THEN BEGIN
-      Message, "The message parameter must be a string.", _Extra=extra
-   ENDIF
-   IF N_Elements(traceback) EQ 0 THEN traceback = 1
-   
-   ; Get the call stack and the calling routine's name.
-   Help, Calls=callStack
-   callingRoutine = (StrSplit(StrCompress(callStack[1])," ", /Extract))[0]
-   
-   ; Are widgets supported?
-   IF !D.Name EQ 'PS' OR !D.Name EQ 'Z' THEN BEGIN
-      widgetsSupported = 1
-   ENDIF ELSE BEGIN
-      widgetsSupported = ((!D.Flags AND 65536L) NE 0)
-   ENDELSE
+  on_error, 2
 
-   ; Is the QUIET keyword set? Then no dialogs.
-   IF Keyword_Set(quiet) THEN widgetsSupported = 0
-   
-   ; It is not enough to know if widgets are supported. In CRON jobs, widgets are
-   ; supported, but there is no X connection and pop-up dialogs are not allowed.
-   ; Here is a quick test to see if we can connect to a windowing system. If not,
-   ; then we are going to assume widgets are not supported.
-   Catch, theError
-   IF theError NE 0 THEN BEGIN
-      Catch, /CANCEL
-      widgetsSupported = 0
-      GOTO, testWidgetSupport
-   ENDIF
-   theWindow = !D.Window
-   IF (!D.Flags AND 256) NE 0 THEN Window, /FREE, XSIZE=5, YSIZE=5, /PIXMAP
-   Catch, /CANCEL
-   
-   testWidgetSupport: ; Come here if you choke on creating a window.
-   IF !D.Window NE theWindow THEN BEGIN
-      WDelete, !D.Window
-      IF theWindow GE 0 THEN WSet, theWindow
-   ENDIF
-   
-   IF widgetsSupported THEN BEGIN
-   
-      ; If this is an error produced with the MESSAGE command, it is a trapped
-      ; error and will have the name "IDL_M_USER_ERR".
-      IF !ERROR_STATE.NAME EQ "IDL_M_USER_ERR" THEN BEGIN
-   
-         IF N_Elements(title) EQ 0 THEN title = 'Trapped Error'
-   
-         ; If the message has the name of the calling routine in it,
-         ; it should be stripped out. Can you find a colon in the string?
-   
-         ; Is the calling routine an object method? If so, special processing
-         ; is required. Object methods will have two colons together.
-         doublecolon = StrPos(theMessage, "::")
-         IF doublecolon NE -1 THEN BEGIN
-   
-            prefix = StrMid(theMessage, 0, doublecolon+2)
-            submessage = StrMid(theMessage, doublecolon+2)
-            colon = StrPos(submessage, ":")
-            IF colon NE -1 THEN BEGIN
-   
-               ; Extract the text up to the colon. Is this the same as
-               ; the callingRoutine? If so, strip it.
-               IF StrMid(theMessage, 0, colon+StrLen(prefix)) EQ callingRoutine THEN $
-                  theMessage = StrMid(theMessage, colon+1+StrLen(prefix))
-            ENDIF
-         ENDIF ELSE BEGIN
-   
-            colon = StrPos(theMessage, ":")
-            IF colon NE -1 THEN BEGIN
-   
-               ; Extract the text up to the colon. Is this the same as
-               ; the callingRoutine? If so, strip it.
-               IF StrMid(theMessage, 0, colon) EQ callingRoutine THEN $
-                  theMessage = StrMid(theMessage, colon+1)
-            ENDIF
-   
-         ENDELSE
-   
-   
-         ; Add the calling routine's name, unless NONAME is set.
-         IF Keyword_Set(noname) THEN BEGIN
-            answer = Dialog_Message(theMessage, Title=title, _Extra=extra, $
-               Error=error, Information=information)
-         ENDIF ELSE BEGIN
-            answer = Dialog_Message(StrUpCase(callingRoutine) + ": " + $
-               theMessage, Title=title, _Extra=extra, $
-               Error=error, Information=information)
-         ENDELSE
-   
-      ENDIF ELSE BEGIN
-   
-         ; Otherwise, this is an IDL system error.
-         IF N_Elements(title) EQ 0 THEN title = 'System Error'
-   
-         IF StrUpCase(callingRoutine) EQ "$MAIN$" THEN $
-            answer = Dialog_Message(theMessage, _Extra=extra, Title=title, $
-               Error=error, Information=information) ELSE $
-         IF Keyword_Set(noname) THEN BEGIN
-            answer = Dialog_Message(theMessage, _Extra=extra, Title=title, $
-               Error=error, Information=information)
-         ENDIF ELSE BEGIN
-            answer = Dialog_Message(StrUpCase(callingRoutine) + "--> " + $
-               theMessage, _Extra=extra, Title=title, $
-               Error=error, Information=information)
-         ENDELSE
-      ENDELSE
-   ENDIF ELSE BEGIN
-         Help, /Last_Message, Output=traceback_msg ; Required because following MESSAGE call clears traceback info.
-         Message, theMessage, /Continue, /NoPrint, /NoName, /NoPrefix, _Extra=extra
-         IF Keyword_Set(noname) THEN $
-            Print, theMessage ELSE $
-            Print, '%' + callingRoutine + ': ' + theMessage 
-         answer = 'OK'
-   ENDELSE
-   
-   ; Provide traceback information if requested and this is NOT an informational message.
-   IF Keyword_Set(traceback) AND ~Keyword_Set(informational)THEN BEGIN
-      IF N_Elements(traceback_msg) NE 0 THEN traceback = traceback_msg ELSE Help, /Last_Message, Output=traceback
-      Print,''
-      Print, 'Traceback Report from ' + StrUpCase(callingRoutine) + ':'
-      Print, ''
-      FOR j=0,N_Elements(traceback)-1 DO Print, "     " + traceback[j]
-   ENDIF
-   
-   RETURN, answer
-END ; ----------------------------------------------------------------------------
+  ; Check for presence and type of message.
 
+  if n_elements(theMessage) eq 0 then theMessage = !error_state.msg
+  s = size(theMessage)
+  messageType = s[s[0] + 1]
+  if messageType ne 7 then begin
+    message, 'The message parameter must be a string.', _extra = extra
+  endif
+  if n_elements(traceback) eq 0 then traceback = 1
+
+  ; Get the call stack and the calling routine's name.
+  help, calls = callStack
+  callingRoutine = (strsplit(strcompress(callStack[1]), ' ', /extract))[0]
+
+  ; Are widgets supported?
+  if !d.name eq 'PS' or !d.name eq 'Z' then begin
+    widgetsSupported = 1
+  endif else begin
+    widgetsSupported = ((!d.flags and 65536l) ne 0)
+  endelse
+
+  ; Is the QUIET keyword set? Then no dialogs.
+  if keyword_set(quiet) then widgetsSupported = 0
+
+  ; It is not enough to know if widgets are supported. In CRON jobs, widgets are
+  ; supported, but there is no X connection and pop-up dialogs are not allowed.
+  ; Here is a quick test to see if we can connect to a windowing system. If not,
+  ; then we are going to assume widgets are not supported.
+  catch, theError
+  if theError ne 0 then begin
+    catch, /cancel
+    widgetsSupported = 0
+    goto, testwidgetsupport
+  endif
+  theWindow = !d.window
+  if (!d.flags and 256) ne 0 then Window, /free, xsize = 5, ysize = 5, /pixmap
+  catch, /cancel
+
+  testwidgetsupport: ; Come here if you choke on creating a window.
+  if !d.window ne theWindow then begin
+    wdelete, !d.window
+    if theWindow ge 0 then wset, theWindow
+  endif
+
+  if widgetsSupported then begin
+    ; If this is an error produced with the MESSAGE command, it is a trapped
+    ; error and will have the name "IDL_M_USER_ERR".
+    if !error_state.name eq 'IDL_M_USER_ERR' then begin
+      if n_elements(title) eq 0 then title = 'Trapped Error'
+
+      ; If the message has the name of the calling routine in it,
+      ; it should be stripped out. Can you find a colon in the string?
+
+      ; Is the calling routine an object method? If so, special processing
+      ; is required. Object methods will have two colons together.
+      doublecolon = strpos(theMessage, '::')
+      if doublecolon ne -1 then begin
+        prefix = strmid(theMessage, 0, doublecolon + 2)
+        submessage = strmid(theMessage, doublecolon + 2)
+        colon = strpos(submessage, ':')
+        if colon ne -1 then begin
+          ; Extract the text up to the colon. Is this the same as
+          ; the callingRoutine? If so, strip it.
+          if strmid(theMessage, 0, colon + strlen(prefix)) eq callingRoutine then $
+            theMessage = strmid(theMessage, colon + 1 + strlen(prefix))
+        endif
+      endif else begin
+        colon = strpos(theMessage, ':')
+        if colon ne -1 then begin
+          ; Extract the text up to the colon. Is this the same as
+          ; the callingRoutine? If so, strip it.
+          if strmid(theMessage, 0, colon) eq callingRoutine then $
+            theMessage = strmid(theMessage, colon + 1)
+        endif
+      endelse
+
+      ; Add the calling routine's name, unless NONAME is set.
+      if keyword_set(noname) then begin
+        answer = dialog_message(theMessage, title = title, _extra = extra, $
+          error = error, information = information)
+      endif else begin
+        answer = dialog_message(strupcase(callingRoutine) + ': ' + $
+          theMessage, title = title, _extra = extra, $
+          error = error, information = information)
+      endelse
+    endif else begin
+      ; Otherwise, this is an IDL system error.
+      if n_elements(title) eq 0 then title = 'System Error'
+
+      if strupcase(callingRoutine) eq '$MAIN$' then $
+        answer = dialog_message(theMessage, _extra = extra, title = title, $
+          error = error, information = information) else $
+        if keyword_set(noname) then begin
+          answer = dialog_message(theMessage, _extra = extra, title = title, $
+            error = error, information = information)
+        endif else begin
+          answer = dialog_message(strupcase(callingRoutine) + '--> ' + $
+            theMessage, _extra = extra, title = title, $
+            error = error, information = information)
+        endelse
+    endelse
+  endif else begin
+    help, /last_message, output = traceback_msg ; Required because following MESSAGE call clears traceback info.
+    message, theMessage, /continue, /noprint, /noname, /noprefix, _extra = extra
+    if keyword_set(noname) then $
+      print, theMessage else $
+      print, '%' + callingRoutine + ': ' + theMessage
+    answer = 'OK'
+  endelse
+
+  ; Provide traceback information if requested and this is NOT an informational message.
+  if keyword_set(traceback) and ~keyword_set(informational) then begin
+    if n_elements(traceback_msg) ne 0 then traceback = traceback_msg else help, /last_message, output = traceback
+    print, ''
+    print, 'Traceback Report from ' + strupcase(callingRoutine) + ':'
+    print, ''
+    for j = 0, n_elements(traceback) - 1 do print, '     ' + traceback[j]
+  endif
+
+  RETURN, answer
+end
+; ----------------------------------------------------------------------------

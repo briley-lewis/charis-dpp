@@ -12,7 +12,7 @@
 ; CALLING SEQUENCE:
 ;   OPLOTIMAGE, img
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   OPLOTIMAGE overlays an image on an already-existing set of plot
 ;   axes.  It should not matter what plot elements have already be
@@ -30,7 +30,7 @@
 ;         ARRAY(M,N) will be M pixels in the x-direction and N pixels
 ;         in the y-direction.  The image is resampled via
 ;         interpolation to fill the desired display region.
-; 
+;
 ; OPTIONAL INPUTS:
 ;   NONE
 ;
@@ -53,7 +53,7 @@
 ;   and x and y are in the range [-2,2] and [4,8], respectively.
 ;   The image is then plotted in the range [-10, 10] in both x and
 ;   y directions.
-;   
+;
 ;   x = findgen(20)/5. - 2.
 ;   y = findgen(20)/5. + 4.
 ;   zz = cos(x) # sin(y)
@@ -95,37 +95,37 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
 pro oplotimage, img, $
-                imgxrange=imgxrange, imgyrange=imgyrange, $
-                _EXTRA=extra
+  imgxrange = imgxrange, imgyrange = imgyrange, $
+  _extra = extra
+  compile_opt idl2
 
-  ;; Return to user upon encountering an error
+  ; ; Return to user upon encountering an error
   on_error, 2
 
-  ;; Usage message
-  if n_params() EQ 0 then begin
-      message, 'OPLOTIMAGE, image, imgxrange=, imgyrange=,...', /info
-      return
+  ; ; Usage message
+  if n_params() eq 0 then begin
+    message, 'OPLOTIMAGE, image, imgxrange=, imgyrange=,...', /info
+    return
   endif
 
   sysposition = fltarr(4)
-  sysposition([0,2]) = !x.window
-  sysposition([1,3]) = !y.window
-  sysxrange   = !x.range
-  if sysxrange(0) EQ 0. AND sysxrange(1) EQ 0. then sysxrange = !x.crange
-  sysyrange   = !y.range
-  if sysyrange(0) EQ 0. AND sysyrange(1) EQ 0. then sysyrange = !y.crange
-  if (sysxrange(0) EQ 0. AND sysxrange(1) EQ 0.) OR $
-    (sysyrange(0) EQ 0. AND sysyrange(1) EQ 0.) then begin
-      message, 'ERROR: you must first sent the X- and Y-RANGE'
+  sysposition[[0, 2]] = !x.window
+  sysposition[[1, 3]] = !y.window
+  sysxrange = !x.range
+  if sysxrange[0] eq 0. and sysxrange[1] eq 0. then sysxrange = !x.crange
+  sysyrange = !y.range
+  if sysyrange[0] eq 0. and sysyrange[1] eq 0. then sysyrange = !y.crange
+  if (sysxrange[0] eq 0. and sysxrange[1] eq 0.) or $
+    (sysyrange[0] eq 0. and sysyrange[1] eq 0.) then begin
+    message, 'ERROR: you must first sent the X- and Y-RANGE'
   endif
 
-  plotimage, img, xrange=sysxrange, yrange=sysyrange, imgxrange=imgxrange, $
-    imgyrange=imgyrange, /noerase, position=sysposition, $
-    /noaxes, _EXTRA=extra
+  plotimage, img, xrange = sysxrange, yrange = sysyrange, imgxrange = imgxrange, $
+    imgyrange = imgyrange, /noerase, position = sysposition, $
+    /noaxes, _extra = extra
 
   return
 end
-

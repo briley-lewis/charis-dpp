@@ -12,7 +12,7 @@
 ; CALLING SEQUENCE:
 ;   PRINTLOG, d1, d2, ..., FORMAT=, LOG=LOG, /ONLYLOG, UNIT=UNIT
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   The PRINTLOG procedure provides the ability to print an arbitrary
 ;   expression to the console or an open file UNIT, and also to
@@ -39,7 +39,7 @@
 ;            0       1
 ;          -17.0000      12.0000
 ;     Computation done.
-;     
+;
 ;
 ;   NOTE: Output to the console can be disabled and re-enabled using
 ;   the DEFAULT_PRINT keyword.  The DEFAULT_PRINT keyword affects the
@@ -118,83 +118,84 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
-pro printlog,  d1,  d2,  d3,  d4,  d5,  d6,  d7,  d8,  d9, d10, $
-               d11, d12, d13, d14, d15, d16, d17, d18, d19, d20, $
-               format=format, log=log, onlylog=logonly0, unit=unit, $
-               nloglines=nloglines, trim=trim, nocatch=nocatch, $
-               default_print=defpr
+; -
+pro printlog, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, $
+  d11, d12, d13, d14, d15, d16, d17, d18, d19, d20, $
+  format = format, log = log, onlylog = logonly0, unit = unit, $
+  nloglines = nloglines, trim = trim, nocatch = nocatch, $
+  default_print = defpr
+  compile_opt idl2
 
   common printlog_common, default_print
 
-  if n_elements(default_print) EQ 0 then default_print = 1
+  if n_elements(default_print) eq 0 then default_print = 1
 
   np = n_params()
 
-  if n_elements(defpr) GT 0 then begin
-      default_print = keyword_set(defpr)
-      if np EQ 0 then return
+  if n_elements(defpr) gt 0 then begin
+    default_print = keyword_set(defpr)
+    if np eq 0 then return
   endif
 
-;  if NOT keyword_set(nocatch) then on_error, 2
-  if np GT 20 then $
+  ; if NOT keyword_set(nocatch) then on_error, 2
+  if np gt 20 then $
     message, 'ERROR: number of parameters to PRINTLOG cannot exceed 20'
-  cmd = string(lindgen(np)+1, $
-               format='("str = string(",50("D",I0,:,","))')
-  if n_elements(format) GT 0 then cmd = cmd + ",format=format(0))" $
-  else cmd = cmd + ")"
+  cmd = string(lindgen(np) + 1, $
+    format = '("str = string(",50("D",I0,:,","))')
+  if n_elements(format) gt 0 then cmd = cmd + ',format=format(0))' $
+  else cmd = cmd + ')'
 
-  if n_elements(nloglines) LT 1 then begin
-      nloglines = n_elements(log)
+  if n_elements(nloglines) lt 1 then begin
+    nloglines = n_elements(log)
   endif else begin
-      nloglines = nloglines(0)
+    nloglines = nloglines[0]
   endelse
-  if nloglines GT n_elements(log) then $
+  if nloglines gt n_elements(log) then $
     nloglines = n_elements(log)
 
   str = ''
   result = execute(cmd)
-  if result NE 1 then return
-  if n_elements(unit) EQ 0 then unit = 0
+  if result ne 1 then return
+  if n_elements(unit) eq 0 then unit = 0
 
-  ;; Whether or not to print to the screen... governed by evil secret
-  ;; common block.
-  logonly = NOT default_print
-  if n_elements(logonly0) GT 0 then logonly = keyword_set(logonly0)
+  ; ; Whether or not to print to the screen... governed by evil secret
+  ; ; common block.
+  logonly = not default_print
+  if n_elements(logonly0) gt 0 then logonly = keyword_set(logonly0)
 
-  if NOT logonly then begin
-      if unit ne 0 then printf, unit, str, format='(A)' $
-      else              print, str, format='(A)'
+  if not logonly then begin
+    if unit ne 0 then printf, unit, str, format = '(A)' $
+    else print, str, format = '(A)'
   endif
 
   first = 0
-  if nloglines EQ 0 then first = 1
+  if nloglines eq 0 then first = 1
   sz = size(log)
-  if nloglines EQ 1 then if sz(sz(0)+1) NE 7 then $
-    if long(log(0)) EQ -1 then first = 1
-  if nloglines EQ 1 then if sz(sz(0)+1) EQ 7 then $
-    if log(0) EQ '' then first = 1
+  if nloglines eq 1 then if sz[sz[0] + 1] ne 7 then $
+    if long(log[0]) eq -1 then first = 1
+  if nloglines eq 1 then if sz[sz[0] + 1] eq 7 then $
+    if log[0] eq '' then first = 1
 
   if first then begin
-      log = [str]
-      nloglines = n_elements(log)
+    log = [str]
+    nloglines = n_elements(log)
   endif else begin
-      ;; Add elements to an existing list
-      nneeded = nloglines + n_elements(str)
-      if nneeded GT n_elements(log) then begin
-          ;; Number of entries to add, plus some sanity checking
-          nadd = n_elements(log) > 64L < 2048L
-          nadd = nadd > (nneeded-n_elements(log))
-          if arg_present(nloglines) EQ 0 then $
-            nadd = nneeded - n_elements(log)
-          olog = temporary(log)
-          log = strarr(n_elements(olog)+nadd)
-          log(0) = temporary(olog)
-      endif
+    ; ; Add elements to an existing list
+    nneeded = nloglines + n_elements(str)
+    if nneeded gt n_elements(log) then begin
+      ; ; Number of entries to add, plus some sanity checking
+      nadd = n_elements(log) > 64l < 2048l
+      nadd = nadd > (nneeded - n_elements(log))
+      if arg_present(nloglines) eq 0 then $
+        nadd = nneeded - n_elements(log)
+      olog = temporary(log)
+      log = strarr(n_elements(olog) + nadd)
+      log[0] = temporary(olog)
+    endif
 
-      ;; Insert the items into the array
-      log(nloglines) = str
-      nloglines = nloglines + n_elements(str)
+    ; ; Insert the items into the array
+    log[nloglines] = str
+    nloglines = nloglines + n_elements(str)
   endelse
 
   return

@@ -12,7 +12,7 @@
 ; CALLING SEQUENCE:
 ;   Various, see USAGE VARIATIONS.
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   ROUTINE_NAMES obtains information about routines, and their
 ;   variables and keywords.  Using these functions, a subroutine can
@@ -84,7 +84,7 @@
 ;            calling procedure.  Variables that are unnamed at the
 ;            specified call level will return the empty string.
 ;            [IDL v5.0 and above only]
-;            
+;
 ;
 ;   VARS   = ROUTINE_NAMES(VARIABLES=LEVEL)
 ;
@@ -134,7 +134,7 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
+compile_opt idl2
 forward_function routine_names
 end
-

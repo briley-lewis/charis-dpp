@@ -12,7 +12,7 @@
 ; CALLING SEQUENCE:
 ;   STRINGS = HELPFORM(NAME, VALUE, [/SHORTFORM,] [/SINGLE,] [WIDTH=width])
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   The HELPFORM function converts an IDL data value into a
 ;   representation very similar to the format produced by the built-in
@@ -132,152 +132,153 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 forward_function helpform
-function helpform, name0, value, size=sz, single=single, shortform=short, $
-                   width=width0, structure_name=stname, tagform=tagform, $
-                   full_struct=struct, recursive_struct=recstruct
+function helpform, name0, value, size = sz, single = single, shortform = short, $
+  width = width0, structure_name = stname, tagform = tagform, $
+  full_struct = struct, recursive_struct = recstruct
+  compile_opt idl2
 
-  ;; Names of all the known IDL types, as of IDL 5.2
+  ; ; Names of all the known IDL types, as of IDL 5.2
   typenames = ['UNDEFINED', 'BYTE', 'INT', 'LONG', 'FLOAT', 'DOUBLE', $
-               'COMPLEX', 'STRING', 'STRUCT', 'DCOMPLEX', 'POINTER', $
-               'OBJREF', 'UINT', 'ULONG', $
-               'LONG64', 'ULONG64', 'UNKNOWN']
-  blanks = string(replicate(32b,80))
-  if n_elements(sz) LT 3 then sz = size(value)
-  tp = sz(sz(0)+1) < 16
+    'COMPLEX', 'STRING', 'STRUCT', 'DCOMPLEX', 'POINTER', $
+    'OBJREF', 'UINT', 'ULONG', $
+    'LONG64', 'ULONG64', 'UNKNOWN']
+  blanks = string(replicate(32b, 80))
+  if n_elements(sz) lt 3 then sz = size(value)
+  tp = sz[sz[0] + 1] < 16
 
-  if n_elements(name0) EQ 0 then name0 = ''
-  name = strtrim(name0(0),2)
+  if n_elements(name0) eq 0 then name0 = ''
+  name = strtrim(name0[0], 2)
 
-  nlen = 15  ;; Length of name
-  tlen = 9   ;; Length of type name
+  nlen = 15 ; ; Length of name
+  tlen = 9 ; ; Length of type name
 
-  if n_elements(width0) EQ 0 then width0 = 80
-  width = floor(width0(0))
+  if n_elements(width0) eq 0 then width0 = 80
+  width = floor(width0[0])
 
-  ;; ================================ STRUCTURES
-  if tp EQ 8 AND keyword_set(struct) then begin
-      sz1 = size(value)
-      if sz1(sz1(0)+1) NE 8 then goto, NOT_STRUCT
-      nt = n_tags(value)
-      len = n_tags(value, /length)
-      tn = tag_names(value)
-      sn = tag_names(value, /structure_name)
-      
-      if sn EQ '' then sn = '<Anonymous>'
+  ; ; ================================ STRUCTURES
+  if tp eq 8 and keyword_set(struct) then begin
+    sz1 = size(value)
+    if sz1[sz1[0] + 1] ne 8 then goto, not_struct
+    nt = n_tags(value)
+    len = n_tags(value, /length)
+    tn = tag_names(value)
+    sn = tag_names(value, /structure_name)
 
-      a = string(sn, nt, len, $
-             format='("** Structure ",A0,", ",I0," tags, length=",I0,":")')
+    if sn eq '' then sn = '<Anonymous>'
 
-      for i = 0, nt-1 do begin
-         stri = helpform(tn(i), value(0).(i), /tagform)
-         szi = size(value(0).(i))
-         tpi = szi(szi(0)+1)
+    a = string(sn, nt, len, $
+      format = '("** Structure ",A0,", ",I0," tags, length=",I0,":")')
 
-         a = [a, '   '+stri]
-         ;; Recursive structures
-         if keyword_set(recstruct) AND tpi EQ 8 then begin
-            stri = helpform(tn(i), value(0).(i), $
-                            /full_struct, /recursive_struct)
-            a = [a, '     '+stri]
-         endif
-      endfor
+    for i = 0, nt - 1 do begin
+      stri = helpform(tn[i], value[0].(i), /tagform)
+      szi = size(value[0].(i))
+      tpi = szi[szi[0] + 1]
 
-      return, a
-  endif
-  NOT_STRUCT:
-
-  if NOT keyword_set(short) then begin
-      ;; Pad the name out, or else put the name on a line by itself
-      if strlen(name) GT nlen then begin
-          if keyword_set(single) then begin
-              a1 = name+' '
-          endif else begin
-              a0 = name
-              a1 = strmid(blanks,0,nlen)+' '
-          endelse
-      endif else begin
-          a1 = strmid(name+blanks,0,nlen)+' '
-      endelse
-      
-      a1 = a1 + strmid(typenames(tp)+blanks,0,tlen)
-      if NOT keyword_set(tagform) then $
-        a1 = a1 +' = '        
-  endif else begin
-      a1 = strmid(typenames(tp)+blanks,0,tlen)
-  endelse
-
-  ndims = sz(0)
-  if ndims GT 0 then begin
-      ;; It is an array, compose the dimensions
-      dims = sz(1:ndims)  
-      v = 'Array['
-      for i = 0L, ndims-1 do begin
-          v = v + strtrim(dims(i),2)
-          if i LT ndims-1 then v = v + ', '
-      endfor
-      v = v + ']'
-
-      ;; If it is a structure, add the structure name (structures are
-      ;; never scalars)
-      if NOT keyword_set(short) AND tp EQ 8 then begin
-          ;; Protect against empty value
-          if n_elements(stname) EQ 0 then begin
-              if n_elements(value) GT 0 then v0 = value(0) else v0 = {dummy:0}
-              sn = tag_names(v0, /structure_name)
-              sn = sn(0)
-          endif else begin
-              sn = strtrim(stname(0),2)
-          endelse
-          if sn EQ '' then sn = '<Anonymous>'
-          v = '-> '+sn+' ' + v 
+      a = [a, '   ' + stri]
+      ; ; Recursive structures
+      if keyword_set(recstruct) and tpi eq 8 then begin
+        stri = helpform(tn[i], value[0].(i), $
+          /full_struct, /recursive_struct)
+        a = [a, '     ' + stri]
       endif
-  endif else begin
-      ;; It is a scalar
+    endfor
 
-      ;; Protect against empty or vector value
-      if n_elements(value) GT 0 then begin
-          v0 = value(0) 
+    return, a
+  endif
+  not_struct:
+
+  if not keyword_set(short) then begin
+    ; ; Pad the name out, or else put the name on a line by itself
+    if strlen(name) gt nlen then begin
+      if keyword_set(single) then begin
+        a1 = name + ' '
       endif else begin
-          if tp NE 10 AND tp NE 11 then tp = 0
+        a0 = name
+        a1 = strmid(blanks, 0, nlen) + ' '
       endelse
+    endif else begin
+      a1 = strmid(name + blanks, 0, nlen) + ' '
+    endelse
 
-      case tp < 16 of 
-          0:  v = '<Undefined>'
-          1:  v = string(v0, format='(I4)')
-          7:  begin
-              w = (width - 35) > 5
-              if strlen(v0) GT w then $
-                v = "'"+strmid(v0,0,w)+"'..." $
-              else $
-                v = "'"+v0+"'"
-          end
-          10: begin
-              sz = size(v0)
-              if sz(sz(0)+1) EQ 10 then v = string(v0(0), /print) $
-              else                      v = '<PtrHeapVar>'
-          end
-          11: begin
-              if n_elements(stname) EQ 0 then begin
-                  forward_function obj_class
-                  sz = size(v0)
-                  if sz(sz(0)+1) EQ 11 then sn = '('+obj_class(v0)+')' $
-                  else                      sn = ''
-              endif else begin
-                  sn = '('+strupcase(strtrim(stname(0),2))+')'
-              endelse
-              v = '<ObjHeapVar'+sn+'>'
-          end
-          16: v = ''
-          else: v = string(v0)
-      endcase
+    a1 = a1 + strmid(typenames[tp] + blanks, 0, tlen)
+    if not keyword_set(tagform) then $
+      a1 = a1 + ' = '
+  endif else begin
+    a1 = strmid(typenames[tp] + blanks, 0, tlen)
   endelse
 
-  if keyword_set(short) then return, a1 + '('+v+')'
+  ndims = sz[0]
+  if ndims gt 0 then begin
+    ; ; It is an array, compose the dimensions
+    dims = sz[1 : ndims]
+    v = 'Array['
+    for i = 0l, ndims - 1 do begin
+      v = v + strtrim(dims[i], 2)
+      if i lt ndims - 1 then v = v + ', '
+    endfor
+    v = v + ']'
+
+    ; ; If it is a structure, add the structure name (structures are
+    ; ; never scalars)
+    if not keyword_set(short) and tp eq 8 then begin
+      ; ; Protect against empty value
+      if n_elements(stname) eq 0 then begin
+        if n_elements(value) gt 0 then v0 = value[0] else v0 = {dummy: 0}
+        sn = tag_names(v0, /structure_name)
+        sn = sn[0]
+      endif else begin
+        sn = strtrim(stname[0], 2)
+      endelse
+      if sn eq '' then sn = '<Anonymous>'
+      v = '-> ' + sn + ' ' + v
+    endif
+  endif else begin
+    ; ; It is a scalar
+
+    ; ; Protect against empty or vector value
+    if n_elements(value) gt 0 then begin
+      v0 = value[0]
+    endif else begin
+      if tp ne 10 and tp ne 11 then tp = 0
+    endelse
+
+    case tp < 16 of
+      0: v = '<Undefined>'
+      1: v = string(v0, format = '(I4)')
+      7: begin
+        w = (width - 35) > 5
+        if strlen(v0) gt w then $
+          v = '''' + strmid(v0, 0, w) + '''...' $
+        else $
+          v = '''' + v0 + ''''
+      end
+      10: begin
+        sz = size(v0)
+        if sz[sz[0] + 1] eq 10 then v = string(v0[0], /print) $
+        else v = '<PtrHeapVar>'
+      end
+      11: begin
+        if n_elements(stname) eq 0 then begin
+          forward_function obj_class
+          sz = size(v0)
+          if sz[sz[0] + 1] eq 11 then sn = '(' + obj_class(v0) + ')' $
+          else sn = ''
+        endif else begin
+          sn = '(' + strupcase(strtrim(stname[0], 2)) + ')'
+        endelse
+        v = '<ObjHeapVar' + sn + '>'
+      end
+      16: v = ''
+      else: v = string(v0)
+    endcase
+  endelse
+
+  if keyword_set(short) then return, a1 + '(' + v + ')'
 
   a1 = a1 + v
-  if n_elements(a0) GT 0 then a1=[a0, a1]
+  if n_elements(a0) gt 0 then a1 = [a0, a1]
 
   return, a1
 end

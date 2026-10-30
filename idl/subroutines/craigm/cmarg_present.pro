@@ -12,7 +12,7 @@
 ; CALLING SEQUENCE:
 ;   PRESENT = ARG_PRESENT(ARG)
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   ARG_PRESENT tests whether an argument to a function or procedure
 ;   can be used as an output parameter.  The behavior of this function
@@ -57,11 +57,11 @@
 ;
 ;      IDL> testarg
 ;             0
-;      IDL> testarg, x      
+;      IDL> testarg, x
 ;             1
 ;      IDL> testarg, findgen(10)
 ;             0
-;   
+;
 ;   In the first case, no argument is passed, so ARG1 cannot be a
 ;   return variable.  In the second case, X is undefined, but it is
 ;   still a legal named variable capable of receiving an output
@@ -82,26 +82,27 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 forward_function arg_present, cmarg_present
-function cmarg_present, arg, nocatch=nocatch
+function cmarg_present, arg, nocatch = nocatch
+  compile_opt idl2
 
   catcherr = 0
-  if NOT keyword_set(nocatch) then catch, catcherr
-  if catcherr NE 0 then begin
-      catch, /cancel
-      return, 0
+  if not keyword_set(nocatch) then catch, catcherr
+  if catcherr ne 0 then begin
+    catch, /cancel
+    return, 0
   endif
 
   forward_function routine_names
   lev = routine_names(/level)
-  if lev LT 3 then return, 0
-  
-  a1 = routine_names(arg, arg_name=lev-2)
-  if n_elements(a1) EQ 0 then return, 0
+  if lev lt 3 then return, 0
+
+  a1 = routine_names(arg, arg_name = lev - 2)
+  if n_elements(a1) eq 0 then return, 0
   sz = size(a1)
-  if sz(sz(0)+1) NE 7 then return, 0
-  if strtrim(a1(0),2) EQ '' then return, 0
+  if sz[sz[0] + 1] ne 7 then return, 0
+  if strtrim(a1[0], 2) eq '' then return, 0
 
   return, 1
 end

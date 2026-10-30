@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -91,42 +91,44 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 function qtcompose, axis, phi
+  compile_opt idl2
 
-  if n_params() EQ 0 then begin
-      info = 1
-      USAGE:
-      message, 'USAGE:', /info
-      message, 'Q = QTCOMPOSE(AXIS, PHI)', info=1
-      return, 0
+  if n_params() eq 0 then begin
+    info = 1
+    usage:
+    message, 'USAGE:', /info
+    message, 'Q = QTCOMPOSE(AXIS, PHI)', info = 1
+    return, 0
   endif
 
   nph = n_elements(phi)
-  nv  = n_elements(axis)/3
-  if nph LT 1 OR nv LT 1 then goto, USAGE
+  nv = n_elements(axis) / 3
+  if nph lt 1 or nv lt 1 then goto, usage
 
-  nq  = nv > nph
-  q = make_array(value=axis(0)*phi(0)*0., 4,nq)
+  nq = nv > nph
+  q = make_array(value = axis[0] * phi[0] * 0., 4, nq)
 
-  sph = sin(phi/2) & cph = cos(phi/2)
-  if nph EQ 1 AND nv EQ 1 then return, [ axis(0:2) * sph(0), cph(0) ]
-  if nph GT 1 AND nv EQ 1 then begin
-      ;; Single axis, multiple rotation angles
-      q(0,*) = axis(0)*sph
-      q(1,*) = axis(1)*sph
-      q(2,*) = axis(2)*sph
-      q(3,*) = cph
-  endif else if nph EQ 1 AND nv GT 1 then begin
-      ;; Multiple axis, single rotation
-      q(0:2,*) = axis*sph(0)
-      q(3,*)   = cph(0)
-  endif else if nph EQ nv then begin
-      ;; Multiple axes, multiple rotations
-      q(0:2,*) = axis*rebin(reform(temporary(sph),1,nq),3,nq)
-      q(3,*)   = temporary(cph)
+  sph = sin(phi / 2)
+  cph = cos(phi / 2)
+  if nph eq 1 and nv eq 1 then return, [axis[0 : 2] * sph[0], cph[0]]
+  if nph gt 1 and nv eq 1 then begin
+    ; ; Single axis, multiple rotation angles
+    q[0, *] = axis[0] * sph
+    q[1, *] = axis[1] * sph
+    q[2, *] = axis[2] * sph
+    q[3, *] = cph
+  endif else if nph eq 1 and nv gt 1 then begin
+    ; ; Multiple axis, single rotation
+    q[0 : 2, *] = axis * sph[0]
+    q[3, *] = cph[0]
+  endif else if nph eq nv then begin
+    ; ; Multiple axes, multiple rotations
+    q[0 : 2, *] = axis * rebin(reform(temporary(sph), 1, nq), 3, nq)
+    q[3, *] = temporary(cph)
   endif else begin
-      message, 'ERROR: number of axes and angles do not match'
+    message, 'ERROR: number of axes and angles do not match'
   endelse
 
   return, q

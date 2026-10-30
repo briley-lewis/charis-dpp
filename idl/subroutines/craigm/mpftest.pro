@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -153,18 +153,18 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
 forward_function cephes_incbet, cephes_incbcf, cephes_incbd, cephes_pseries
 
-;; Set machine constants, once for this session.  Double precision
-;; only.
+; ; Set machine constants, once for this session.  Double precision
+; ; only.
 pro cephes_setmachar
-  COMPILE_OPT strictarr
+  compile_opt strictarr
   common cephes_machar, cephes_machar_vals
-  if n_elements(cephes_machar_vals) GT 0 then return
+  if n_elements(cephes_machar_vals) gt 0 then return
 
-  if (!version.release) LT 5 then dummy = check_math(1, 1)
+  if (!version.release) lt 5 then dummy = check_math(1, 1)
 
   mch = machar(/double)
   machep = mch.eps
@@ -172,71 +172,70 @@ pro cephes_setmachar
   minnum = mch.xmin
   maxlog = alog(mch.xmax)
   minlog = alog(mch.xmin)
-  maxgam = 171.624376956302725D
+  maxgam = 171.624376956302725d
 
   cephes_machar_vals = {machep: machep, maxnum: maxnum, minnum: minnum, $
-                        maxlog: maxlog, minlog: minlog, maxgam: maxgam}
+    maxlog: maxlog, minlog: minlog, maxgam: maxgam}
 
-  if (!version.release) LT 5 then dummy = check_math(0, 0)
+  if (!version.release) lt 5 then dummy = check_math(0, 0)
   return
 end
 
-;							incbet.c
-;   
-;   	Incomplete beta integral
-;   
-;   
-;    SYNOPSIS:
-;   
-;    double a, b, x, y, incbet();
-;   
-;    y = incbet( a, b, x );
-;   
-;   
-;    DESCRIPTION:
-;   
-;    Returns incomplete beta integral of the arguments, evaluated
-;    from zero to x.  The function is defined as
-;   
-;                     x
-;        -            -
-;       | (a+b)      | |  a-1     b-1
-;     -----------    |   t   (1-t)   dt.
-;      -     -     | |
-;     | (a) | (b)   -
-;                    0
-;   
-;    The domain of definition is 0 <= x <= 1.  In this
-;    implementation a and b are restricted to positive values.
-;    The integral from x to 1 may be obtained by the symmetry
-;    relation
-;   
-;       1 - incbet( a, b, x )  =  incbet( b, a, 1-x ).
-;   
-;    The integral is evaluated by a continued fraction expansion
-;    or, when b*x is small, by a power series.
-;   
-;    ACCURACY:
-;   
-;    Tested at uniformly distributed random points (a,b,x) with a and b
-;    in "domain" and x between 0 and 1.
-;                                           Relative error
-;    arithmetic   domain     # trials      peak         rms
-;       IEEE      0,5         10000       6.9e-15     4.5e-16
-;       IEEE      0,85       250000       2.2e-13     1.7e-14
-;       IEEE      0,1000      30000       5.3e-12     6.3e-13
-;       IEEE      0,10000    250000       9.3e-11     7.1e-12
-;       IEEE      0,100000    10000       8.7e-10     4.8e-11
-;    Outputs smaller than the IEEE gradual underflow threshold
-;    were excluded from these statistics.
-;   
-;    ERROR MESSAGES:
-;      message         condition      value returned
-;    incbet domain      x<0, x>1          0.0
-;    incbet underflow                     0.0
+; incbet.c
+;
+; Incomplete beta integral
+;
+;
+; SYNOPSIS:
+;
+; double a, b, x, y, incbet();
+;
+; y = incbet( a, b, x );
+;
+;
+; DESCRIPTION:
+;
+; Returns incomplete beta integral of the arguments, evaluated
+; from zero to x.  The function is defined as
+;
+; x
+; -            -
+; | (a+b)      | |  a-1     b-1
+; -----------    |   t   (1-t)   dt.
+; -     -     | |
+; | (a) | (b)   -
+; 0
+;
+; The domain of definition is 0 <= x <= 1.  In this
+; implementation a and b are restricted to positive values.
+; The integral from x to 1 may be obtained by the symmetry
+; relation
+;
+; 1 - incbet( a, b, x )  =  incbet( b, a, 1-x ).
+;
+; The integral is evaluated by a continued fraction expansion
+; or, when b*x is small, by a power series.
+;
+; ACCURACY:
+;
+; Tested at uniformly distributed random points (a,b,x) with a and b
+; in "domain" and x between 0 and 1.
+; Relative error
+; arithmetic   domain     # trials      peak         rms
+; IEEE      0,5         10000       6.9e-15     4.5e-16
+; IEEE      0,85       250000       2.2e-13     1.7e-14
+; IEEE      0,1000      30000       5.3e-12     6.3e-13
+; IEEE      0,10000    250000       9.3e-11     7.1e-12
+; IEEE      0,100000    10000       8.7e-10     4.8e-11
+; Outputs smaller than the IEEE gradual underflow threshold
+; were excluded from these statistics.
+;
+; ERROR MESSAGES:
+; message         condition      value returned
+; incbet domain      x<0, x>1          0.0
+; incbet underflow                     0.0
 function cephes_incbet, aa, bb, xx
-
-  COMPILE_OPT strictarr
+  compile_opt strictarr
   forward_function cephes_incbcf, cephes_incbd, cephes_pseries
 
   common cephes_machar, machvals
@@ -245,81 +244,80 @@ function cephes_incbet, aa, bb, xx
   MAXGAM = machvals.maxgam
   MACHEP = machvals.machep
 
-  if aa LE 0. OR bb LE 0. then goto, DOMERR
+  if aa le 0. or bb le 0. then goto, domerr
 
-  if xx LE 0. OR xx GE 1. then begin
-      if xx EQ 0 then return, 0.D
-      if xx EQ 1. then return, 1.D
-      DOMERR:
-      message, 'ERROR: domain', /info
-      return, 0.D
+  if xx le 0. or xx ge 1. then begin
+    if xx eq 0 then return, 0.d
+    if xx eq 1. then return, 1.d
+    domerr:
+    message, 'ERROR: domain', /info
+    return, 0.d
   endif
 
   flag = 0
-  if bb * xx LE 1. AND xx LE 0.95 then begin
-      t = cephes_pseries(aa, bb, xx)
-      goto, DONE
+  if bb * xx le 1. and xx le 0.95 then begin
+    t = cephes_pseries(aa, bb, xx)
+    goto, done
   endif
 
-  w = 1.D - xx
+  w = 1.d - xx
 
-  if xx GT aa/(aa+bb) then begin
-      flag = 1
-      a = bb
-      b = aa
-      xc = xx
-      x = w
+  if xx gt aa / (aa + bb) then begin
+    flag = 1
+    a = bb
+    b = aa
+    xc = xx
+    x = w
   endif else begin
-      a = aa
-      b = bb
-      xc = w
-      x = xx
+    a = aa
+    b = bb
+    xc = w
+    x = xx
   endelse
 
-  if flag EQ 1 AND b*x LE 1. AND x LE 0.95 then begin
-      t = cephes_pseries(a, b, x)
-      goto, DONE
+  if flag eq 1 and b * x le 1. and x le 0.95 then begin
+    t = cephes_pseries(a, b, x)
+    goto, done
   endif
 
-  ;; Choose expansion for better convergence
-  y = x * (a+b-2.) - (a-1.)
-  if y LT 0. then w = cephes_incbcf(a, b, x) $
-  else            w = cephes_incbd(a, b, x) / xc
+  ; ; Choose expansion for better convergence
+  y = x * (a + b - 2.) - (a - 1.)
+  if y lt 0. then w = cephes_incbcf(a, b, x) $
+  else w = cephes_incbd(a, b, x) / xc
 
-  ;; Multiply w by the factor
-  ;;    a      b   _             _     _
-  ;;   x  (1-x)   | (a+b) / ( a | (a) | (b) ) .   */
+  ; ; Multiply w by the factor
+  ; ;    a      b   _             _     _
+  ; ;   x  (1-x)   | (a+b) / ( a | (a) | (b) ) .   */
   y = a * alog(x)
   t = b * alog(xc)
-  if (a+b) LT MAXGAM AND abs(y) LT MAXLOG AND abs(t) LT MAXLOG then begin
-      t = ((xc^b) * (x^a)) * w * gamma(a+b) / ( a * gamma(a) * gamma(b) )
-      goto, DONE
+  if (a + b) lt MAXGAM and abs(y) lt MAXLOG and abs(t) lt MAXLOG then begin
+    t = ((xc ^ b) * (x ^ a)) * w * gamma(a + b) / (a * gamma(a) * gamma(b))
+    goto, done
   endif
 
-  ;; Resort to logarithms
-  y = y + t + lngamma(a+b) - lngamma(a) - lngamma(b)
-  y = y + alog(w/a)
-  if y LT MINLOG then t = 0.D $
-  else                t = exp(y)
-  
-  DONE:
-  if flag EQ 1 then begin
-      if t LE MACHEP then t = 1.D - MACHEP $
-      else                t = 1.D - t
+  ; ; Resort to logarithms
+  y = y + t + lngamma(a + b) - lngamma(a) - lngamma(b)
+  y = y + alog(w / a)
+  if y lt MINLOG then t = 0.d $
+  else t = exp(y)
+
+  done:
+  if flag eq 1 then begin
+    if t le MACHEP then t = 1.d - MACHEP $
+    else t = 1.d - t
   endif
-  
+
   return, t
 end
 
-;; Continued fraction expasion #1 for incomplete beta integral
+; ; Continued fraction expasion #1 for incomplete beta integral
 function cephes_incbcf, a, b, x
-
-  COMPILE_OPT strictarr
+  compile_opt strictarr
   common cephes_machar, machvals
   MACHEP = machvals.machep
-  
-  big = 4.503599627370496D15
-  biginv = 2.22044604925031308085D-16
+
+  big = 4.503599627370496d15
+  biginv = 2.22044604925031308085d-16
 
   k1 = a
   k2 = a + b
@@ -330,79 +328,78 @@ function cephes_incbcf, a, b, x
   k7 = k4
   k8 = a + 2.
 
-  pkm2 = 0.D
-  qkm2 = 1.D
-  pkm1 = 1.D
-  qkm1 = 1.D
-  ans = 1.D
-  r = 1.D
-  n = 0L
-  thresh = 3.D * MACHEP
-  
+  pkm2 = 0.d
+  qkm2 = 1.d
+  pkm1 = 1.d
+  qkm1 = 1.d
+  ans = 1.d
+  r = 1.d
+  n = 0l
+  thresh = 3.d * MACHEP
+
   repeat begin
-      xk = - (x * k1 * k2 ) / (k3 * k4)
-      pk = pkm1 + pkm2 * xk
-      qk = qkm1 + qkm2 * xk
-      pkm2 = pkm1
-      pkm1 = pk
-      qkm2 = qkm1
-      qkm1 = qk
+    xk = -(x * k1 * k2) / (k3 * k4)
+    pk = pkm1 + pkm2 * xk
+    qk = qkm1 + qkm2 * xk
+    pkm2 = pkm1
+    pkm1 = pk
+    qkm2 = qkm1
+    qkm1 = qk
 
-      xk = ( x * k5 * k6 ) / ( k7 * k8)
-      pk = pkm1 + pkm2 * xk
-      qk = qkm1 + qkm2 * xk
-      pkm2 = pkm1
-      pkm1 = pk
-      qkm2 = qkm1
-      qkm1 = qk
+    xk = (x * k5 * k6) / (k7 * k8)
+    pk = pkm1 + pkm2 * xk
+    qk = qkm1 + qkm2 * xk
+    pkm2 = pkm1
+    pkm1 = pk
+    qkm2 = qkm1
+    qkm1 = qk
 
-      if qk NE 0 then r = pk/qk
-      if r NE 0 then begin
-          t = abs( (ans-r)/r )
-          ans = r
-      endif else begin
-          t = 1.D
-      endelse
+    if qk ne 0 then r = pk / qk
+    if r ne 0 then begin
+      t = abs((ans - r) / r)
+      ans = r
+    endif else begin
+      t = 1.d
+    endelse
 
-      if t LT thresh then goto, CDONE
-      k1 = k1 + 1.
-      k2 = k2 + 1.
-      k3 = k3 + 2.
-      k4 = k4 + 2.
-      k5 = k5 + 1.
-      k6 = k6 - 1.
-      k7 = k7 + 2.
-      k8 = k8 + 2.
+    if t lt thresh then goto, cdone
+    k1 = k1 + 1.
+    k2 = k2 + 1.
+    k3 = k3 + 2.
+    k4 = k4 + 2.
+    k5 = k5 + 1.
+    k6 = k6 - 1.
+    k7 = k7 + 2.
+    k8 = k8 + 2.
 
-      if abs(qk) + abs(pk) GT big then begin
-          pkm2 = pkm2 * biginv
-          pkm1 = pkm1 * biginv
-          qkm2 = qkm2 * biginv
-          qkm1 = qkm1 * biginv
-      endif
-      if abs(qk) LT biginv OR abs(pk) LT biginv then begin
-          pkm2 = pkm2 * big
-          pkm1 = pkm1 * big
-          qkm2 = qkm2 * big
-          qkm1 = qkm1 * big
-      endif
-      
-      n = n + 1
-  endrep until n GE 300
+    if abs(qk) + abs(pk) gt big then begin
+      pkm2 = pkm2 * biginv
+      pkm1 = pkm1 * biginv
+      qkm2 = qkm2 * biginv
+      qkm1 = qkm1 * biginv
+    endif
+    if abs(qk) lt biginv or abs(pk) lt biginv then begin
+      pkm2 = pkm2 * big
+      pkm1 = pkm1 * big
+      qkm2 = qkm2 * big
+      qkm1 = qkm1 * big
+    endif
 
-  CDONE:
+    n = n + 1
+  endrep until n ge 300
+
+  cdone:
   return, ans
 end
 
-;; Continued fraction expansion #2 for incomplete beta integral
+; ; Continued fraction expansion #2 for incomplete beta integral
 function cephes_incbd, a, b, x
-
-  COMPILE_OPT strictarr
+  compile_opt strictarr
   common cephes_machar, machvals
   MACHEP = machvals.machep
 
-  big = 4.503599627370496D15
-  biginv = 2.22044604925031308085D-16
+  big = 4.503599627370496d15
+  biginv = 2.22044604925031308085d-16
 
   k1 = a
   k2 = b - 1.
@@ -412,148 +409,143 @@ function cephes_incbd, a, b, x
   k6 = a + b
   k7 = a + 1.
   k8 = a + 2.
-  
-  pkm2 = 0.D
-  qkm2 = 1.D
-  pkm1 = 1.D
-  qkm1 = 1.D
-  z = x / (1.D - x)
-  ans = 1.D
-  r = 1.D
-  n = 0L
-  thresh = 3.D * MACHEP
-  
+
+  pkm2 = 0.d
+  qkm2 = 1.d
+  pkm1 = 1.d
+  qkm1 = 1.d
+  z = x / (1.d - x)
+  ans = 1.d
+  r = 1.d
+  n = 0l
+  thresh = 3.d * MACHEP
+
   repeat begin
-      xk = -(z * k1 * k2) / (k3 * k4)
-      pk = pkm1 + pkm2 * xk
-      qk = qkm1 + qkm2 * xk
-      pkm2 = pkm1
-      pkm1 = pk
-      qkm2 = qkm1
-      qkm1 = qk
-      
-      xk = (z * k5 * k6) / (k7 * k8)
-      pk = pkm1 + pkm2 * xk
-      qk = qkm1 + qkm2 * xk
-      pkm2 = pkm1
-      pkm1 = pk
-      qkm2 = qkm1
-      qkm1 = qk
-      
-      if qk NE 0 then r = pk/qk
-      if r NE 0 then begin
-          t = abs( (ans-r)/r )
-          ans = r
-      endif else begin
-          t = 1.D
-      endelse
+    xk = -(z * k1 * k2) / (k3 * k4)
+    pk = pkm1 + pkm2 * xk
+    qk = qkm1 + qkm2 * xk
+    pkm2 = pkm1
+    pkm1 = pk
+    qkm2 = qkm1
+    qkm1 = qk
 
-      if t LT thresh then goto, CDONE
-      
-      k1 = k1 + 1.
-      k2 = k2 - 1.
-      k3 = k3 + 2.
-      k4 = k4 + 2.
-      k5 = k5 + 1.
-      k6 = k6 + 1.
-      k7 = k7 + 2.
-      k8 = k8 + 2.
+    xk = (z * k5 * k6) / (k7 * k8)
+    pk = pkm1 + pkm2 * xk
+    qk = qkm1 + qkm2 * xk
+    pkm2 = pkm1
+    pkm1 = pk
+    qkm2 = qkm1
+    qkm1 = qk
 
-      if abs(qk) + abs(pk) GT big then begin
-          pkm2 = pkm2 * biginv
-          pkm1 = pkm1 * biginv
-          qkm2 = qkm2 * biginv
-          qkm1 = qkm1 * biginv
-      endif
-      if abs(qk) LT biginv OR abs(pk) LT biginv then begin
-          pkm2 = pkm2 * big
-          pkm1 = pkm1 * big
-          qkm2 = qkm2 * big
-          qkm1 = qkm1 * big
-      endif
-      
-      n = n + 1
-  endrep until n GE 300
+    if qk ne 0 then r = pk / qk
+    if r ne 0 then begin
+      t = abs((ans - r) / r)
+      ans = r
+    endif else begin
+      t = 1.d
+    endelse
 
-  CDONE:
+    if t lt thresh then goto, cdone
+
+    k1 = k1 + 1.
+    k2 = k2 - 1.
+    k3 = k3 + 2.
+    k4 = k4 + 2.
+    k5 = k5 + 1.
+    k6 = k6 + 1.
+    k7 = k7 + 2.
+    k8 = k8 + 2.
+
+    if abs(qk) + abs(pk) gt big then begin
+      pkm2 = pkm2 * biginv
+      pkm1 = pkm1 * biginv
+      qkm2 = qkm2 * biginv
+      qkm1 = qkm1 * biginv
+    endif
+    if abs(qk) lt biginv or abs(pk) lt biginv then begin
+      pkm2 = pkm2 * big
+      pkm1 = pkm1 * big
+      qkm2 = qkm2 * big
+      qkm1 = qkm1 * big
+    endif
+
+    n = n + 1
+  endrep until n ge 300
+
+  cdone:
   return, ans
 end
 
-;; Power series for incomplete beta integral.
-;; Use when b*x is small and x not too close to 1
+; ; Power series for incomplete beta integral.
+; ; Use when b*x is small and x not too close to 1
 function cephes_pseries, a, b, x
-
-  COMPILE_OPT strictarr
+  compile_opt strictarr
   common cephes_machar, machvals
   MINLOG = machvals.minlog
   MAXLOG = machvals.maxlog
   MAXGAM = machvals.maxgam
   MACHEP = machvals.machep
 
-  ai = 1.D/a
-  u = (1.D - b) * x
-  v = u / (a + 1.D)
+  ai = 1.d / a
+  u = (1.d - b) * x
+  v = u / (a + 1.d)
   t1 = v
   t = u
-  n = 2.D
-  s = 0.D
+  n = 2.d
+  s = 0.d
   z = MACHEP * ai
 
-  while abs(v) GT z do begin
-      u = (n-b) * x / n
-      t = t * u
-      v = t / (a+n)
-      s = s + v
-      n = n + 1.D
+  while abs(v) gt z do begin
+    u = (n - b) * x / n
+    t = t * u
+    v = t / (a + n)
+    s = s + v
+    n = n + 1.d
   endwhile
   s = s + t1 + ai
 
   u = a * alog(x)
-  if (a+b) LT MAXGAM AND abs(u) LT MAXLOG then begin
-      t = gamma(a+b)/(gamma(a)*gamma(b))
-      s = s * t * x^a
+  if (a + b) lt MAXGAM and abs(u) lt MAXLOG then begin
+    t = gamma(a + b) / (gamma(a) * gamma(b))
+    s = s * t * x ^ a
   endif else begin
-      t = lngamma(a+b) - lngamma(a) - lngamma(b) + u + alog(s)
-      if t LT MINLOG then s = 0.D else s = exp(t)
+    t = lngamma(a + b) - lngamma(a) - lngamma(b) + u + alog(s)
+    if t lt MINLOG then s = 0.d else s = exp(t)
   endelse
 
   return, s
 end
 
 ; MPFTEST
-;  Returns the significance level of a particular F-statistic.
-;     P(x; nu1, nu2)  is probability for F to exceed x 
-;  x - the F-ratio
-;    For ratio of variance test:
-;      x = (chi1sq/nu1) / (chi2sq/nu2)
-;      p = mpftest(x, nu1, nu2)
-;    For additional parameter test:
-;      x = [ (chi1sq-chi2sq)/(nu1-nu2) ] / (chi2sq/nu2)
-;      p = mpftest(x, nu1-nu2, nu2)
+; Returns the significance level of a particular F-statistic.
+; P(x; nu1, nu2)  is probability for F to exceed x
+; x - the F-ratio
+; For ratio of variance test:
+; x = (chi1sq/nu1) / (chi2sq/nu2)
+; p = mpftest(x, nu1, nu2)
+; For additional parameter test:
+; x = [ (chi1sq-chi2sq)/(nu1-nu2) ] / (chi2sq/nu2)
+; p = mpftest(x, nu1-nu2, nu2)
 ;
-;  nu1 - number of DOF in chi1sq
-;  nu2 - number of DOF in chi2sq   nu2 < nu1
+; nu1 - number of DOF in chi1sq
+; nu2 - number of DOF in chi2sq   nu2 < nu1
 
-function mpftest, x, nu1, nu2, slevel=slevel, clevel=clevel, sigma=sigma
+function mpftest, x, nu1, nu2, slevel = slevel, clevel = clevel, sigma = sigma
+  compile_opt strictarr
+  cephes_setmachar ; ; Set machine constants
 
-  COMPILE_OPT strictarr
-  cephes_setmachar   ;; Set machine constants
-
-  if nu1 LT 1 OR nu2 LT 1 OR x LT 0. then begin
-      message, 'ERROR: domain', /info
-      return, 0.D
+  if nu1 lt 1 or nu2 lt 1 or x lt 0. then begin
+    message, 'ERROR: domain', /info
+    return, 0.d
   endif
 
-  w = double(nu2) / (double(nu2) + double(nu1)*double(x))
-  
-  s = cephes_incbet(0.5D * nu2, 0.5D * nu1, w)
-  ;; Return confidence level if requested
-  if keyword_set(clevel) then return, 1D - s
-  if keyword_set(sigma)  then return, mpnormlim(s, /slevel)
+  w = double(nu2) / (double(nu2) + double(nu1) * double(x))
 
-  ;; Return significance level otherwise.
+  s = cephes_incbet(0.5d * nu2, 0.5d * nu1, w)
+  ; ; Return confidence level if requested
+  if keyword_set(clevel) then return, 1d - s
+  if keyword_set(sigma) then return, mpnormlim(s, /slevel)
+
+  ; ; Return significance level otherwise.
   return, s
-  
 end
-
-      

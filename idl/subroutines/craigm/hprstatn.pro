@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -112,7 +112,7 @@
 ;           of JDTT.  Since subtraction of large numbers occurs with
 ;           TBASE first, the greatest precision is achieved when TBASE
 ;           is expressed as a nearby julian epoch, JDTT is expressed
-;           as a small offset from the fixed epoch.  
+;           as a small offset from the fixed epoch.
 ;           Default: 0
 ;
 ;   JPL - if set, then the JPL ephemeris is used to compute nutation
@@ -174,64 +174,76 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-pro hprstatn, jdtt, r_iers, r_eci, v_eci, tbase=tbase0, $
-              jpl=jpl, use_eop=use_eop, no_ut1=no_ut1, $
-              no_precession=noprec, no_nutation=nonut, $
-              no_polar_motion=nopm
+pro hprstatn, jdtt, r_iers, r_eci, v_eci, tbase = tbase0, $
+  jpl = jpl, use_eop = use_eop, no_ut1 = no_ut1, $
+  no_precession = noprec, no_nutation = nonut, $
+  no_polar_motion = nopm
+  compile_opt idl2
 
-  ;; Compute the earth-orientation angles
-  hprnutang, jdtt, tbase=tbase0, zeta, theta, z, dpsi, deps, $
-    mean_obliq=eps0, true_obliq=eps, $
-    gas_time=gast, $
-    polar_x=pmx, polar_y=pmy, use_eop=use_eop, no_ut1=no_ut1, $
-    no_nutation=nonut, jpl=jpl
+  ; ; Compute the earth-orientation angles
+  hprnutang, jdtt, tbase = tbase0, zeta, theta, z, dpsi, deps, $
+    mean_obliq = eps0, true_obliq = eps, $
+    gas_time = gast, $
+    polar_x = pmx, polar_y = pmy, use_eop = use_eop, no_ut1 = no_ut1, $
+    no_nutation = nonut, jpl = jpl
 
-  ;; Standard value of rotational angular velocity of the earth (Aoki
-  ;; et al 1982)
-  omega = 7.2921151467d-5 ;; RADIAN/SEC
+  ; ; Standard value of rotational angular velocity of the earth (Aoki
+  ; ; et al 1982)
+  omega = 7.2921151467d-5 ; ; RADIAN/SEC
 
   if keyword_set(nopm) then begin
-      pmx = 0
-      pmy = 0
+    pmx = 0
+    pmy = 0
   endif
 
-  ;; Rotation from terrestrial reference pole to the true celestial
-  ;; pole of date, then application of earth spin using apparent
-  ;; sidereal time.
-  ;;              GAST   PMY   PMX
-  qter = qteuler(['z',   'x',  'y'], $
-                 +gast,  -pmy, -pmx)
-  gast = 0 & pmx = 0 & pmy = 0
+  ; ; Rotation from terrestrial reference pole to the true celestial
+  ; ; pole of date, then application of earth spin using apparent
+  ; ; sidereal time.
+  ; ;              GAST   PMY   PMX
+  qter = qteuler(['z', 'x', 'y'], $
+    + gast, -pmy, -pmx)
+  gast = 0
+  pmx = 0
+  pmy = 0
 
-  ;; Position referred to true celestial pole of date
+  ; ; Position referred to true celestial pole of date
   r_tod = qtvrot(r_iers, temporary(qter))
 
-  ;; Velocity referred to true celestial pole of date
+  ; ; Velocity referred to true celestial pole of date
   if arg_present(v_eci) then begin
-      v_tod = r_tod*0
-      v_tod(0,*) = -omega*r_tod(1,*)
-      v_tod(1,*) = +omega*r_tod(0,*)
+    v_tod = r_tod * 0
+    v_tod[0, *] = -omega * r_tod[1, *]
+    v_tod[1, *] = + omega * r_tod[0, *]
   endif
 
   if keyword_set(noprec) then begin
-      zeta = 0d & theta = 0d & z = 0d 
+    zeta = 0d
+    theta = 0d
+    z = 0d
   endif
   if keyword_set(nonut) then begin
-      eps0 = 0d & dpsi = 0d & eps = 0d
+    eps0 = 0d
+    dpsi = 0d
+    eps = 0d
   endif
 
-  ;; Application of earth precession and nutation from true equator
-  ;; and equinox of date, to mean equator and equinox of J2000
-  ;; (celestial)
-  ;;              Precession        Nutation 
-  qcel = qteuler(['z','y','z',      'x','z','x'], $
-                 -zeta, +theta, -z, +eps0, -dpsi, -eps)
-  zeta = 0 & theta = 0 & z = 0 & eps0 = 0 & dpsi = 0 & eps = 0
+  ; ; Application of earth precession and nutation from true equator
+  ; ; and equinox of date, to mean equator and equinox of J2000
+  ; ; (celestial)
+  ; ;              Precession        Nutation
+  qcel = qteuler(['z', 'y', 'z', 'x', 'z', 'x'], $
+    - zeta, + theta, -z, + eps0, -dpsi, -eps)
+  zeta = 0
+  theta = 0
+  z = 0
+  eps0 = 0
+  dpsi = 0
+  eps = 0
 
-  ;; Compute station position in Earth Centered Inertial coordinates
-  DO_PRNUTROT:
+  ; ; Compute station position in Earth Centered Inertial coordinates
+  do_prnutrot:
   r_eci = qtvrot(temporary(r_tod), qcel)
   if arg_present(v_eci) then $
     v_eci = qtvrot(temporary(v_tod), temporary(qcel))

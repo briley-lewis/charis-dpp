@@ -12,7 +12,7 @@
 ; CALLING SEQUENCE:
 ;   DXLRESET
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   DXLRESET resets the current debugging focus level, if it has
 ;   changed.  This routine is internal to the debugging procedures.
@@ -32,28 +32,27 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
-pro dxlreset, remove=remove0
-@dxcommon.pro
+; -
+pro dxlreset, remove = remove0
+  compile_opt idl2
+  @dxcommon.pro
 
-  if n_elements(remove0) EQ 0 then remove0 = 1L
-  remove = floor(remove0(0)) + 1
+  if n_elements(remove0) eq 0 then remove0 = 1l
+  remove = floor(remove0[0]) + 1
 
-  ;; Be sure we are on the same level as last time... otherwise reset
+  ; ; Be sure we are on the same level as last time... otherwise reset
   reset = 1
   n = n_elements(dbtraceback)
-  if routine_names(/level)-remove EQ n then begin
-      help, calls=newtraceback
-      if n_elements(newtraceback)-remove EQ n then $
-        if total(newtraceback(remove:*) EQ dbtraceback) EQ n then $
+  if routine_names(/level) - remove eq n then begin
+    help, calls = newtraceback
+    if n_elements(newtraceback) - remove eq n then $
+      if total(newtraceback[remove : *] eq dbtraceback) eq n then $
         reset = 0
   endif
   if reset then begin
-      dblevel = (routine_names(/level)-remove) > 1
-      remove = (routine_names(/level)-dblevel)
-      help, calls=newtraceback
-      dbtraceback = newtraceback(remove:*)
+    dblevel = (routine_names(/level) - remove) > 1
+    remove = (routine_names(/level) - dblevel)
+    help, calls = newtraceback
+    dbtraceback = newtraceback[remove : *]
   endif
-  
-
 end

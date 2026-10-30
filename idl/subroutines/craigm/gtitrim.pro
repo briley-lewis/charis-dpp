@@ -12,7 +12,7 @@
 ; CALLING SEQUENCE:
 ;   NEWGTI = GTITRIM(GTI, COUNT=, MAXGAP=, MINGTI=)
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   A good time interval is by definition a list of intervals which
 ;   represent "good" or acceptable portions of the real number line.
@@ -111,78 +111,80 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-function gtitrim, gti, maxgap=maxgap, mingti=mingti, maxgti=maxgti, $
-                  count=count, query=query
+function gtitrim, gti, maxgap = maxgap, mingti = mingti, maxgti = maxgti, $
+  count = count, query = query
+  compile_opt idl2
 
   if keyword_set(query) then return, 1
 
-  count = 0L
+  count = 0l
   ngti = n_elements(gti)
-  if n_elements(maxgap) EQ 0 then maxgap = 0D
-  if n_elements(mingti) EQ 0 then mingti = 0D
+  if n_elements(maxgap) eq 0 then maxgap = 0d
+  if n_elements(mingti) eq 0 then mingti = 0d
 
-  ;; Case of empty GTI
-  if ngti LT 2 then return, 0L
+  ; ; Case of empty GTI
+  if ngti lt 2 then return, 0l
 
-  ;; Case of single GTI
-  if ngti EQ 2 then begin
-      if gti(1) - gti(0) LT mingti then return, 0L
-      count = 1L
-      newgti = reform(gti, 2, 1)
-      goto, GTI_CHECKS
+  ; ; Case of single GTI
+  if ngti eq 2 then begin
+    if gti[1] - gti[0] lt mingti then return, 0l
+    count = 1l
+    newgti = reform(gti, 2, 1)
+    goto, gti_checks
   endif
 
   newgti = gti
-  ngti = ngti/2
-  ;; Check for gaps, spaces between GTIs
-  gaps = newgti(0,1:*) - newgti(1,*)
-  wh = where(gaps GT maxgap, ct)
-  if ct EQ 0 then begin
-      ;; All of the gaps are too small
-      newgti = reform([min(newgti), max(newgti)], 2, 1)
-  endif else if ct GT 0 AND ct LT ngti-1 then begin
-      ;; Remake the GTI, removing the gaps
-      vgti = reform(make_array(2, ct+1, value=newgti(0)), 2, ct+1, /overwrite)
-      vgti(0,0)  = min(newgti)
-      vgti(1,ct) = max(newgti)
-      vgti(1,0:ct-1) = newgti(1,wh)
-      vgti(0,1:ct)   = newgti(0,wh+1)
-      newgti = temporary(vgti)
+  ngti = ngti / 2
+  ; ; Check for gaps, spaces between GTIs
+  gaps = newgti[0, 1 : *] - newgti[1, *]
+  wh = where(gaps gt maxgap, ct)
+  if ct eq 0 then begin
+    ; ; All of the gaps are too small
+    newgti = reform([min(newgti), max(newgti)], 2, 1)
+  endif else if ct gt 0 and ct lt ngti - 1 then begin
+    ; ; Remake the GTI, removing the gaps
+    vgti = reform(make_array(2, ct + 1, value = newgti[0]), 2, ct + 1, /overwrite)
+    vgti[0, 0] = min(newgti)
+    vgti[1, ct] = max(newgti)
+    vgti[1, 0 : ct - 1] = newgti[1, wh]
+    vgti[0, 1 : ct] = newgti[0, wh + 1]
+    newgti = temporary(vgti)
   endif
 
-  GTI_CHECKS:
-  ;; Remove too-small GTIs
-  dur = newgti(1,*) - newgti(0,*)
-  wh = where(dur GE mingti, count)
-  if count GT 0 then newgti = newgti(*,wh) else newgti = 0L
-  if count GT 0 then newgti = reform(newgti, 2, count, /overwrite)
+  gti_checks:
+  ; ; Remove too-small GTIs
+  dur = newgti[1, *] - newgti[0, *]
+  wh = where(dur ge mingti, count)
+  if count gt 0 then newgti = newgti[*, wh] else newgti = 0l
+  if count gt 0 then newgti = reform(newgti, 2, count, /overwrite)
 
-  ;; 
-  if count GT 0 AND n_elements(maxgti) GT 0 then begin
-      maxgti1 = maxgti(0)
-      nper = (newgti(1,*)-newgti(0,*)) / maxgti1
-      iper = ceil(nper)
-      totgti = total(iper)
-      if maxgti1 GT 0 AND totgti GT count then begin
-          vzero = newgti(0) & vzero(0) = 0
-          newgti2 = make_array(2, totgti, value=vzero)
-          j = 0L
-          for i = 0L, count-1 do begin
-              if iper(i) EQ 1 then begin
-                  newgti2(*,j) = newgti(*,i)
-              endif else begin
-                  for k = 0, iper(i)-1 do $
-                    newgti2(*,j+k) = [ newgti(0,i)+maxgti1*k, $
-                                       newgti(1,i)<(newgti(0,i)+maxgti1*(k+1))]
-              endelse
-              j = j + iper(i)
-          endfor
+  ; ;
+  if count gt 0 and n_elements(maxgti) gt 0 then begin
+    maxgti1 = maxgti[0]
+    nper = (newgti[1, *] - newgti[0, *]) / maxgti1
+    iper = ceil(nper)
+    totgti = total(iper)
+    if maxgti1 gt 0 and totgti gt count then begin
+      vzero = newgti[0]
+      vzero[0] = 0
+      newgti2 = make_array(2, totgti, value = vzero)
+      j = 0l
+      for i = 0l, count - 1 do begin
+        if iper[i] eq 1 then begin
+          newgti2[*, j] = newgti[*, i]
+        endif else begin
+          for k = 0, iper[i] - 1 do $
+            newgti2[*, j + k] = [newgti[0, i] + maxgti1 * k, $
+              newgti[1, i] < (newgti[0, i] + maxgti1 * (k + 1))]
+        endelse
+        j = j + iper[i]
+      endfor
 
-          count = totgti
-          newgti = reform(newgti2,2,totgti)
-      endif
+      count = totgti
+      newgti = reform(newgti2, 2, totgti)
+    endif
   endif
 
   return, newgti

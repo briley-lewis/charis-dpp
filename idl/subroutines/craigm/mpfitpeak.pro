@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -84,7 +84,7 @@
 ; COMPATIBILITY
 ;
 ;  This function is designed to work with IDL 5.0 or greater.
-;  
+;
 ;  Because TIED parameters rely on the EXECUTE() function, they cannot
 ;  be used with the free version of the IDL Virtual Machine.
 ;
@@ -132,7 +132,7 @@
 ;                  is ignored
 ;                * if ERROR is NaN or Infinite, and the NAN keyword is
 ;                  set, then the corresponding data point is ignored
-;                * if ERROR is negative, then the absolute value of 
+;                * if ERROR is negative, then the absolute value of
 ;                  ERROR is used.
 ;
 ;   ESTIMATES - Array of starting values for each parameter of the
@@ -168,7 +168,7 @@
 ;
 ;   NTERMS - An integer describing the number of fitting terms.
 ;            NTERMS must have a minimum value, but can optionally be
-;            larger depending on the desired baseline.  
+;            larger depending on the desired baseline.
 ;
 ;            For gaussian and lorentzian models, NTERMS must be three
 ;            (zero baseline), four (constant baseline) or five (linear
@@ -185,7 +185,7 @@
 ;            If the fit is unweighted (i.e. no errors were given, or
 ;            the weights were uniformly set to unity), then PERROR
 ;            will probably not represent the true parameter
-;            uncertainties.  
+;            uncertainties.
 ;
 ;            *If* you can assume that the true reduced chi-squared
 ;            value is unity -- meaning that the fit is implicitly
@@ -224,7 +224,7 @@
 ;                  is ignored
 ;                * if WEIGHTS is NaN or Infinite, and the NAN keyword is
 ;                  set, then the corresponding data point is ignored
-;                * if WEIGHTS is negative, then the absolute value of 
+;                * if WEIGHTS is negative, then the absolute value of
 ;                  WEIGHTS is used.
 ;
 ;   YERROR - upon return, the root-mean-square variance of the
@@ -235,7 +235,7 @@
 ;
 ;   ; First, generate some synthetic data
 ;   npts = 200
-;   x  = dindgen(npts) * 0.1 - 10.                  ; Independent variable 
+;   x  = dindgen(npts) * 0.1 - 10.                  ; Independent variable
 ;   yi = gauss1(x, [2.2D, 1.4, 3000.]) + 1000       ; "Ideal" Y variable
 ;   y  = yi + randomn(seed, npts) * sqrt(1000. + yi); Measured, w/ noise
 ;   sy = sqrt(1000.D + y)                           ; Poisson errors
@@ -251,7 +251,7 @@
 ; REFERENCES:
 ;
 ;   MINPACK-1, Jorge More', available from netlib (www.netlib.org).
-;   "Optimization Software Guide," Jorge More' and Stephen Wright, 
+;   "Optimization Software Guide," Jorge More' and Stephen Wright,
 ;     SIAM, *Frontiers in Applied Mathematics*, Number 14.
 ;
 ; MODIFICATION HISTORY:
@@ -291,218 +291,218 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
 forward_function mpfit, mpfitfun, mpfitpeak, mpfitpeak_gauss, $
   mpfitpeak_lorentz, mpfitpeak_moffat, mpfitpeak_u
 
 function mpfitpeak_u, x, p
-  COMPILE_OPT strictarr
+  compile_opt strictarr
   wid = abs(p[2]) > 1e-20
-  return, ((x-p[1])/wid)^2
+  return, ((x - p[1]) / wid) ^ 2
 end
 
-
 ; Gaussian Function
-function mpfitpeak_gauss, x, p, _extra=extra
-  COMPILE_OPT strictarr
+function mpfitpeak_gauss, x, p, _extra = extra
+  compile_opt strictarr
   sz = size(x)
-  if sz[sz[0]+1] EQ 5 then smax = 26D else smax = 13.
+  if sz[sz[0] + 1] eq 5 then smax = 26d else smax = 13.
   u = mpfitpeak_u(x, p)
-  mask = u LT (smax^2)  ;; Prevents floating underflow
-  if n_elements(p) GE 4 then f = p[3] else f = 0
-  if n_elements(p) GE 5 then f = f + p[4]*x
-  return,  f + p[0] * mask * exp(-0.5 * temporary(u) * mask)
+  mask = u lt (smax ^ 2) ; ; Prevents floating underflow
+  if n_elements(p) ge 4 then f = p[3] else f = 0
+  if n_elements(p) ge 5 then f = f + p[4] * x
+  return, f + p[0] * mask * exp(-0.5 * temporary(u) * mask)
 end
 
 ; Lorentzian Function
-function mpfitpeak_lorentz, x, p, _extra=extra
-  COMPILE_OPT strictarr
+function mpfitpeak_lorentz, x, p, _extra = extra
+  compile_opt strictarr
   u = mpfitpeak_u(x, p)
-  if n_elements(p) GE 4 then f = p[3] else f = 0
-  if n_elements(p) GE 5 then f = f + p[4]*x
+  if n_elements(p) ge 4 then f = p[3] else f = 0
+  if n_elements(p) ge 5 then f = f + p[4] * x
   return, f + p[0] / (u + 1)
 end
 
 ; Moffat Function
-function mpfitpeak_moffat, x, p, _extra=extra
-  COMPILE_OPT strictarr
+function mpfitpeak_moffat, x, p, _extra = extra
+  compile_opt strictarr
   u = mpfitpeak_u(x, p)
-  if n_elements(p) GE 5 then f = p[4] else f = 0
-  if n_elements(p) GE 6 then f = f + p[5]*x
-  return, f + p[0] / (u + 1)^p[3]
+  if n_elements(p) ge 5 then f = p[4] else f = 0
+  if n_elements(p) ge 6 then f = f + p[5] * x
+  return, f + p[0] / (u + 1) ^ p[3]
 end
 
-
-function mpfitpeak, x, y, a, estimates=est, nterms=nterms, $
-                    gaussian=gauss, lorentzian=lorentz, moffat=moffat, $
-                    perror=perror, sigma=sigma, yerror=yerror, $
-                    chisq=chisq, bestnorm=bestnorm, niter=iter, nfev=nfev, $
-                    error=dy, weights=weights, measure_errors=dym, $
-                    nfree=nfree, dof=dof, nan=nan, $
-                    negative=neg, positive=pos, parinfo=parinfo, $
-                    errmsg=errmsg, status=status, $
-                    query=query, quiet=quiet, _extra=extra
-
-  COMPILE_OPT strictarr
-  status = 0L
+function mpfitpeak, x, y, a, estimates = est, nterms = nterms, $
+  gaussian = gauss, lorentzian = lorentz, moffat = moffat, $
+  perror = perror, sigma = sigma, yerror = yerror, $
+  chisq = chisq, bestnorm = bestnorm, niter = iter, nfev = nfev, $
+  error = dy, weights = weights, measure_errors = dym, $
+  nfree = nfree, dof = dof, nan = nan, $
+  negative = neg, positive = pos, parinfo = parinfo, $
+  errmsg = errmsg, status = status, $
+  query = query, quiet = quiet, _extra = extra
+  compile_opt strictarr
+  status = 0l
   errmsg = ''
 
-  if n_params() EQ 0 then begin
-      message, 'USAGE: yfit = MPFITPEAK(X, Y, A, ...)', /info
-      return, !values.d_nan
+  if n_params() eq 0 then begin
+    message, 'USAGE: yfit = MPFITPEAK(X, Y, A, ...)', /info
+    return, !values.d_nan
   endif
 
-  ;; Detect MPFIT and crash if it was not found
+  ; ; Detect MPFIT and crash if it was not found
   catch, catcherror
-  if catcherror NE 0 then begin
-      MPFIT_NOTFOUND:
-      catch, /cancel
-      message, 'ERROR: the required functions MPFIT and MPFITFUN ' + $
-        'must be in your IDL path', /info
-      return, !values.d_nan
+  if catcherror ne 0 then begin
+    mpfit_notfound:
+    catch, /cancel
+    message, 'ERROR: the required functions MPFIT and MPFITFUN ' + $
+      'must be in your IDL path', /info
+    return, !values.d_nan
   endif
-  if mpfit(/query)    NE 1 then goto, MPFIT_NOTFOUND
-  if mpfitfun(/query) NE 1 then goto, MPFIT_NOTFOUND
+  if mpfit(/query) ne 1 then goto, mpfit_notfound
+  if mpfitfun(/query) ne 1 then goto, mpfit_notfound
   catch, /cancel
   if keyword_set(query) then return, 1
 
-  ;; Check the number of parameter estimates
-  if n_elements(quiet) EQ 0 then quiet=1
-  if n_elements(nterms) EQ 0 then nterms = 4
+  ; ; Check the number of parameter estimates
+  if n_elements(quiet) eq 0 then quiet = 1
+  if n_elements(nterms) eq 0 then nterms = 4
 
-  ;; Reject data vectors that are too simple
-  if n_elements(x) LT nterms OR n_elements(y) LT nterms then begin
-      errmsg = 'ERROR: X and Y must have at least NTERMS elements'
+  ; ; Reject data vectors that are too simple
+  if n_elements(x) lt nterms or n_elements(y) lt nterms then begin
+    errmsg = 'ERROR: X and Y must have at least NTERMS elements'
+    message, errmsg, /cont
+    status = 0
+    return, !values.d_nan
+  endif
+
+  ; ; Compute the weighting factors to use
+  if (n_elements(dy) eq 0 and n_elements(weights) eq 0 and $
+    n_elements(dym) eq 0) then begin
+    weights = x * 0 + 1 ; ; Unweighted by default
+  endif else if n_elements(dy) gt 0 then begin
+    weights = dy * 0 ; ; Avoid division by zero
+    wh = where(dy ne 0, ct)
+    if ct gt 0 then weights[wh] = 1. / dy[wh] ^ 2
+  endif else if n_elements(dym) gt 0 then begin
+    weights = dym * 0 ; ; Avoid division by zero
+    wh = where(dym ne 0, ct)
+    if ct gt 0 then weights[wh] = 1. / dym[wh] ^ 2
+  endif
+
+  if n_elements(est) eq 0 then begin
+    ; ; Here is the secret - the width is estimated based on the area
+    ; ; above/below the average.  Thus, as the signal becomes more
+    ; ; noisy the width automatically broadens as it should.
+
+    nx = n_elements(x)
+
+    is = sort(x)
+    xs = x[is]
+    ys = y[is]
+    maxx = max(xs, min = minx)
+    maxy = max(ys, min = miny, nan = nan)
+    dx = 0.5 * [xs[1] - xs[0], xs[2 : *] - xs, xs[nx - 1] - xs[nx - 2]]
+    totarea = total(dx * ys, nan = nan) ; ; Total area under curve
+    av = totarea / (maxx - minx) ; ; Average height
+
+    ; ; Degenerate case: all flat with no noise
+    if miny eq maxy then begin
+      est = ys(0) * 0.0 + [0, xs[nx / 2], (xs[nx - 1] - xs[0]) / 2, ys[0]]
+      guess = 1
+      goto, done_guess
+    endif
+
+    ; ; Compute the spread in values above and below average... we
+    ; ; take the narrowest one as the one with the peak
+    wh1 = where(y ge av, ct1)
+    wh2 = where(y le av, ct2)
+    if ct1 eq 0 or ct2 eq 0 then begin
+      errmsg = 'ERROR: average Y value should fall within the range of Y data values but does not'
       message, errmsg, /cont
       status = 0
       return, !values.d_nan
+    endif
+    sd1 = total(x[wh1] ^ 2) / ct1 - (total(x[wh1]) / ct1) ^ 2
+    sd2 = total(x[wh2] ^ 2) / ct2 - (total(x[wh2]) / ct2) ^ 2
+
+    ; ; Compute area above/below average
+
+    if keyword_set(pos) then goto, pos_peak
+    if keyword_set(neg) then goto, neg_peak
+    if sd1 lt sd2 then begin ; ; This is a positive peak
+      pos_peak:
+      cent = x[where(y eq maxy)]
+      cent = cent[0]
+      peak = maxy - av
+    endif else begin ; ; This is a negative peak
+      neg_peak:
+      cent = x[where(y eq miny)]
+      cent = cent[0]
+      peak = miny - av
+    endelse
+    peakarea = totarea - total(dx * (ys < av), nan = nan)
+    if peak eq 0 then peak = 0.5 * peakarea
+    width = peakarea / (2 * abs(peak))
+    if width eq 0 or finite(width) eq 0 then width = median(dx)
+
+    est = [peak, cent, width, av]
+    guess = 1
   endif
+  done_guess:
 
-  ;; Compute the weighting factors to use
-  if (n_elements(dy) EQ 0 AND n_elements(weights) EQ 0 AND $
-      n_elements(dym) EQ 0) then begin
-      weights = x*0+1        ;; Unweighted by default
-  endif else if n_elements(dy) GT 0 then begin
-      weights = dy * 0   ;; Avoid division by zero
-      wh = where(dy NE 0, ct)
-      if ct GT 0 then weights[wh] = 1./dy[wh]^2
-  endif else if n_elements(dym) GT 0 then begin
-      weights = dym * 0   ;; Avoid division by zero
-      wh = where(dym NE 0, ct)
-      if ct GT 0 then weights[wh] = 1./dym[wh]^2
-   endif
-
-  if n_elements(est) EQ 0 then begin
-      ;; Here is the secret - the width is estimated based on the area
-      ;; above/below the average.  Thus, as the signal becomes more
-      ;; noisy the width automatically broadens as it should.
-
-      nx = n_elements(x)
-
-      is = sort(x)
-      xs = x[is] & ys = y[is]
-      maxx = max(xs, min=minx) & maxy = max(ys, min=miny, nan=nan)
-      dx = 0.5 * [xs[1]-xs[0], xs[2:*] - xs, xs[nx-1] - xs[nx-2]]
-      totarea = total(dx*ys, nan=nan)       ;; Total area under curve
-      av = totarea/(maxx - minx)  ;; Average height
-
-      ;; Degenerate case: all flat with no noise
-      if miny EQ maxy then begin
-          est = ys(0)*0.0 + [0,xs[nx/2],(xs[nx-1]-xs[0])/2, ys[0]]
-          guess = 1
-          goto, DONE_GUESS
-      endif
-
-      ;; Compute the spread in values above and below average... we
-      ;; take the narrowest one as the one with the peak
-      wh1 = where(y GE av, ct1)
-      wh2 = where(y LE av, ct2)
-      if ct1 EQ 0 OR ct2 EQ 0 then begin
-          errmsg = 'ERROR: average Y value should fall within the range of Y data values but does not'
-          message, errmsg, /cont
-          status = 0
-          return, !values.d_nan
-      endif
-      sd1 = total(x[wh1]^2)/ct1 - (total(x[wh1])/ct1)^2
-      sd2 = total(x[wh2]^2)/ct2 - (total(x[wh2])/ct2)^2
-      
-      ;; Compute area above/below average
-
-      if keyword_set(pos) then goto, POS_PEAK
-      if keyword_set(neg) then goto, NEG_PEAK
-      if sd1 LT sd2 then begin  ;; This is a positive peak
-          POS_PEAK:
-          cent  = x[where(y EQ maxy)] & cent = cent[0]
-          peak  = maxy - av
-      endif else begin          ;; This is a negative peak
-          NEG_PEAK:
-          cent  = x[where(y EQ miny)] & cent = cent[0]
-          peak  = miny - av
-      endelse
-      peakarea = totarea - total(dx*(ys<av), nan=nan)
-      if peak EQ 0 then peak = 0.5*peakarea
-      width = peakarea / (2*abs(peak))
-      if width EQ 0 OR finite(width) EQ 0 then width = median(dx)
-
-      est = [peak, cent, width, av]
-      guess = 1
-  endif
-  DONE_GUESS:
-
-  ;; Parameter checking for individual function types
+  ; ; Parameter checking for individual function types
   np = 3
-  if keyword_set(moffat) then begin               ;; MOFFAT
-      fun = 'mpfitpeak_moffat'
-      if keyword_set(guess) then est = [est[0:2], 1, est[3:*]]
-      np = 4
-  endif else if keyword_set(lorentz) then begin  ;; LORENTZIAN
-      fun = 'mpfitpeak_lorentz'
-  endif else begin                               ;; GAUSSIAN
-      fun = 'mpfitpeak_gauss'
+  if keyword_set(moffat) then begin ; ; MOFFAT
+    fun = 'mpfitpeak_moffat'
+    if keyword_set(guess) then est = [est[0 : 2], 1, est[3 : *]]
+    np = 4
+  endif else if keyword_set(lorentz) then begin ; ; LORENTZIAN
+    fun = 'mpfitpeak_lorentz'
+  endif else begin ; ; GAUSSIAN
+    fun = 'mpfitpeak_gauss'
   endelse
-  if n_elements(est) LT np then begin
-      errmsg = 'ERROR: parameter ESTIMATES must have at least '+strtrim(np,2)+$
-        ' elements'
-      message, errmsg, /cont
-      return, !values.d_nan
+  if n_elements(est) lt np then begin
+    errmsg = 'ERROR: parameter ESTIMATES must have at least ' + strtrim(np, 2) + $
+      ' elements'
+    message, errmsg, /cont
+    return, !values.d_nan
   endif
-  if nterms[0] LT np then begin
-      errmsg = 'ERROR: NTERMS must be at least '+strtrim(np,2)
-      message, errmsg, /cont
-      return, !values.d_nan
+  if nterms[0] lt np then begin
+    errmsg = 'ERROR: NTERMS must be at least ' + strtrim(np, 2)
+    message, errmsg, /cont
+    return, !values.d_nan
   endif
-  p0 = replicate(est[0]*0, nterms[0] > n_elements(est))
+  p0 = replicate(est[0] * 0, nterms[0] > n_elements(est))
   p0[0] = est
 
-  ;; Function call
-  a = mpfitfun(fun, x, y, 0, p0[0:nterms[0]-1], weights=weights, $
-               bestnorm=bestnorm, nfev=nfev, status=status, $
-               nfree=nfree, dof=dof, nan=nan, $
-               parinfo=parinfo, perror=perror, niter=iter, yfit=yfit, $
-               quiet=quiet, errmsg=errmsg, _EXTRA=extra)
+  ; ; Function call
+  a = mpfitfun(fun, x, y, 0, p0[0 : nterms[0] - 1], weights = weights, $
+    bestnorm = bestnorm, nfev = nfev, status = status, $
+    nfree = nfree, dof = dof, nan = nan, $
+    parinfo = parinfo, perror = perror, niter = iter, yfit = yfit, $
+    quiet = quiet, errmsg = errmsg, _extra = extra)
 
-  ;; Print error message if there is one.
-  if NOT keyword_set(quiet) AND errmsg NE '' then $
+  ; ; Print error message if there is one.
+  if not keyword_set(quiet) and errmsg ne '' then $
     message, errmsg, /cont
 
-  if status NE 0 then begin
-      ;; Make sure the width is positive
-      a[2] = abs(a[2])
+  if status ne 0 then begin
+    ; ; Make sure the width is positive
+    a[2] = abs(a[2])
 
-      ;; For compatibility with GAUSSFIT
-      if n_elements(perror)   GT 0 then sigma = perror
-      if n_elements(bestnorm) GT 0 then chisq = bestnorm
+    ; ; For compatibility with GAUSSFIT
+    if n_elements(perror) gt 0 then sigma = perror
+    if n_elements(bestnorm) gt 0 then chisq = bestnorm
 
-      ;; Root mean squared of residuals
-      yerror = a[0]*0
-      if n_elements(dof) GT 0 AND dof[0] GT 0 then begin
-          yerror[0] = sqrt( total( (y-yfit)^2, nan=nan ) / dof[0])
-      endif
+    ; ; Root mean squared of residuals
+    yerror = a[0] * 0
+    if n_elements(dof) gt 0 and dof[0] gt 0 then begin
+      yerror[0] = sqrt(total((y - yfit) ^ 2, nan = nan) / dof[0])
+    endif
 
-      return, yfit
+    return, yfit
   endif
 
   return, !values.d_nan
 end
-

@@ -170,137 +170,139 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
-pro mcholdc, a, d, e, outfull=full, sparse=sparse, pivot=pivot, $
-             permute=pp, invpermute=ipp, tau=tau0, cholsol=cholsol
+; -
+pro mcholdc, a, d, e, outfull = full, sparse = sparse, pivot = pivot, $
+  permute = pp, invpermute = ipp, tau = tau0, cholsol = cholsol
+  compile_opt idl2
 
-  if n_params() EQ 0 then begin
-      message, 'USAGE: MCHOLDC, A, D, E [, /OUTFULL, /SPARSE, /PIVOT, '+$
-        '/CHOLSOL, TAU=, PERMUTE=, INVPERMUTE= ]', /info
-      return
+  if n_params() eq 0 then begin
+    message, 'USAGE: MCHOLDC, A, D, E [, /OUTFULL, /SPARSE, /PIVOT, ' + $
+      '/CHOLSOL, TAU=, PERMUTE=, INVPERMUTE= ]', /info
+    return
   endif
 
-  ;; Test for proper dimensions
+  ; ; Test for proper dimensions
   sz = size(a)
-  if sz(0) EQ 0 then begin
-      d = a
-      a = a(0)*0 + 1
-      e = a(0)*0
-      return
+  if sz[0] eq 0 then begin
+    d = a
+    a = a[0] * 0 + 1
+    e = a[0] * 0
+    return
   endif
-  if sz(0) NE 2 then $
+  if sz[0] ne 2 then $
     message, 'ERROR: Matrix A must be two dimensional'
-  if sz(1) NE sz(2) then $
+  if sz[1] ne sz[2] then $
     message, 'ERROR: Matrix A must be square'
-  if n_elements(tau0) GT 0 then tau = tau0(0)
+  if n_elements(tau0) gt 0 then tau = tau0[0]
 
-  n = sz(1)
+  n = sz[1]
 
-  zero = a(0)*0
-  one  = zero + 1
+  zero = a[0] * 0
+  one = zero + 1
   eps = zero + 1e-6
 
-  ;; Gamma and Xi are the max diagonal and off-diagonal components
-  diag = lindgen(n)*n + lindgen(n)
-  gamma = max(abs(a(diag)))
+  ; ; Gamma and Xi are the max diagonal and off-diagonal components
+  diag = lindgen(n) * n + lindgen(n)
+  gamma = max(abs(a[diag]))
 
   xi = zero
-  for i = 0L, n-2 do begin
-      xi = max( [xi, max(abs(a(i+1:*,i)))] )
+  for i = 0l, n - 2 do begin
+    xi = max([xi, max(abs(a[i + 1 : *, i]))])
   endfor
 
-  eps1 = max([gamma,xi]) * eps
+  eps1 = max([gamma, xi]) * eps
   del = max([eps, eps1])
-  
-  ;; Compute the bound on the diagonal elements
-  bound = max([gamma, xi/sqrt(n^2-1), eps])
 
-  ;; Compute output arrays
+  ; ; Compute the bound on the diagonal elements
+  bound = max([gamma, xi / sqrt(n ^ 2 - 1), eps])
+
+  ; ; Compute output arrays
   d = replicate(zero, n)
   e = d
   pp = lindgen(n)
 
-  for j = 0, n-1 do begin
-      
-      ;; Pivoting - search for max element of abs(diag(A))
-      if keyword_set(pivot) then begin
-          maxa = max(abs(a(diag(j:*))), jmax)
-          if jmax GT 0 then begin
-              jmax = jmax + j
-              nn = lindgen(n)
-              j1 = (nn*n+j   ) < (nn+j*n)
-              j2 = (nn*n+jmax) < (nn+jmax*n)
-              temp = j1(j)  & j1(j) = j1(jmax) & j1(jmax) = temp
+  for j = 0, n - 1 do begin
+    ; ; Pivoting - search for max element of abs(diag(A))
+    if keyword_set(pivot) then begin
+      maxa = max(abs(a[diag[j : *]]), jmax)
+      if jmax gt 0 then begin
+        jmax = jmax + j
+        nn = lindgen(n)
+        j1 = (nn * n + j) < (nn + j * n)
+        j2 = (nn * n + jmax) < (nn + jmax * n)
+        temp = j1[j]
+        j1[j] = j1[jmax]
+        j1[jmax] = temp
 
-              ;; Exchange the row/columns
-              temp  = a(j1) & a(j1) = a(j2)    & a(j2)    = temp
+        ; ; Exchange the row/columns
+        temp = a[j1]
+        a[j1] = a[j2]
+        a[j2] = temp
 
-              ;; Change the permutation vector
-              temp  = pp(j) & pp(j) = pp(jmax) & pp(jmax) = temp
-          endif
+        ; ; Change the permutation vector
+        temp = pp[j]
+        pp[j] = pp[jmax]
+        pp[jmax] = temp
       endif
+    endif
 
-      ;; Compute update to the L matrix, in place
-      if j GT 0 AND j LT n-1 then begin
-          
-          ;; The sparse path computes the same thing, but is faster if
-          ;; very few components of the matrix are non-zero.
-          if keyword_set(sparse) then begin
-              ajk = reform(a(j,0:j-1)*d(0:j-1), /overwrite)
-              wh = where(ajk NE 0, nk)
-              if nk GT 0 then $
-                a(j+1:*,j) = a(j+1:*,j) - a(j+1:*,wh) # ajk(wh)
-          endif else begin
-              a(j+1:*,j) = a(j+1:*,j) - $
-                a(j+1:*,0:j-1) # reform(a(j,0:j-1)*d(0:j-1), /overwrite)
-          endelse
-      endif
-
-      ;; Compute correction to diagonal element
-      if j LT n-1 then begin
-          thj2 = max(a(j:*,j)^2)
-      endif
-
-      ;; Compute the unusual modified factorization of Xie and
-      ;; Schlick, or else default to the standard Gill, Murray & Wright
-      if n_elements(tau) GT 0 then begin
-          ww = a(j,j) + tau(0)
-          if      ww GT del      then d(j) = max([ww, thj2/bound]) $
-          else if abs(ww) LE del then d(j) = del $
-          else                        d(j) = min([ww,-thj2/bound])
+    ; ; Compute update to the L matrix, in place
+    if j gt 0 and j lt n - 1 then begin
+      ; ; The sparse path computes the same thing, but is faster if
+      ; ; very few components of the matrix are non-zero.
+      if keyword_set(sparse) then begin
+        ajk = reform(a[j, 0 : j - 1] * d[0 : j - 1], /overwrite)
+        wh = where(ajk ne 0, nk)
+        if nk gt 0 then $
+          a[j + 1 : *, j] = a[j + 1 : *, j] - a[j + 1 : *, wh] # ajk[wh]
       endif else begin
-          d(j) = max([del, abs(a(j,j)), thj2/bound])
+        a[j + 1 : *, j] = a[j + 1 : *, j] - $
+          a[j + 1 : *, 0 : j - 1] # reform(a[j, 0 : j - 1] * d[0 : j - 1], /overwrite)
       endelse
-      e(j) = d(j) - a(j,j)
+    endif
 
-      ;; Apply corrections
-      if j LT n-1 then begin
-          i = lindgen(n-1-j)+j+1
-          a(i,i) = a(i,i) - a(i,j)^2/d(j)
-          a(j+1:*,j) = a(j+1:*,j) / d(j)
-      endif
+    ; ; Compute correction to diagonal element
+    if j lt n - 1 then begin
+      thj2 = max(a[j : *, j] ^ 2)
+    endif
 
+    ; ; Compute the unusual modified factorization of Xie and
+    ; ; Schlick, or else default to the standard Gill, Murray & Wright
+    if n_elements(tau) gt 0 then begin
+      ww = a[j, j] + tau[0]
+      if ww gt del then d[j] = max([ww, thj2 / bound]) $
+      else if abs(ww) le del then d[j] = del $
+      else d[j] = min([ww, -thj2 / bound])
+    endif else begin
+      d[j] = max([del, abs(a[j, j]), thj2 / bound])
+    endelse
+    e[j] = d[j] - a[j, j]
+
+    ; ; Apply corrections
+    if j lt n - 1 then begin
+      i = lindgen(n - 1 - j) + j + 1
+      a[i, i] = a[i, i] - a[i, j] ^ 2 / d[j]
+      a[j + 1 : *, j] = a[j + 1 : *, j] / d[j]
+    endif
   endfor
 
-  ;; Invert the permutation vector
+  ; ; Invert the permutation vector
   ipp = sort(pp)
 
-  ;; Expand to a full matrix if requested
+  ; ; Expand to a full matrix if requested
   if keyword_set(cholsol) then begin
-      d = sqrt(d)
-      for j = 0, n-2 do a(j+1:*,j) = a(j+1:*,j)*d(j)
-      a = transpose(temporary(a))
+    d = sqrt(d)
+    for j = 0, n - 2 do a[j + 1 : *, j] = a[j + 1 : *, j] * d[j]
+    a = transpose(temporary(a))
   endif else if keyword_set(full) then begin
-      for j = 0, n-1 do a(0:j,j) = 0
-      a(diag) = 1
-      dd = a*0
-      ee = dd
-      dd(diag) = d
-      ee(diag) = e
-      
-      d = dd
-      e = ee
+    for j = 0, n - 1 do a[0 : j, j] = 0
+    a[diag] = 1
+    dd = a * 0
+    ee = dd
+    dd[diag] = d
+    ee[diag] = e
+
+    d = dd
+    e = ee
   endif
-
 end
-

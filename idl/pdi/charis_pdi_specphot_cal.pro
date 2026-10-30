@@ -2,6 +2,7 @@ pro charis_pdi_specphot_cal,pfname,$
 calmethod=calmethod,pick=pick,datacube=datacube,calcube=calcube,modamp=modamp,subskyannulus=subskyannulus,$
 filtcal_slice=filtcal_slice,nopradcal=nopradcal,$
 notimeratio=notimeratio,$
+expandederror=expandederror,$
 meancomb=meancomb,$
 fixradius=fixradius,$
 ap_factor=ap_factor,$
@@ -27,7 +28,7 @@ if (N_PARAMS() eq 0 or keyword_set(help)) then begin
     print,'**Calling Sequence**'
     print,'charis_pdi_specphot_cal,pfname,prefname=prefname,Lsuffname=Lsuffname,Rsuffname=Rsuffname,fov_mask_pars=fov_mask_pars,'
     print,'calmethod=calmethod,pick=pick,datacube=datacube,calcube=calcube,modamp=modamp,subskyannulus=subskyannulus,'
-    print,'filtcal_slice=filtcal_slice,nopradcal=nopradcal,meancomb=meancomb,ap_factor=ap_factor,filtername=fname,starname=starname,mag=mag,starlib=starlib,'
+    print,'filtcal_slice=filtcal_slice,nopradcal=nopradcal,expandederror=expandederror,meancomb=meancomb,ap_factor=ap_factor,filtername=fname,starname=starname,mag=mag,starlib=starlib,'
     print,'av=av,prefname=prefname,suffname=suffname,test=test,verbose=verbose,fluxunits=fluxunits,outfilename=outfilename,help=help'
     print,''
     print,'Example:'
@@ -51,6 +52,37 @@ datadir=reducdir+'reg/'
 subdir='reg/'
 reducdir+=subdir
 
+;******
+;LOGGING
+;the command line call
+
+dpp_command=(recall_commands())[0]
+
+;setting up log file
+currenttime=systime()
+ct=strsplit(currenttime,/extract,' ')
+;format is month, day, hms, year
+currenttime_log=ct[1]+ct[2]+'_'+ct[4]+'_'+ct[3]
+trimmed_time_log=ct[1]+ct[2]+'_'+ct[4]
+logfilename=currenttime_log+'.log'
+logfilenametrimmed=trimmed_time_log
+
+;now, look to see if logfile exists
+checklog_list=file_search('./log/'+logfilenametrimmed+'*',count=count_checklog)
+checklog=checklog_list[n_elements(checklog_list)-1]
+
+if count_checklog eq 0 then begin
+logname='./log/'+logfilename
+openw,11,logname
+printf,11,ct[3],dpp_command,format='(a,x,a)'
+endif else begin
+logname='./'+checklog
+openw,11,logname,/append
+printf,11,ct[3],dpp_command,format='(a,x,a)'
+endelse
+;*****
+close,11
+
 if ~keyword_set(prefname) then prefname = 'n'
 if ~keyword_set(Lsuffname) then Lsuffname = 'leftreg'
 if ~keyword_set(Rsuffname) then Rsuffname = 'rightreg'
@@ -67,26 +99,24 @@ sz = size(imtest, /dim)
 dimx = sz[0]
 dimy = sz[1]
 
-if ~keyword_set(fov_mask_pars) then fov_mask_pars=[dimx,dimy,0]
-charis_generate_roi,output=fov_mask,roirange=fov_mask_pars,roidim=[dimx,dimy]
-outside_fov = where(fov_mask eq 0)
+if keyword_set(fov_mask_pars) then begin
+    charis_generate_roi,output=fov_mask,roirange=fov_mask_pars,roidim=[dimx,dimy]
+    outside_fov = where(fov_mask eq 0)
+endif
 
 for i=0,nfiles-1 do begin
     Lcube = readfits(files_polleft[i],h1L,/exten,/silent) ; Left pol
     Rcube = readfits(files_polright[i],h1R,/exten,/silent) ; Right pol
-
-    badl=where(Lcube eq 0)
-    badr=where(Rcube eq 0)
-    Lcube[badl] = !values.f_nan
-    Rcube[badr] = !values.f_nan
-    for Li=0,sz[2]-1 do begin
-        left_slice = Lcube[*,*,Li]
-        left_slice[outside_fov] = !values.f_nan
-        Lcube[*,*,Li] = left_slice
-        right_slice = Rcube[*,*,Li]
-        right_slice[outside_fov] = !values.f_nan
-        Rcube[*,*,Li] = right_slice
-    endfor
+    if keyword_set(fov_mask_pars) then begin
+        for Li=0,sz[2]-1 do begin
+            left_slice = Lcube[*,*,Li]
+            left_slice[outside_fov] = !values.f_nan
+            Lcube[*,*,Li] = left_slice
+            right_slice = Rcube[*,*,Li]
+            right_slice[outside_fov] = !values.f_nan
+            Rcube[*,*,Li] = right_slice
+        endfor
+    endif
 
     Icube = Lcube+Rcube ; Single sum cube on which to perform specphotcal
     bad = where(~finite(Icube))
@@ -102,6 +132,10 @@ if keyword_set(unsat) then begin
     charis_specphot_cal_unsat, pfname, calmethod=calmethod, pick=pick, datacube=datacube, calcube=calcube, subskyannulus=subskyannulus, filtcal_slice=filtcal_slice, nopradcal=nopradcal,$
     meancomb=meancomb, fixradius=fixradius, ap_factor=ap_factor, filtername=filtername, starlib=starlib, empspectrum=empspectrum, av=av,$
     prefname='n', suffname='_tmp', verbose=verbose, fluxunits=fluxunits, outfilename=outfilename, help=help
+    ;charis_specphot_cal, pfname, pick=pick, datacube=datacube, calcube=calcube, modamp=modamp, subskyannulus=subskyannulus, filtcal_slice=filtcal_slice, nopradcal=nopradcal, notimeratio=notimeratio,$
+    ;meancomb=meancomb, fixradius=fixradius, ap_factor=ap_factor, filtername=filtername, starlib=starlib, empspectrum=empspectrum, av=av,$
+    ;prefname='n', suffname='_tmp', verbose=verbose, fluxunits=fluxunits, outfilename=outfilename, calmethod='psf',help=help
+
 endif else begin
     charis_specphot_cal, pfname, calmethod=calmethod, pick=pick, datacube=datacube, calcube=calcube, modamp=modamp, subskyannulus=subskyannulus, filtcal_slice=filtcal_slice, nopradcal=nopradcal, notimeratio=notimeratio,$
     meancomb=meancomb, fixradius=fixradius, ap_factor=ap_factor, filtername=filtername, starlib=starlib, empspectrum=empspectrum, av=av,$
@@ -160,5 +194,7 @@ for i=0,nfiles-1 do begin
     spawn,'rm '+files_tmp[i]
     spawn,'rm '+files_tmp_cal[i]
 endfor
+
+close,/all
 endofprogram:
 end           

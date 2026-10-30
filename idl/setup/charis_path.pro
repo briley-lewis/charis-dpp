@@ -1,82 +1,78 @@
-function charis_path,pathname=pathname
+function charis_path, pathname = pathname
+  compile_opt idl2
 
-;Basic structure is...
-;directory_name = [path to CHARIS DPP]/[subdirectory]
+  ; Basic structure is...
+  ; directory_name = [path to CHARIS DPP]/[subdirectory]
 
-;e.g. my path to CHARIS DPP is '~/idl_tools/ADI_dl/charis_dpp_new/'
-;so for modeldirectory it is modeldirectory=[path to CHARIS DPP]/models/'
-; ... or ... modeldirectory='~/idl_tools/ADI_dl/charis_dpp_new/models/'
+  ; e.g. my path to CHARIS DPP is '~/idl_tools/ADI_dl/charis_dpp_new/'
+  ; so for modeldirectory it is modeldirectory=[path to CHARIS DPP]/models/'
+  ; ... or ... modeldirectory='~/idl_tools/ADI_dl/charis_dpp_new/models/'
 
-;*****MODIFY THESE****
+  ; *****MODIFY THESE****
 
-;1.
-charispath='~/idl_tools/ADI_dl/charis_dpp_new/'
+  ; 1.
+  charispath = '/home/thomasmc/charis-dpp/idl/'
 
-;these models have are from the online substellar atmosphere model server: 
-;http://svo2.cab.inta-csic.es/theory/newov2/
-;format lte[temp]-[logg]-[metallicity].BT-Sett.7.dat.txt
-;e.g lte020-4.0-0.0.BT-Settl.7.dat.txt  = 2000K, log(g)=4, solar metallicity
+  ; these models have are from the online substellar atmosphere model server:
+  ; http://svo2.cab.inta-csic.es/theory/newov2/
+  ; format lte[temp]-[logg]-[metallicity].BT-Sett.7.dat.txt
+  ; e.g lte020-4.0-0.0.BT-Settl.7.dat.txt  = 2000K, log(g)=4, solar metallicity
 
-;2.
-btsettldirectory='/Users/thaynecurrie/Research/Planets/DI/ames/btsettl/'
+  ; 2.
+  btsettldirectory = '/Volumes/HAL/models/'
 
+  ; ********
 
-;********
+  ; ****do NOT modify anything below this line
 
+  modeldirectory = charispath + 'models/'
+  wavecaldirectory = charispath + 'cals/'
+  filterresponsedirectory = charispath + 'tools/filters/filter_response/'
 
-;****do NOT modify anything below this line
+  planetdirectory = charispath + 'models/planetmodels/'
+  modelspectrumdirectory = charispath + 'models/starmodels/'
 
-modeldirectory=charispath+'models/'
-wavecaldirectory=charispath+'cals/'
-filterresponsedirectory=charispath+'tools/filters/filter_response/'
+  bonnefoydirectory = charispath + 'models/planetmodels/bonn_speclib/'
+  montrealdirectory = charispath + 'models/planetmodels/Montreal/'
 
-planetdirectory=charispath+'models/planetmodels/'
-modelspectrumdirectory=charispath+'models/starmodels/'
+  ; *not implemented yet, obsolete due to Cruz gravity standards?
+  ; spexdirectory='~/Research/Planets/DI/spex/'
 
-bonnefoydirectory=charispath+'models/planetmodels/bonn_speclib/'
-montrealdirectory=charispath+'models/planetmodels/Montreal/'
+  case pathname of
+    'modeldir': begin
+      pathdirectory = modeldirectory
+    end
 
-;*not implemented yet, obsolete due to Cruz gravity standards?
-;spexdirectory='~/Research/Planets/DI/spex/'
+    'wavecalpath': begin
+      pathdirectory = wavecaldirectory
+    end
 
-case pathname of
+    'planetdir': begin
+      pathdirectory = planetdirectory
+    end
 
-'modeldir': begin
- pathdirectory=modeldirectory
-           end
+    'filtresponsedir': begin
+      pathdirectory = filterresponsedirectory
+    end
 
-'wavecalpath': begin
- pathdirectory=wavecaldirectory
-            end
+    'modelspecdir': begin
+      pathdirectory = modelspectrumdirectory
+    end
 
-'planetdir': begin
- pathdirectory=planetdirectory
-            end 
+    'montrealdir': begin
+      pathdirectory = montrealdirectory
+    end
+    'bonnefoydir': begin
+      pathdirectory = bonnefoydirectory
+    end
+    'btsettldir': begin
+      pathdirectory = btsettldirectory
+    end
 
- 'filtresponsedir': begin
-pathdirectory=filterresponsedirectory
-            end
+    ; 'spexdir': begin
+    ; pathdirectory=spexdirectory
+    ; end
+  endcase
 
-'modelspecdir': begin
-pathdirectory=modelspectrumdirectory
-            end
-
-'montrealdir': begin
-pathdirectory=montrealdirectory
-              end
-'bonnefoydir': begin
-pathdirectory=bonnefoydirectory
-              end
-'btsettldir': begin
-pathdirectory=btsettldirectory
-              end
-
-;'spexdir': begin
-;pathdirectory=spexdirectory
-;           end
-
-endcase
-
-return,pathdirectory
-
+  return, pathdirectory
 end

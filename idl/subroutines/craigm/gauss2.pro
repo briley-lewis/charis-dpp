@@ -66,13 +66,14 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-function gauss2, x, y, p, _EXTRA=extra
+function gauss2, x, y, p, _extra = extra
+  compile_opt idl2
 
-  u = ((x-p(0))/p(2))^2 + ((y-p(1))/p(2))^2
-  mask = u LT 100
-  f = p(3) * mask * exp(-0.5D * temporary(u) * mask)
+  u = ((x - p[0]) / p[2]) ^ 2 + ((y - p[1]) / p[2]) ^ 2
+  mask = u lt 100
+  f = p[3] * mask * exp(-0.5d * temporary(u) * mask)
   mask = 0
 
   return, f

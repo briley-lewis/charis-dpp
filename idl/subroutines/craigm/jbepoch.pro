@@ -16,7 +16,7 @@
 ;   JDAY  = JBEPOCH(/B, EPOCH, /TO_DAY)  ;; Besselian Epoch to Julian Day
 ;   JDAY  = JBEPOCH(/J, EPOCH, /TO_DAY)  ;; Julian Epoch to Julian Day
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   The function JBEPOCH computes the Julian or Besselian Epoch year
 ;   number from a given Julian day number.  Epochs of this form are
@@ -60,7 +60,7 @@
 ;   If TO_DAY is set, then returns Julian Days.
 ;
 ;   If TO_DAY is not set, then returns year number.
-;   
+;
 ;
 ; REFERENCES:
 ;
@@ -86,27 +86,26 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
+function jbepoch, ep, b = b, j = j, to_day = today, mjd = mjd
+  compile_opt idl2
 
-function jbepoch, ep, b=b, j=j, to_day=today, mjd=mjd
-
-  if NOT keyword_set(mjd) then offset = 2400000.5d else offset = 0d
+  if not keyword_set(mjd) then offset = 2400000.5d else offset = 0d
 
   if keyword_set(b) then begin
-      if keyword_set(today) then begin
-          return, offset + 15019.81352D0 + (ep-1900D0)*365.242198781D0
-      endif else begin
-          return, 1900D0 + (ep-15019.81352D0-offset)/365.242198781D0
-      endelse
+    if keyword_set(today) then begin
+      return, offset + 15019.81352d0 + (ep - 1900d0) * 365.242198781d0
+    endif else begin
+      return, 1900d0 + (ep - 15019.81352d0 - offset) / 365.242198781d0
+    endelse
   endif else if keyword_set(j) then begin
-      if keyword_set(today) then begin
-          return, offset + 51544.5D0 + (ep-2000D0)*365.25D0
-      endif else begin
-          return, 2000D0 + (ep-51544.5D0-offset)/365.25D0
-      endelse
+    if keyword_set(today) then begin
+      return, offset + 51544.5d0 + (ep - 2000d0) * 365.25d0
+    endif else begin
+      return, 2000d0 + (ep - 51544.5d0 - offset) / 365.25d0
+    endelse
   endif
 
   message, 'ERROR: you must specify the /B or /J keyword'
-
 end

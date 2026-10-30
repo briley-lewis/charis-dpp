@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -31,7 +31,7 @@
 ;            *unformatted*.
 ;
 ; Side Effects
-; 
+;
 ;   The pipe is read as needed and the cache is populated.
 ;   The file pointer advances.
 ;
@@ -47,32 +47,33 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-PRO FXPREAD, UNIT, BUFFER, TRANSFER_COUNT=TC
+pro FXPREAD, UNIT, BUFFER, transfer_count = TC
+  compile_opt idl2
 
-@fxpcommn
+  @fxpcommn
 
-  SZ = SIZE(BUFFER)
-  TYPECODE = SZ(SZ(0)+1) < 12
-  NBYTES = SZ(SZ(0)+2)*BYTELENS(TYPECODE)
-  
-  IF NBYTES LT 0 THEN BEGIN
-      TYPENAME = ['UNDEFINED', 'BYTE', 'INTEGER', 'LONG', $
-                  'FLOAT', 'DOUBLE', 'COMPLEX', 'STRING', $
-                  'STRUCTURE', 'DCOMPLEX', 'POINTER',     $
-                  'OBJECT', 'UNKNOWN' ]
-      MESSAGE, 'ERROR: Cannot read unformatted '+TYPENAME(TYPECODE)+' data'
-      RETURN
-  ENDIF
+  SZ = size(BUFFER)
+  TYPECODE = SZ[SZ[0] + 1] < 12
+  NBYTES = SZ[SZ[0] + 2] * BYTELENS(TYPECODE)
 
-  IF POINTER(UNIT)+NBYTES GT CACHE_LEN(UNIT) THEN BEGIN
-      FXPBUFFR, UNIT, POINTER(UNIT)+NBYTES
-  ENDIF
+  if NBYTES lt 0 then begin
+    TYPENAME = ['UNDEFINED', 'BYTE', 'INTEGER', 'LONG', $
+      'FLOAT', 'DOUBLE', 'COMPLEX', 'STRING', $
+      'STRUCTURE', 'DCOMPLEX', 'POINTER', $
+      'OBJECT', 'UNKNOWN']
+    message, 'ERROR: Cannot read unformatted ' + TYPENAME[TYPECODE] + ' data'
+    RETURN
+  endif
 
-  READU, CACHE_UNIT(UNIT), BUFFER, TRANSFER_COUNT=TC
-  POINT_LUN, -CACHE_UNIT(UNIT), P
+  if POINTER(UNIT) + NBYTES gt CACHE_LEN(UNIT) then begin
+    FXPBUFFR, UNIT, POINTER(UNIT) + NBYTES
+  endif
+
+  readu, CACHE_UNIT(UNIT), BUFFER, transfer_count = TC
+  point_lun, -CACHE_UNIT(UNIT), P
   POINTER(UNIT) = P
 
   RETURN
-END
+end

@@ -1,3 +1,4 @@
+;works but you need to clean up your source code
 pro charis_register_cube,pfname,prefname=prefname,suffname=suffname,$
 method=method,$
 guessoffsets=guessoffsets,$
@@ -5,20 +6,29 @@ rsub=rsub,$
 refcube=refcube,$
 medbox=medbox,$
 ladder=ladder,$
+fitgauss=fitgauss,$
+fittrim=fittrim,$
 xcorr=xcorr,$
+rin_corr=rin_corr,$
+rout_corr=rout_corr,$
 revise=revise,$
 splitpsf=splitpsf,$
 keepprev=keepprev,$
 nosmooth=nosmooth,$
 fwhmlim=fwhmlim,$
 smallsteps=smallsteps,$
-;,bandaid=bandaid,$
 ;refslice=refslice,$
+smoothval=smoothval,$
 smask=smask,$
 checkquality=checkquality,$
 astrogrid=astrogrid,$
+wait=wait,$
 verbose=verbose,help=help
 
+;01/22/2026 - edited the PSF splitting fix, added way to handle post-NBS parity flips
+;09/21/2023 - current version of image registration module.  previously called charis_register_cube2.pro
+;06/30/2023 - added option to increase/decrease number of channels poly_fitted; added option for elliptical gaussian fitting
+;01/07/2022 - Improved documentation
 ;05/24/2021 - Edited to add 'astrogrid' keyword: if using PDI mode, set to 11.2
 ;03/27/2020 - Edited to handle cal spot frame used to register images without spots
 ;03/25/2020 - Includes switch to register ladder sequences that select different files and do not produce a reduc.log file
@@ -36,8 +46,7 @@ verbose=verbose,help=help
 ; components.  
 
 ;Limitations ... 
-;- cross-correlation currently does not work
-;- gaussian centroiding ONLY for method = 'psf'
+;- cross-correlation currently does not work well
 ;- does not yet do method = 'halo'
 
 ;*****Nominal Program (no switches)*****
@@ -59,7 +68,7 @@ starttime=systime(/seconds)
 
 if (N_PARAMS() eq 0 or keyword_set(help)) then begin
 print,"charis_register_cube,pfname,method=method,guessoffsets=guessoffsets,astrogrid=astrogrid,rsub=rsub,medbox=medbox"
-print,",refcube=refcube,ladder=ladder,xcorr=xcorr,splitpsf=splitpsf,keepprev=keepprev,nosmooth=nosmooth,revise=revise,fwhmlim=fwhmlim"
+print,",refcube=refcube,ladder=ladder,fitgauss=fitgauss,fittrim=fittrim,xcorr=xcorr,rin_corr=rin_corr,rout_corr=rout_corr,splitpsf=splitpsf,keepprev=keepprev,nosmooth=nosmooth,revise=revise,fwhmlim=fwhmlim"
 print,"smallsteps=smallsteps,smask=smask,checkquality=checkquality,verbose=verbose,help=help"
 print,""
 print,"***Major Keywords***"
@@ -68,28 +77,39 @@ print,'*pfname - parameter file (e.g. HR8799_low.info)'
 print,""
 print,"*method - [which method used for registering cubes?]"
 print," - choices: "
-print," 0/'sats' [use sat spots], Examples: charis_register_cube,'HR8799_low.info',method=0"
+print," 0/'sats' [use sat spots], Examples: charis_register_cube,'HR8799_low.info',method=0 [DEFAULT]"
 print,"OR","                                  charis_register_cube,'HR8799_low.info',method='sats'"
 print,""
 print," 1/'psf' [use unsat. PSF], Examples: charis_register_cube,'LkCa15_low.info',method=1"
 print,"OR","                                  charis_register_cube,'LkCa15_low.info',method='psf'"
 print,""
 print," 2/'calsat' [use sat spots in cal. cube to register cubes w/o spots]"
+print,"             note: in this case, the cubes-with-spots are sometimes known as 'ladder cubes'"
+print,"             so this method selects computes a centroid for a cube in fnum_lad and then ..."
+print,"             uses halo cross-correlation to centroid cubes in fnum_sat"
 print,"                          Examples: charis_register_cube,'ABAur_low.info',method=2"
-print,"OR","                                  charis_register_cube,'ABAur_low.info',method='calsat'"
+print,"                                    charis_register_cube,'ABAur_low.info',method='calsat'"
 print,""
-print,"*guessoffsets - guess the starting centroid offset from array center [default=0]"
+print,"*guessoffsets - guess the starting centroid offset from array center (default=[0,0] ) *** USE THIS IF THE STAR IS OFF-CENTERED!!!***"
 print,"*rsub - subtract radial profile b4 centroiding? [default=no]; *medbox - box-width for unsharp masking [default=15]"
+print,"*medbox - subtract off a moving-box median filter of specified width
+print,"*fittrim - how many channels do you trim off -- short and long wavelengths? -- default = 2. If you want 0 -- i.e. fit all channels -- then set fittrim=-1"
+print,"*fitgauss - if set, then fit an elliptical gaussian with FWHM & tilt as free parameters to determine the centroid instead of relying on gcntrd.pro"
 print,""
 print,"***other keywords"
-print,"*refcube [reference cube for centroiding, method=1],*ladder [is this a ladder sequence?],*xcorr [are we doing cross-correlating?, method=0]"
-print,"*revise [in case of bad centroiding],*splitpsf [fix for a splitting PSF core], *keepprev [keeps orig. centroid estimate incaseof failure]"
+print,"*refcube [reference cube for centroiding, method=1]
+print,"*ladder [is this a ladder sequence?] - if so, it will register cubes in fnum_lad"
+print,"        [note: this is step not required as a prerequisite for registering cubes-without-spots using calmethod=2"
+print,"*xcorr [are we doing cross-correlating?, method=0: **note**: not well tested, inadvisable at this time]"
+print,"*revise [in case of bad centroiding],*splitpsf [fix for a splitting PSF core], *keepprev [keeps orig. centroid estimate in case of failure]"
 print,"*nosmooth [do not do sub-PSF core smoothing b4 centroiding],*fwhmlim[boxsize for centroid search]"
 print,"*smallsteps[for method=0+xcorr flag thrown,*smask[mask pixels surrounding bright companion]"
 print,"*checkquality[calculate core-to-halo ratio, plot results],*verbose[for debugging]"
-print,"*astrogrid [Alternate astrogrid spacing in lambda / D, to use for spacings other than 15.9 lambda/D; 15.9 lambda/D for total intensity, usually 11.2 lambda/D for PDI]"
+print,"*astrogrid [Alternate astrogrid spacing in lambda / D units]; to use for spacings other than 15.9 lambda/D. Note: 15.9 lambda/D for total intensity, usually 11.2 lambda/D for PDI"
 goto,skiptotheend
 endif
+
+if ~keyword_set(smoothval) then smoothval=3
 
 if ~keyword_set(method) then begin 
 method = 0
@@ -101,24 +121,30 @@ endif
 ;if method eq 'psf' then method = 1
 ;if method eq 'calsats' then method =2
 
-if method eq 'sats' then begin 
+
+if string(method) eq 'sats' then begin 
 method = 0
 goto,skipmethodlist
 endif
-if method eq 'psf' then begin
+if string(method) eq 'psf' then begin
 method = 1
 goto,skipmethodlist
 endif
-if method eq 'calsats' then begin
+if string(method) eq 'calsats' then begin
 method =2
 goto,skipmethodlist
 endif
 
+
 skipmethodlist:
 
-;if ~keyword_set(refslice) then refslice=10  ;hardwire this for now
+
 
 refslice=10 ;hardwire this for now
+
+if ~keyword_set(fittrim) then fittrim=4
+
+fittrim = fittrim > 0
 
 if ~keyword_set(ladder) then begin
 ;*****Output Log File
@@ -145,6 +171,37 @@ reducdir+=subdir
 ;tmpdir=reducdir+'tmp/'
 ;file_mkdir,tmpdir
 ;*******end Directory Structure
+
+
+;******
+;LOGGING
+;the command line call
+
+dpp_command=(recall_commands())[0]
+
+;setting up log file
+currenttime=systime()
+ct=strsplit(currenttime,/extract,' ')
+;format is month, day, hms, year
+currenttime_log=ct[1]+ct[2]+'_'+ct[4]+'_'+ct[3]
+trimmed_time_log=ct[1]+ct[2]+'_'+ct[4]
+logfilename=currenttime_log+'.log'
+logfilenametrimmed=trimmed_time_log
+
+;now, look to see if logfile exists
+checklog_list=file_search('./log/'+logfilenametrimmed+'*',count=count_checklog)
+checklog=checklog_list[n_elements(checklog_list)-1]
+
+if count_checklog eq 0 then begin
+logname='./log/'+logfilename
+openw,11,logname
+printf,11,ct[3],dpp_command,format='(a,x,a)'
+endif else begin
+logname='./'+checklog
+openw,11,logname,/append
+printf,11,ct[3],dpp_command,format='(a,x,a)'
+endelse
+;*****
 
 
 ;******Keywords and Filenames*****
@@ -236,7 +293,6 @@ case method of
 
 ;take initial frame and grab the filter name
 filtname=strtrim(sxpar(h0,'CAL_BAND'))
-;filtnamelist=['
 case filtname of 
 'J': begin
        sat_xguess=charis_get_constant(name='jspots_x')
@@ -245,16 +301,10 @@ case filtname of
 'H': begin
        sat_xguess=charis_get_constant(name='hspots_x')
        sat_yguess=charis_get_constant(name='hspots_y')
-       ;sat_xguess=[64,112,137,89]
-       ;sat_yguess=[114,138,89,64]
-       ;refslice=0; until you fix above
      end
 'K': begin
        sat_xguess=charis_get_constant(name='kspots_x')
        sat_yguess=charis_get_constant(name='kspots_y')
-       ;sat_xguess=[50,116,150,84]
-       ;sat_yguess=[117,150,83,49]
-       ;refslice=0; until you fix above
      end
 'lowres': begin
        sat_xguess=charis_get_constant(name='lowspots_x')
@@ -263,12 +313,9 @@ case filtname of
   
  else: begin
 
-;endif else begin
 ;if not highres then default to low res spots for now
        sat_xguess=charis_get_constant(name='lowspots_x')
        sat_yguess=charis_get_constant(name='lowspots_y')
-       ;  sat_xguess=[59,113,141,87]
-       ;  sat_yguess=[114,141,86,59]
        end
 endcase
 
@@ -277,14 +324,37 @@ if keyword_set(astrogrid) then begin
   sat_yguess = (sat_yguess-yc0)*(astrogrid/15.9)+yc0
 endif
 
+;****parity flip for post-NBS data
+parity_val=sxpar(h0,'PARITY',count=parity_count)
+
+if parity_count gt 0 and parity_val eq 1 then begin
+print,'original x guesses are',sat_xguess
+dx=sat_xguess-xc0 ;delta(x) offset from center of image plane
+
+sat_xguess=-1*dx+xc0
+
+endif
+
+;****
+
 if keyword_set(guessoffsets) then begin
 sat_xguess+=guessoffsets[0]
 sat_yguess+=guessoffsets[1]
 endif
 
+;print,xc0,dx,guessoffsets[0]
 ;print,sat_xguess
-;print,sat_yguess
-;stop
+;print,'original + offsets are',sat_xguess-guessoffsets[0]
+print,'revised x guesses are',sat_xguess
+print,'y guesses are',sat_yguess
+
+get_charis_wvlh,h0,wvlhs
+scl=wvlhs[refslice]/wvlhs
+
+;Telescope Diameter for Subaru
+Dtel=charis_get_constant(name='Dtel')
+pixscale=charis_get_constant(name='pixscale')
+fwhm=1.*(1.d-6*wvlhs*1d-3/Dtel)*(180.*3600./!dpi)/pixscale
 
 
 for i=0L,nfiles-1 do begin
@@ -296,14 +366,12 @@ h0=headfits(datadir+files[i],ext=0,/silent)
 a_in=a
 sz=size(a)
 
-
 parangle0=float(sxpar(h0,'PA'))
 ha0=float(sxpar(h0,'HA'))
 
 ;***This *should* work.  Manually edit if it results in PA being discontinuous in reduc.log
 
 ;center the pa value on zero
-;need to fix this...
 ;if parangle0 gt 180 then parangle0-=360
 if parangle0 gt 180 and decdeg lt lat then parangle0-=360
 
@@ -312,8 +380,6 @@ if parangle0 gt 180 and decdeg lt lat then parangle0-=360
 ;*****Image Registration Loop.
 ;**- If you have satellite spots then you have a choice of getting the centroid from gaussian-fitting or from joint cross-correlation
 
-get_charis_wvlh,h0,wvlhs
-scl=wvlhs[refslice]/wvlhs
 
 
 ;****do an initial centroid measurement
@@ -326,10 +392,19 @@ profrad_tc,a_firstchan,2,1,dim/2,p2d=pr
 ;profrad_tc,imslice2,2,allrsat[i],rmax,p2d=pr,p1d=p1d,rayon=r
 a_firstchan-=pr
 endif
+
+ if ~keyword_set(fitgauss) then begin
  gcntrd,a_firstchan,sat_xguess[0],sat_yguess[0],satcx0,satcy0,fwhmlim
  gcntrd,a_firstchan,sat_xguess[1],sat_yguess[1],satcx1,satcy1,fwhmlim
  gcntrd,a_firstchan,sat_xguess[2],sat_yguess[2],satcx2,satcy2,fwhmlim
  gcntrd,a_firstchan,sat_xguess[3],sat_yguess[3],satcx3,satcy3,fwhmlim
+ endif else begin
+
+ calc_centroid_spots4,a_firstchan,[sat_xguess[0],sat_yguess[0]],fwhm[refslice],satcx0,satcy0
+ calc_centroid_spots4,a_firstchan,[sat_xguess[1],sat_yguess[1]],fwhm[refslice],satcx1,satcy1
+ calc_centroid_spots4,a_firstchan,[sat_xguess[2],sat_yguess[2]],fwhm[refslice],satcx2,satcy2
+ calc_centroid_spots4,a_firstchan,[sat_xguess[3],sat_yguess[3]],fwhm[refslice],satcx3,satcy3
+ endelse
 
  
 if (satcx0 lt 0 or satcy0 lt 0) then begin 
@@ -366,7 +441,6 @@ endif
  cens0p=cv_coord(from_rect=cens0-c0,/to_polar)
 initial_centroid=median(cens0,dimension=2,/even)
 
-;dist_circle,g,[sz[1],sz[2]]
 
 PSFcens=fltarr(2,sz[3])
 deltax=fltarr(sz[3])
@@ -382,7 +456,7 @@ if keyword_set(rsub) then begin
 profrad_tc,a_test,2,1,dim/2,p2d=pr
 a_test-=pr
 endif
-if ~keyword_set(nosmooth) then a_test=smooth(a_test,3)
+if ~keyword_set(nosmooth) then a_test=smooth(a_test,smoothval)
 
 ;****if you have a very bright pt source that is skewing the sat spot determination, apply an NAN mask here.
 if keyword_set(smask) then begin
@@ -401,18 +475,24 @@ endif
 if ~keyword_set(xcorr) then begin
 ;*Gaussian Centroiding
 
+ if ~keyword_set(fitgauss) then begin
  gcntrd,a_test,cens[0,0,ii],cens[1,0,ii],satcx0,satcy0,fwhmlim
  gcntrd,a_test,cens[0,1,ii],cens[1,1,ii],satcx1,satcy1,fwhmlim
  gcntrd,a_test,cens[0,2,ii],cens[1,2,ii],satcx2,satcy2,fwhmlim
  gcntrd,a_test,cens[0,3,ii],cens[1,3,ii],satcx3,satcy3,fwhmlim
 
+ endif else begin
+ calc_centroid_spots4,a_test,[cens[0,0,ii],cens[1,0,ii]],fwhm[ii],satcx0,satcy0
+ calc_centroid_spots4,a_test,[cens[0,1,ii],cens[1,1,ii]],fwhm[ii],satcx1,satcy1
+ calc_centroid_spots4,a_test,[cens[0,2,ii],cens[1,2,ii]],fwhm[ii],satcx2,satcy2
+ calc_centroid_spots4,a_test,[cens[0,3,ii],cens[1,3,ii]],fwhm[ii],satcx3,satcy3
+ endelse
+
 if (satcx0 lt 0 or satcy0 lt 0) then begin 
 cntrd,a_test,cens[0,0,ii],cens[1,0,ii],satcx0,satcy0,fwhmlim,/keepcenter
 endif
 if (satcx1 lt 0 or satcy1 lt 0) then begin 
-;print,'v1',satcx1,satcy1
 cntrd,a_test,cens[0,1,ii],cens[1,1,ii],satcx1,satcy1,fwhmlim,/keepcenter
-;print,'v2',satcx1,satcy1
 endif
 if (satcx2 lt 0 or satcy2 lt 0) then begin 
 cntrd,a_test,cens[0,2,ii],cens[1,2,ii],satcx2,satcy2,fwhmlim,/keepcenter
@@ -427,9 +507,7 @@ if (satcx0 lt 0 or satcy0 lt 0) then begin
 cntrd,a_test,cens[0,0,ii],cens[1,0,ii],satcx0,satcy0,fwhmlim,extendbox=2
 endif
 if (satcx1 lt 0 or satcy1 lt 0) then begin
-;print,'v1',satcx1,satcy1
 cntrd,a_test,cens[0,1,ii],cens[1,1,ii],satcx1,satcy1,fwhmlim,extendbox=2
-print,'v3',satcx1,satcy1
 ;stop
 endif
 if (satcx2 lt 0 or satcy2 lt 0) then begin
@@ -508,13 +586,20 @@ endfor
 slices=findgen(sz[3])
 ;-refslice
 ;good=where(finite(PSFcens[0,*]) ne 0 and finite(PSFcens[1,*]) ne 0,ngood)
-good=where(finite(PSFcens[0,2:sz[3]-1-2]) ne 0 and finite(PSFcens[1,2:sz[3]-1-2]) ne 0,ngood)
+
+good=where(finite(PSFcens[0,ceil(fittrim/2.):sz[3]-1-floor(fittrim/2.)]) ne 0 and finite(PSFcens[1,ceil(fittrim/2.):sz[3]-1-floor(fittrim/2.)]) ne 0,ngood)
+;good=where(finite(PSFcens[0,2:sz[3]-1-fittrim]) ne 0 and finite(PSFcens[1,2:sz[3]-1-fittrim]) ne 0,ngood)
+
 print,'number of slices for fit ', ngood
 
 ;****for now put in break to exit in case the program cannot find any centroids
+
 if ngood gt 0 then begin
-fitx=robust_poly_fit((slices[2:sz[3]-1-2])[good]-refslice,(PSFcens[0,2:sz[3]-1-2])[good]-PSFcens[0,refslice],2,numit=15)
-fity=robust_poly_fit((slices[2:sz[3]-1-2])[good]-refslice,(PSFcens[1,2:sz[3]-1-2])[good]-PSFcens[1,refslice],2,numit=15)
+print,'fittrim is',fittrim
+fitx=robust_poly_fit((slices[ceil(fittrim/2.):sz[3]-1-floor(fittrim/2.)])[good]-refslice,(PSFcens[0,ceil(fittrim/2.):sz[3]-1-floor(fittrim/2.)])[good]-PSFcens[0,refslice],2,numit=15)
+fity=robust_poly_fit((slices[ceil(fittrim/2.):sz[3]-1-floor(fittrim/2.)])[good]-refslice,(PSFcens[1,ceil(fittrim/2.):sz[3]-1-floor(fittrim/2.)])[good]-PSFcens[1,refslice],2,numit=15)
+;fitx=robust_poly_fit((slices[2:sz[3]-1-fittrim])[good]-refslice,(PSFcens[0,2:sz[3]-1-fittrim])[good]-PSFcens[0,refslice],2,numit=15)
+;fity=robust_poly_fit((slices[2:sz[3]-1-fittrim])[good]-refslice,(PSFcens[1,2:sz[3]-1-fittrim])[good]-PSFcens[1,refslice],2,numit=15)
 
 refoffsetx=PSFcens[0,refslice]-xc0
 refoffsety=PSFcens[1,refslice]-yc0
@@ -522,10 +607,15 @@ refoffsety=PSFcens[1,refslice]-yc0
 deltax=fitx[0]+fitx[1]*(slices-refslice)+fitx[2]*(slices-refslice)^2.+refoffsetx
 deltay=fity[0]+fity[1]*(slices-refslice)+fity[2]*(slices-refslice)^2.+refoffsety
 
-print,refoffsetx,xc0,PSFcens[0,refslice]
+if keyword_set(verbose) then print,refoffsetx,xc0,PSFcens[0,refslice]
 
 if keyword_set(guessoffsets) then begin
-plot,slices,PSFcens[0,*],yrange=[sz[1]/2-7+long(guessoffsets[0]),sz[1]/2+7+long(guessoffsets[1])],ystyle=1,/nodata
+plot,slices,PSFcens[0,*],yrange=[40,140],ystyle=1,/nodata
+
+;plot,slices,PSFcens[0,*],yrange=[median(PSFcens[0,*])-7,median(PSFcens[0,*])+7],ystyle=1,/nodata
+;sz[1]/2-7+long(guessoffsets[0]),sz[1]/2+7+long(guessoffsets[1])],ystyle=1,/nodata
+;plot,slices,PSFcens[0,*],yrange=[sz[1]/2-7+long(guessoffsets[0]),sz[1]/2+7+long(guessoffsets[1])],ystyle=1,/nodata
+
 endif else begin
 plot,slices,PSFcens[0,*],yrange=[sz[1]/2-7,sz[1]/2+7],ystyle=1,/nodata
 endelse
@@ -594,6 +684,7 @@ if keyword_set(verbose) then print,'Median PSF Center is ',psfcenx,psfceny
 a=a_in
 
 
+sxaddpar,h0,'HISTORY',currenttime_log+' '+dpp_command
 writefits,reducdir+filesout[i],0,h0
 writefits,reducdir+filesout[i],a,h1,/append
 if ~keyword_set(ladder) then printf,1,filenum[i],psfcenx,psfceny,rsat,ha0,parangle0
@@ -632,11 +723,8 @@ endfor
          ;dist_circle,g,[refsz[1],refsz[2]],xoo,yoo
 
 ;Telescope Diameter for Subaru
-;Dtel=7.9d0 ;visible pupil for SCExAO
 Dtel=charis_get_constant(name='Dtel')
-;pixel scale 16.4 mas/pixel
 pixscale=charis_get_constant(name='pixscale')
-;pixscale=0.0164
 fwhm=1.*(1.d-6*wvlhs*1d-3/Dtel)*(180.*3600./!dpi)/pixscale
          
          ;Define variables
@@ -673,7 +761,11 @@ if parangle0 gt 180 and decdeg lt lat then parangle0-=360
 
 for il=0L,refsz[3]-1 do begin
 
+if ~keyword_set(fitgauss) then begin
 gcntrd,a[*,*,il],xc0+guessoffsets[0],yc0+guessoffsets[1],xc1,yc1,fwhmlim
+endif else begin
+calc_centroid_spots4,a[*,*,il],[xc0+guessoffsets[0],yc0+guessoffsets[1]],fwhm[il],xc1,yc1
+endelse
 
 if (xc1 lt 0 or yc1 lt 0) then begin
 cntrd,a[*,*,il],xc0+guessoffsets[0],yc0+guessoffsets[1],xc1,yc1,fwhmlim,/keepcenter
@@ -687,9 +779,22 @@ endif
 
 if keyword_set(splitpsf) then begin
 
-az=sumaper_im(smooth(a[*,*,il],2),fwhmlim,30,/nan)
-;cntrd,az,xc0+guessoffsets[0],yc0+guessoffsets[1],xc1,yc1,fwhm[il],extendbox=3
-cntrd,az,xc0+guessoffsets[0],yc0+guessoffsets[1],xc1,yc1,fwhmlim
+;for unsaturated data with PSF splitting...
+
+;az=sumaper_im(smooth(a[*,*,il],3),fwhmlim,30,/nan)
+az=sumaper_im(smooth(a[*,*,il],3),fwhmlim/2,80,/nan,/silent)
+cntrd,az,xc0+guessoffsets[0],yc0+guessoffsets[1],xc1,yc1,4*fwhmlim
+
+;sourceind=get_xycind(dim,dim,xc0+guessoffsets[0],yc0+guessoffsets[1],fwhmlim)
+;xinds = sourceind mod dim
+;yinds = sourceind / dim
+if keyword_set(verbose) then print,'initial guess before splitting',xc0+guessoffsets[0],yc0+guessoffsets[1]
+
+;simple center of mass.  tests do not find this to be better than cntrd off of sumaper_im'd images
+;fimage=a[*,*,il]
+;xc1=total(1.*xinds*fimage[sourceind])/(total(fimage[sourceind])*1.)
+;yc1=total(1.*yinds*fimage[sourceind])/(total(fimage[sourceind])*1.)
+
 endif
 
 if keyword_set(keepprev) then begin
@@ -720,11 +825,11 @@ refoffsety=PSFcens[1,refslice]-yc0
 ;slices=findgen(refsz[3]-refslice)
 slices=findgen(refsz[3])
 
-good=where(finite(PSFcens[0,2:refsz[3]-1-2]) ne 0 and finite(PSFcens[1,2:refsz[3]-1-2]) ne 0,ngood)
+good=where(finite(PSFcens[0,ceil(fittrim/2.):refsz[3]-1-floor(fittrim/2.)]) ne 0 and finite(PSFcens[1,ceil(fittrim/2.):refsz[3]-1-floor(fittrim/2.)]) ne 0,ngood)
 
 if ngood gt 0 then begin
-fitx=robust_poly_fit((slices[2:refsz[3]-1-2])[good]-refslice,(PSFcens[0,2:refsz[3]-1-2])[good]-PSFcens[0,refslice],2,numit=15)
-fity=robust_poly_fit((slices[2:refsz[3]-1-2])[good]-refslice,(PSFcens[1,2:refsz[3]-1-2])[good]-PSFcens[1,refslice],2,numit=15)
+fitx=robust_poly_fit((slices[ceil(fittrim/2.):refsz[3]-1-floor(fittrim/2.)])[good]-refslice,(PSFcens[0,ceil(fittrim/2.):refsz[3]-1-floor(fittrim/2.)])[good]-PSFcens[0,refslice],2,numit=15)
+fity=robust_poly_fit((slices[ceil(fittrim/2.):refsz[3]-1-floor(fittrim/2.)])[good]-refslice,(PSFcens[1,ceil(fittrim/2.):refsz[3]-1-floor(fittrim/2.)])[good]-PSFcens[1,refslice],2,numit=15)
  
 deltax=fitx[0]+fitx[1]*(slices-refslice)+fitx[2]*(slices-refslice)^2.+refoffsetx
 deltay=fity[0]+fity[1]*(slices-refslice)+fity[2]*(slices-refslice)^2.+refoffsety
@@ -740,7 +845,7 @@ oplot,slices,PSFcens[1,*]+3,psym=4,thick=5
 oplot,slices,deltay+yc0+3,linestyle=1
 
 
-;wait,2.5
+if keyword_set(wait) then wait,2
 endif else begin
 deltax[*]=-9999
 deltay[*]=-9999
@@ -757,6 +862,10 @@ PSFcens[1,ii]-=deltay[ii]
 sxaddpar,h1,'PSFC_'+strtrim(ii,2),$
  string(strtrim(PSFcens[*,ii],2),format='(F7.3," ",F7.3)'),$
   'PSF Center of slice '+strtrim(ii,2)
+
+sxaddpar,h1,'shift_'+strtrim(ii,2),$
+ string(strtrim([-1*deltax[ii],-1*deltay[ii]],2),format='(F7.3," ",F7.3)'),$
+  'Image shift for slice '+strtrim(ii,2)
 endfor
 
 
@@ -766,6 +875,7 @@ sxaddpar,h1,"PSFCENTX",psfcenx,'Mean PSF center X'
 sxaddpar,h1,"PSFCENTY",psfceny,'Mean PSF center Y'
 a=a_in
 
+sxaddpar,h0,'HISTORY',currenttime_log+' '+dpp_command
 writefits,reducdir+filesout[i],0,h0
 writefits,reducdir+filesout[i],a,h1,/append
 if ~keyword_set(ladder) then printf,1,filenum[i],psfcenx,psfceny,rsat,ha0,parangle0
@@ -819,10 +929,26 @@ if keyword_set(astrogrid) then begin
   sat_yguess = (sat_yguess-yc0)*(astrogrid/15.9)+yc0
 endif
 
+;****parity flip for post-NBS data
+parity_val=sxpar(h0,'PARITY',count=parity_count) 
+
+if parity_count gt 0 and parity_val eq 1 then begin
+print,'original x guesses are',sat_xguess 
+dx=sat_xguess-xc0 ;delta(x) offset from center of image plane
+
+sat_xguess=-1*dx+xc0 
+
+endif
+
+;****
+
 if keyword_set(guessoffsets) then begin
 sat_xguess+=guessoffsets[0]
 sat_yguess+=guessoffsets[1]
 endif
+
+if ~keyword_set(rin_corr) then rin_corr=0.2
+if ~keyword_set(rout_corr) then rout_corr=0.5
 
 
 ;*****ref cube: not used for registration right now!*****
@@ -832,6 +958,7 @@ endif
 
         ;figure out the registration for this cube using cross-correlation
         sz=size(refimage)
+        refsz=sz
 ;********
 
          ;wavelength array
@@ -845,6 +972,7 @@ endif
 
 ref_firstchan=refimage[*,*,refslice]
 ref_firstchan-=filter_image(ref_firstchan,median=medbox)
+
 if keyword_set(rsub) then begin
 profrad_tc,ref_firstchan,2,1,dim/2,p2d=pr
 ref_firstchan-=pr
@@ -897,13 +1025,18 @@ endfor
 ;****Polynomial fit to individual slice centroid measurements****
 slices=findgen(sz[3])
 ;-refslice
-good=where(finite(PSFcensref[0,2:sz[3]-1-2]) ne 0 and finite(PSFcensref[1,2:sz[3]-1-2]) ne 0,ngood)
-print,'good is', ngood
+
+good=where(finite(PSFcensref[0,ceil(fittrim/2.):sz[3]-1-floor(fittrim/2.)]) ne 0 and finite(PSFcensref[1,ceil(fittrim/2.):sz[3]-1-floor(fittrim/2.)]) ne 0,ngood)
+;good=where(finite(PSFcensref[0,2:sz[3]-1-2]) ne 0 and finite(PSFcensref[1,2:sz[3]-1-2]) ne 0,ngood)
+
+if keyword_set(verbose) then print,'good is', ngood
 
 if ngood eq 0 then stop
 
-fitx=robust_poly_fit((slices[2:sz[3]-1-2])[good]-refslice,(PSFcensref[0,2:sz[3]-1-2])[good]-PSFcensref[0,refslice],2,numit=15)
-fity=robust_poly_fit((slices[2:sz[3]-1-2])[good]-refslice,(PSFcensref[1,2:sz[3]-1-2])[good]-PSFcensref[1,refslice],2,numit=15)
+fitx=robust_poly_fit((slices[ceil(fittrim/2.):sz[3]-1-floor(fittrim/2.)])[good]-refslice,(PSFcens[0,ceil(fittrim/2.):sz[3]-1-floor(fittrim/2.)])[good]-PSFcens[0,refslice],2,numit=15)
+fity=robust_poly_fit((slices[ceil(fittrim/2.):sz[3]-1-floor(fittrim/2.)])[good]-refslice,(PSFcens[1,ceil(fittrim/2.):sz[3]-1-floor(fittrim/2.)])[good]-PSFcens[1,refslice],2,numit=15)
+;fitx=robust_poly_fit((slices[2:sz[3]-1-fitttrim])[good]-refslice,(PSFcensref[0,2:sz[3]-1-fittrim])[good]-PSFcensref[0,refslice],2,numit=15)
+;fity=robust_poly_fit((slices[2:sz[3]-1-fitttrim])[good]-refslice,(PSFcensref[1,2:sz[3]-1-fittrim])[good]-PSFcensref[1,refslice],2,numit=15)
 
 refoffsetx=PSFcensref[0,refslice]-xc0
 refoffsety=PSFcensref[1,refslice]-yc0
@@ -911,9 +1044,8 @@ refoffsety=PSFcensref[1,refslice]-yc0
 deltaxref=fitx[0]+fitx[1]*(slices-refslice)+fitx[2]*(slices-refslice)^2.+refoffsetx
 deltayref=fity[0]+fity[1]*(slices-refslice)+fity[2]*(slices-refslice)^2.+refoffsety
 
-print,'Offsets of Reference Image ',deltaxref,deltayref
+if keyword_set(verbose) then print,'Offsets of Reference Image ',deltaxref,deltayref
 
-stop
 if keyword_set(guessoffsets) then begin
 plot,slices,PSFcensref[0,*],yrange=[sz[1]/2-7+long(guessoffsets[0]),sz[1]/2+7+long(guessoffsets[1])],ystyle=1,/nodata
 endif else begin
@@ -984,7 +1116,7 @@ print,'Registering File Number ',i+1,' ',files[i]
 
    print,PSFcensrefcorr[0,10],PSFcensrefcorr[1,10]
    dist_circle,cendistance,201,PSFcensrefcorr[0,10],PSFcensrefcorr[1,10]  
-   roi=where(cendistance gt 0.2/pixscale and cendistance le 0.5/pixscale)
+   roi=where(cendistance gt rin_corr/pixscale and cendistance le rout_corr/pixscale)
    cendistance[roi]=10
 
  ;**- If you have satellite spots then you have a choice of getting the centroid from gaussian-fitting or from joint cross-correlation
@@ -1002,8 +1134,11 @@ slices=findgen(sz[3])
 
 good=where(finite(PSFcens[0,2:sz[3]-1-2]) ne 0 and finite(PSFcens[1,2:sz[3]-1-2]) ne 0,ngood)
 
-fitx=robust_poly_fit((slices[2:sz[3]-1-2])[good]-refslice,(PSFcens[0,2:sz[3]-1-2])[good]-PSFcens[0,refslice],2,numit=15)
-fity=robust_poly_fit((slices[2:sz[3]-1-2])[good]-refslice,(PSFcens[1,2:sz[3]-1-2])[good]-PSFcens[1,refslice],2,numit=15)
+fitx=robust_poly_fit((slices[ceil(fittrim/2.):refsz[3]-1-floor(fittrim/2.)])[good]-refslice,(PSFcens[0,ceil(fittrim/2.):refsz[3]-1-floor(fittrim/2.)])[good]-PSFcens[0,refslice],2,numit=15)
+fity=robust_poly_fit((slices[ceil(fittrim/2.):refsz[3]-1-floor(fittrim/2.)])[good]-refslice,(PSFcens[1,ceil(fittrim/2.):refsz[3]-1-floor(fittrim/2.)])[good]-PSFcens[1,refslice],2,numit=15)
+
+;fitx=robust_poly_fit((slices[2:sz[3]-1-fittrim])[good]-refslice,(PSFcens[0,2:sz[3]-1-fittrim])[good]-PSFcens[0,refslice],2,numit=15)
+;fity=robust_poly_fit((slices[2:sz[3]-1-fittrim])[good]-refslice,(PSFcens[1,2:sz[3]-1-fittrim])[good]-PSFcens[1,refslice],2,numit=15)
 
 refoffsetx=PSFcens[0,refslice]-xc0
 refoffsety=PSFcens[1,refslice]-yc0
@@ -1040,6 +1175,7 @@ psfceny=median(PSFcens[1,*],/even)
 sxaddpar,h1,"PSFCENTX",psfcenx,'Mean PSF center X'
 sxaddpar,h1,"PSFCENTY",psfceny,'Mean PSF center Y'
 
+sxaddpar,h0,'HISTORY',currenttime_log+' '+dpp_command
 writefits,reducdir+filesout[i],0,h0
 writefits,reducdir+filesout[i],a,h1,/append
 
@@ -1052,6 +1188,7 @@ endfor
 
 endcase
 
+;***move this to a separate function entirely
 ;****Check PSF quality ****
 if (keyword_set(checkquality) and method eq 0) then begin
 ;if (keyword_set(checkquality)) then begin
@@ -1060,18 +1197,15 @@ test=headfits(reducdir+filesout[0])
 
 get_charis_wvlh,h0,wvlhs
 ;Telescope Diameter for Subaru
-;Dtel=7.9d0 ;visible pupil for SCExAO
 Dtel=charis_get_constant(name='Dtel')
-;pixel scale 16.4 mas/pixel
 pixscale=charis_get_constant(name='pixscale')
-;pixscale=0.0164
 fwhm=1.*(1.d-6*wvlhs*1d-3/Dtel)*(180.*3600./!dpi)/pixscale
 
 openw,2,'PSFquality'
 sattohalo=fltarr(nfiles)
 for ifile=0L,nfiles-1 do begin
 
-inputcube=readfits(reducdir+filesout[ifile],/ext,h1input)
+inputcube=readfits(reducdir+filesout[ifile],/ext,h1input,/silent)
 
 cens=fltarr(2,4,sz[3])
 
@@ -1142,6 +1276,8 @@ close,2
 
 endtime=systime(/seconds)
 print,"elapsed time is ",endtime-starttime," seconds"
+
+close,11
 skiptotheend:
 
 end

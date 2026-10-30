@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -22,13 +22,13 @@
 ;  MPFIT2DFUN fits a user-supplied model -- in the form of an IDL
 ;  function -- to a set of user-supplied data.  MPFIT2DFUN calls
 ;  MPFIT, the MINPACK-1 least-squares minimizer, to do the main
-;  work.  MPFIT2DFUN is a specialized version for two-dimensional 
+;  work.  MPFIT2DFUN is a specialized version for two-dimensional
 ;  data.
 ;
 ;  Given the data and their uncertainties, MPFIT2DFUN finds the best set
 ;  of model parameters which match the data (in a least-squares
 ;  sense) and returns them in an array.
-;  
+;
 ;  The user must supply the following items:
 ;   - Two arrays of independent variable values ("X", "Y").
 ;   - An array of "measured" *dependent* variable values ("Z").
@@ -46,7 +46,7 @@
 ;  improve performance.
 ;
 ;  See below for an example of usage.
-;   
+;
 ; USER FUNCTION
 ;
 ;  The user must define a function which returns the model value.  For
@@ -81,32 +81,32 @@
 ;  be two-dimensional *arrays* describing the X and Y positions of
 ;  every *pixel*.  [ Thus any two dimensional sampling is permitted,
 ;  including irregular sampling. ]
-;  
+;
 ;  If the sampling is regular, then the x coordinates are the same for
 ;  each row, and the y coordinates are the same for each column.  Call
 ;  the x-row and y-column coordinates XR and YC respectively.  You can
 ;  then compute X and Y as follows:
-;  
+;
 ;      X = XR # (YC*0 + 1)             eqn. 1
 ;      Y = (XR*0 + 1) # YC             eqn. 2
-;  
+;
 ;  For example, if XR and YC have the following values:
-;  
+;
 ;    XR = [  1, 2, 3, 4, 5,]  ;; X positions of one row of pixels
 ;    YC = [ 15,16,17 ]        ;; Y positions of one column of
 ;                                pixels
-;  
+;
 ;  Then using equations 1 and 2 above will give these values to X and
 ;  Y:
-;  
+;
 ;     X :  1  2  3  4  5       ;; X positions of all pixels
 ;          1  2  3  4  5
 ;          1  2  3  4  5
-;  
+;
 ;     Y : 15 15 15 15 15       ;; Y positions of all pixels
 ;         16 16 16 16 16
 ;         17 17 17 17 17
-;  
+;
 ;  Using the above technique is suggested, but *not* required.  You
 ;  can do anything you wish with the X and Y values.  This technique
 ;  only makes it easier to compute your model function values.
@@ -126,31 +126,31 @@
 ;  Each parameter is associated with one element of the array, in
 ;  numerical order.  The structure can have the following entries
 ;  (none are required):
-;  
+;
 ;     .VALUE - the starting parameter value (but see the START_PARAMS
 ;              parameter for more information).
-;  
+;
 ;     .FIXED - a boolean value, whether the parameter is to be held
 ;              fixed or not.  Fixed parameters are not varied by
 ;              MPFIT, but are passed on to MYFUNCT for evaluation.
-;  
+;
 ;     .LIMITED - a two-element boolean array.  If the first/second
 ;                element is set, then the parameter is bounded on the
 ;                lower/upper side.  A parameter can be bounded on both
 ;                sides.  Both LIMITED and LIMITS must be given
 ;                together.
-;  
+;
 ;     .LIMITS - a two-element float or double array.  Gives the
 ;               parameter limits on the lower and upper sides,
 ;               respectively.  Zero, one or two of these values can be
 ;               set, depending on the values of LIMITED.  Both LIMITED
 ;               and LIMITS must be given together.
-;  
+;
 ;     .PARNAME - a string, giving the name of the parameter.  The
 ;                fitting code of MPFIT does not use this tag in any
 ;                way.  However, the default ITERPROC will print the
 ;                parameter name if available.
-;  
+;
 ;     .STEP - the step size to be used in calculating the numerical
 ;             derivatives.  If set to zero, then the step size is
 ;             computed automatically.  Ignored when AUTODERIVATIVE=0.
@@ -200,7 +200,7 @@
 ;                  will never be changed by more than this value.
 ;
 ;                  A value of 0 indicates no maximum.  Default: 0.
-;  
+;
 ;     .TIED - a string expression which "ties" the parameter to other
 ;             free or fixed parameters.  Any expression involving
 ;             constants and the parameter array P are permitted.
@@ -209,13 +209,13 @@
 ;             Since they are totally constrained, tied parameters are
 ;             considered to be fixed; no errors are computed for them.
 ;             [ NOTE: the PARNAME can't be used in expressions. ]
-;  
+;
 ;  Future modifications to the PARINFO structure, if any, will involve
 ;  adding structure tags beginning with the two letters "MP".
 ;  Therefore programmers are urged to avoid using tags starting with
 ;  the same letters; otherwise they are free to include their own
 ;  fields within the PARINFO structure, and they will be ignored.
-;  
+;
 ;  PARINFO Example:
 ;  parinfo = replicate({value:0.D, fixed:0, limited:[0,0], $
 ;                       limits:[0.D,0]}, 5)
@@ -223,7 +223,7 @@
 ;  parinfo[4].limited(0) = 1
 ;  parinfo[4].limits(0)  = 50.D
 ;  parinfo[*].value = [5.7D, 2.2, 500., 1.5, 2000.]
-;  
+;
 ;  A total of 5 parameters, with starting values of 5.7,
 ;  2.2, 500, 1.5, and 2000 are given.  The first parameter
 ;  is fixed at a value of 5.7, and the last parameter is
@@ -233,7 +233,7 @@
 ; COMPATIBILITY
 ;
 ;  This function is designed to work with IDL 5.0 or greater.
-;  
+;
 ;  Because TIED parameters rely on the EXECUTE() function, they cannot
 ;  be used with the free version of the IDL Virtual Machine.
 ;
@@ -271,7 +271,7 @@
 ;                  passed, then the starting *value* is taken from
 ;                  START_PARAMS, but the *constraints* are taken from
 ;                  PARINFO.
-; 
+;
 ; RETURNS:
 ;
 ;   Returns the array of best-fit parameters.
@@ -338,11 +338,11 @@
 ;                PARINFO=parinfo, QUIET=quiet, ...
 ;                ; perform custom iteration update
 ;              END
-;         
+;
 ;              ITERPROC must either accept all three keyword
 ;              parameters (FUNCTARGS, PARINFO and QUIET), or at least
 ;              accept them via the _EXTRA keyword.
-;          
+;
 ;              MYFUNCT is the user-supplied function to be minimized,
 ;              P is the current set of model parameters, ITER is the
 ;              iteration number, and FUNCTARGS are the arguments to be
@@ -386,7 +386,7 @@
 ;   PARINFO - Provides a mechanism for more sophisticated constraints
 ;             to be placed on parameter values.  When PARINFO is not
 ;             passed, then it is assumed that all parameters are free
-;             and unconstrained.  Values in PARINFO are never 
+;             and unconstrained.  Values in PARINFO are never
 ;             modified during a call to MPFIT.
 ;
 ;             See description above for the structure of PARINFO.
@@ -418,27 +418,27 @@
 ;            following values:
 ;
 ;	   0  improper input parameters.
-;         
+;
 ;	   1  both actual and predicted relative reductions
 ;	      in the sum of squares are at most FTOL.
-;         
+;
 ;	   2  relative error between two consecutive iterates
 ;	      is at most XTOL
-;         
+;
 ;	   3  conditions for STATUS = 1 and STATUS = 2 both hold.
-;         
+;
 ;	   4  the cosine of the angle between fvec and any
 ;	      column of the jacobian is at most GTOL in
 ;	      absolute value.
-;         
+;
 ;	   5  the maximum number of iterations has been reached
-;         
+;
 ;	   6  FTOL is too small. no further reduction in
 ;	      the sum of squares is possible.
-;         
+;
 ;	   7  XTOL is too small. no further improvement in
 ;	      the approximate solution x is possible.
-;         
+;
 ;	   8  GTOL is too small. fvec is orthogonal to the
 ;	      columns of the jacobian to machine precision.
 ;
@@ -474,7 +474,7 @@
 ;
 ;   p0 = [0D, 0D, 1D, 10D]
 ;   p = mpfit2dfun('GAUSS2', x, y, z, sz, p0)
-;   
+;
 ;   Generates a synthetic data set with a Gaussian peak, and Poisson
 ;   statistical uncertainty.  Then the same function (but different
 ;   starting parameters) is fitted to the data to see how close we can
@@ -506,7 +506,7 @@
 ; REFERENCES:
 ;
 ;   MINPACK-1, Jorge More', available from netlib (www.netlib.org).
-;   "Optimization Software Guide," Jorge More' and Stephen Wright, 
+;   "Optimization Software Guide," Jorge More' and Stephen Wright,
 ;     SIAM, *Frontiers in Applied Mathematics*, Number 14.
 ;
 ; MODIFICATION HISTORY:
@@ -537,112 +537,122 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-FORWARD_FUNCTION mpfit2dfun_eval, mpfit2dfun, mpfit
+forward_function mpfit2dfun_eval, mpfit2dfun, mpfit
 
 ; This is the call-back function for MPFIT.  It evaluates the
 ; function, subtracts the data, and returns the residuals.
-function mpfit2dfun_eval, p, dp, _EXTRA=extra
-
-  COMPILE_OPT strictarr
+function mpfit2dfun_eval, p, dp, _extra = extra
+  compile_opt strictarr
   common mpfit2dfun_common, fcn, x, y, z, err, wts, f, fcnargs
 
-  ;; The function is evaluated here.  There are four choices,
-  ;; depending on whether (a) FUNCTARGS was passed to MPFIT2DFUN, which
-  ;; is passed to this function as "hf"; or (b) the derivative
-  ;; parameter "dp" is passed, meaning that derivatives should be
-  ;; calculated analytically by the function itself.
-  if n_elements(fcnargs) GT 0 then begin
-      if n_params() GT 1 then f = call_function(fcn,x,y,p, dp, _EXTRA=fcnargs)$
-      else                    f = call_function(fcn,x,y,p,     _EXTRA=fcnargs)
+  ; ; The function is evaluated here.  There are four choices,
+  ; ; depending on whether (a) FUNCTARGS was passed to MPFIT2DFUN, which
+  ; ; is passed to this function as "hf"; or (b) the derivative
+  ; ; parameter "dp" is passed, meaning that derivatives should be
+  ; ; calculated analytically by the function itself.
+  if n_elements(fcnargs) gt 0 then begin
+    if n_params() gt 1 then f = call_function(fcn, x, y, p, dp, _extra = fcnargs) $
+    else f = call_function(fcn, x, y, p, _extra = fcnargs)
   endif else begin
-      if n_params() GT 1 then f = call_function(fcn,x,y,p, dp) $
-      else                    f = call_function(fcn,x,y,p)
+    if n_params() gt 1 then f = call_function(fcn, x, y, p, dp) $
+    else f = call_function(fcn, x, y, p)
   endelse
 
-  ;; Compute the deviates, applying either errors or weights
-  if n_elements(err) GT 0 then begin
-      result = (z-f)/err
-  endif else if n_elements(wts) GT 0 then begin
-      result = (z-f)*wts
+  ; ; Compute the deviates, applying either errors or weights
+  if n_elements(err) gt 0 then begin
+    result = (z - f) / err
+  endif else if n_elements(wts) gt 0 then begin
+    result = (z - f) * wts
   endif else begin
-      result = (z-f)
+    result = (z - f)
   endelse
-      
-  ;; Make sure the returned result is one-dimensional.
+
+  ; ; Make sure the returned result is one-dimensional.
   result = reform(result, n_elements(result), /overwrite)
   return, result
-  
 end
 
-function mpfit2dfun, fcn, x, y, z, err, p, WEIGHTS=wts, FUNCTARGS=fa, $
-                   BESTNORM=bestnorm, nfev=nfev, STATUS=status, $
-                   parinfo=parinfo, query=query, $
-                   npegged=npegged, nfree=nfree, dof=dof, $
-                   covar=covar, perror=perror, niter=iter, yfit=yfit, $
-                   quiet=quiet, ERRMSG=errmsg, _EXTRA=extra
-
-  COMPILE_OPT strictarr
-  status = 0L
+function mpfit2dfun, fcn, x, y, z, err, p, weights = wts, functargs = fa, $
+  bestnorm = bestnorm, nfev = nfev, status = status, $
+  parinfo = parinfo, query = query, $
+  npegged = npegged, nfree = nfree, dof = dof, $
+  covar = covar, perror = perror, niter = iter, yfit = yfit, $
+  quiet = quiet, errmsg = errmsg, _extra = extra
+  compile_opt strictarr
+  status = 0l
   errmsg = ''
 
-  ;; Detect MPFIT and crash if it was not found
+  ; ; Detect MPFIT and crash if it was not found
   catch, catcherror
-  if catcherror NE 0 then begin
-      MPFIT_NOTFOUND:
-      catch, /cancel
-      message, 'ERROR: the required function MPFIT must be in your IDL path', /info
-      return, !values.d_nan
+  if catcherror ne 0 then begin
+    mpfit_notfound:
+    catch, /cancel
+    message, 'ERROR: the required function MPFIT must be in your IDL path', /info
+    return, !values.d_nan
   endif
-  if mpfit(/query) NE 1 then goto, MPFIT_NOTFOUND
+  if mpfit(/query) ne 1 then goto, mpfit_notfound
   catch, /cancel
   if keyword_set(query) then return, 1
 
-  if n_params() EQ 0 then begin
-      message, "USAGE: PARMS = MPFIT2DFUN('MYFUNCT', X, Y, ERR, "+ $
-        "START_PARAMS, ... )", /info
-      return, !values.d_nan
+  if n_params() eq 0 then begin
+    message, 'USAGE: PARMS = MPFIT2DFUN(''MYFUNCT'', X, Y, ERR, ' + $
+      'START_PARAMS, ... )', /info
+    return, !values.d_nan
   endif
-  if n_elements(x) EQ 0 OR n_elements(y) EQ 0 OR n_elements(z) EQ 0 then begin
-      message, 'ERROR: X, Y and Z must be defined', /info
-      return, !values.d_nan
+  if n_elements(x) eq 0 or n_elements(y) eq 0 or n_elements(z) eq 0 then begin
+    message, 'ERROR: X, Y and Z must be defined', /info
+    return, !values.d_nan
   endif
 
-  ;; Use common block to pass data back and forth
+  ; ; Use common block to pass data back and forth
   common mpfit2dfun_common, fc, xc, yc, zc, ec, wc, mc, ac
-  fc = fcn & xc = x & yc = y & zc = z & mc = 0L
-  ;; These optional parameters must be undefined first
-  ac = 0 & dummy = size(temporary(ac))
-  ec = 0 & dummy = size(temporary(ec))
-  wc = 0 & dummy = size(temporary(wc))
+  fc = fcn
+  xc = x
+  yc = y
+  zc = z
+  mc = 0l
+  ; ; These optional parameters must be undefined first
+  ac = 0
+  dummy = size(temporary(ac))
+  ec = 0
+  dummy = size(temporary(ec))
+  wc = 0
+  dummy = size(temporary(wc))
 
-  if n_elements(fa) GT 0 then ac = fa
-  if n_elements(wts) GT 0 then begin
-      wc = sqrt(abs(wts))
-  endif else if n_elements(err) GT 0 then begin
-      wh = where(err EQ 0, ct)
-      if ct GT 0 then begin
-          message, 'ERROR: ERROR value must not be zero.  Use WEIGHTS.', $
-            /info
-          return, !values.d_nan
-      endif
-      ec = err
+  if n_elements(fa) gt 0 then ac = fa
+  if n_elements(wts) gt 0 then begin
+    wc = sqrt(abs(wts))
+  endif else if n_elements(err) gt 0 then begin
+    wh = where(err eq 0, ct)
+    if ct gt 0 then begin
+      message, 'ERROR: ERROR value must not be zero.  Use WEIGHTS.', $
+        /info
+      return, !values.d_nan
+    endif
+    ec = err
   endif
 
   result = mpfit('mpfit2dfun_eval', p, $
-                 parinfo=parinfo, STATUS=status, nfev=nfev, BESTNORM=bestnorm,$
-                 covar=covar, perror=perror, niter=iter, $
-                 nfree=nfree, npegged=npegged, dof=dof, $
-                 ERRMSG=errmsg, quiet=quiet, _EXTRA=extra)
+    parinfo = parinfo, status = status, nfev = nfev, bestnorm = bestnorm, $
+    covar = covar, perror = perror, niter = iter, $
+    nfree = nfree, npegged = npegged, dof = dof, $
+    errmsg = errmsg, quiet = quiet, _extra = extra)
 
-  ;; Retrieve the fit value
+  ; ; Retrieve the fit value
   yfit = temporary(mc)
-  ;; Some cleanup
-  xc = 0 & yc = 0 & zc = 0 & wc = 0 & ec = 0 & mc = 0 & ac = 0
+  ; ; Some cleanup
+  xc = 0
+  yc = 0
+  zc = 0
+  wc = 0
+  ec = 0
+  mc = 0
+  ac = 0
 
-  ;; Print error message if there is one.
-  if NOT keyword_set(quiet) AND errmsg NE '' then $
+  ; ; Print error message if there is one.
+  if not keyword_set(quiet) and errmsg ne '' then $
     message, errmsg, /info
 
   return, result

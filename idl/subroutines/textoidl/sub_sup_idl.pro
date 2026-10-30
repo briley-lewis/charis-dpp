@@ -4,7 +4,7 @@
 ;       SUB_SUP_IDL
 ; PURPOSE:
 ;       Return the proper IDL font positioning command for TeX
-;       sub/superscripts. 
+;       sub/superscripts.
 ; CATEGORY:
 ; CALLING SEQUENCE:
 ;       fnt = sub_sup_idl( strn )
@@ -22,7 +22,7 @@
 ; NOTES:
 ; EXAMPLE:
 ; LIBRARY FUNCTIONS CALLED:
-;        
+;
 ; MODIFICATION HISTORY:
 ;       $Id: sub_sup_idl.pro,v 1.1 1996/01/31 18:47:37 mcraig Exp $
 ;       $Log: sub_sup_idl.pro,v $
@@ -32,18 +32,16 @@
 ; RELEASE:
 ;       $Name: Rel_2_1_2 $
 ;-
-FUNCTION Sub_sup_idl, token,  FORCE_UD = force_ud
+function Sub_sup_idl, token, force_ud = force_ud
+  compile_opt idl2
 
-IF keyword_set(force_ud) THEN BEGIN 
-    IF (token EQ '^') THEN return, '!U' 
-    IF (token EQ '_') THEN return, '!D'
+  if keyword_set(force_ud) then begin
+    if (token eq '^') then return, '!U'
+    if (token eq '_') then return, '!D'
     return, ''
-ENDIF ELSE BEGIN
-    IF (token EQ '^') THEN return, '!E' 
-    IF (token EQ '_') THEN return, '!I'
+  endif else begin
+    if (token eq '^') then return, '!E'
+    if (token eq '_') then return, '!I'
     return, ''
-ENDELSE
-
-END
-
-
+  endelse
+end

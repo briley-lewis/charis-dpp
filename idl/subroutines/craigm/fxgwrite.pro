@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -67,34 +67,35 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
-PRO FXGWRITE, UNIT, BUFFER, TRANSFER_COUNT=TC
+; -
+pro FXGWRITE, UNIT, BUFFER, transfer_count = TC
+  compile_opt idl2
 
   on_error, 2
 
-  if n_params() NE 2 then begin
-      message, 'USAGE: FXGWRITE, UNIT, BUFFER [, TRANSFER_COUNT=TC ]', /info
-      return
+  if n_params() ne 2 then begin
+    message, 'USAGE: FXGWRITE, UNIT, BUFFER [, TRANSFER_COUNT=TC ]', /info
+    return
   endif
-  if n_elements(unit) EQ 0 then $
+  if n_elements(UNIT) eq 0 then $
     message, 'ERROR: UNIT is not defined'
-  if n_elements(buffer) EQ 0 then $
+  if n_elements(BUFFER) eq 0 then $
     message, 'ERROR: BUFFER is not defined'
 
-@fxfilter
-  if unit LT 0 OR unit GE FXFILTER_MAX_LUN then $
+  @fxfilter
+  if UNIT lt 0 or UNIT ge FXFILTER_MAX_LUN then $
     message, 'ERROR: UNIT is not a valid file unit'
 
   writeu = 'WRITEU'
-  if filterflag(unit) AND 1  then $
-    if write_cmd(unit) NE '' then writeu = write_cmd(unit)
-  if writeu EQ '-' then begin
-      errmsg = string(unit, $
-               format='("ERROR: Resource unit ",I0," does not support writing.")')
-      message, errmsg
+  if filterflag(UNIT) and 1 then $
+    if write_cmd(UNIT) ne '' then writeu = write_cmd(UNIT)
+  if writeu eq '-' then begin
+    errmsg = string(UNIT, $
+      format = '("ERROR: Resource unit ",I0," does not support writing.")')
+    message, errmsg
   endif
-  
-  call_procedure, writeu, unit, buffer, transfer_count=tc
+
+  call_procedure, writeu, UNIT, BUFFER, transfer_count = TC
 
   return
 end

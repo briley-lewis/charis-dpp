@@ -1,6 +1,6 @@
 ; Copyright (c)  Exelis Visual Information Solutions, Inc., a subsidiary of Harris Corporation and
-;       CreaSo Creative Software Systems GmbH.
-;       All rights reserved. Unauthorized reproduction prohibited.
+; CreaSo Creative Software Systems GmbH.
+; All rights reserved. Unauthorized reproduction prohibited.
 ;+
 ; NAME:
 ;    STR_SEP
@@ -47,68 +47,68 @@
 ;	July 1992, AH,	CreaSo		Created.
 ;	December, 1994, DMS, RSI	Added TRIM and REMOVE_ALL.
 ;-
-function STR_SEP, str, separator, REMOVE_ALL = remove_all, TRIM = trim, ESC=esc
+function STR_SEP, str, separator, remove_all = remove_all, trim = trim, esc = esc
+  compile_opt idl2
 
+  on_error, 2
+  if n_params() ne 2 then message, 'Wrong number of arguments.'
 
-ON_ERROR, 2
-if n_params() ne 2 then message,'Wrong number of arguments.'
-
-spos = 0L
-if n_elements(esc) gt 0 then begin		;Check for escape character?
-  if strpos(str, esc) lt 0 then goto, no_esc	;None in string, use fast case
-  besc = (byte(esc))[0]
-  bsep = (byte(separator))[0]
-  new = bytarr(strlen(str)+1)
-  new[0] = byte(str)
-  j = 0L
-  for i=0L, n_elements(new)-2 do begin
-    if new[i] eq besc then begin
-	new[j] = new[i+1]
-	i = i + 1
-    endif else if new[i] eq bsep then new[j] = 1b $   ;Change seps to 1b char
-    else new[j] = new[i]
-    j = j + 1
+  spos = 0l
+  if n_elements(esc) gt 0 then begin ; Check for escape character?
+    if strpos(str, esc) lt 0 then goto, no_esc ; None in string, use fast case
+    besc = (byte(esc))[0]
+    bsep = (byte(separator))[0]
+    new = bytarr(strlen(str) + 1)
+    new[0] = byte(str)
+    j = 0l
+    for i = 0l, n_elements(new) - 2 do begin
+      if new[i] eq besc then begin
+        new[j] = new[i + 1]
+        i = i + 1
+      endif else if new[i] eq bsep then new[j] = 1b $ ; Change seps to 1b char
+      else new[j] = new[i]
+      j = j + 1
     endfor
-  new = string(new[0:j-1])
-  w = where(byte(new) eq 1b, count)  ;where seps are...
-  arr = strarr(count+1)
-  for i=0L, count-1 do begin
-	arr[i] = strmid(new, spos, w[i]-spos)
-	spos = w[i] + 1
-	endfor
-  arr[count] = strmid(new, spos, strlen(str))  ;Last element
-  goto, done
-  endif			;esc
+    new = string(new[0 : j - 1])
+    w = where(byte(new) eq 1b, count) ; where seps are...
+    arr = strarr(count + 1)
+    for i = 0l, count - 1 do begin
+      arr[i] = strmid(new, spos, w[i] - spos)
+      spos = w[i] + 1
+    endfor
+    arr[count] = strmid(new, spos, strlen(str)) ; Last element
+    goto, done
+  endif ; esc
 
-no_esc:
-if strlen(separator) le 1 then begin	;Single character separator?
-    w = where(byte(str) eq (byte(separator))[0], count)  ;where seps are...
-    arr = strarr(count+1)
-    for i=0, count-1 do begin
-	arr[i] = strmid(str, spos, w[i]-spos)
-	spos = w[i] + 1
-	endfor
-    arr[count] = strmid(str, spos, strlen(str))  ;Last element
-endif else begin		;Multi character separator....
-    n = 0L		   ; Determine number of seperators in string.
+  no_esc:
+  if strlen(separator) le 1 then begin ; Single character separator?
+    w = where(byte(str) eq (byte(separator))[0], count) ; where seps are...
+    arr = strarr(count + 1)
+    for i = 0, count - 1 do begin
+      arr[i] = strmid(str, spos, w[i] - spos)
+      spos = w[i] + 1
+    endfor
+    arr[count] = strmid(str, spos, strlen(str)) ; Last element
+  endif else begin ; Multi character separator....
+    n = 0l ; Determine number of seperators in string.
     repeat begin
-	pos = strpos (str, separator, spos)
-	spos = pos + strlen(separator)
-	n = n+1
+      pos = strpos(str, separator, spos)
+      spos = pos + strlen(separator)
+      n = n + 1
     endrep until pos eq -1
 
-    arr = strarr(n)	   ; Create result array
-    spos = 0L
-    for i=0L, n-1 do begin   ; Separate substrings
-      pos = strpos (str, separator, spos)
-      if pos ge 0 then arr[i] = strmid (str, spos, pos-spos) $
+    arr = strarr(n) ; Create result array
+    spos = 0l
+    for i = 0l, n - 1 do begin ; Separate substrings
+      pos = strpos(str, separator, spos)
+      if pos ge 0 then arr[i] = strmid(str, spos, pos - spos) $
       else arr[i] = strmid(str, spos, strlen(str))
-      spos = pos+strlen(separator)
-   endfor
-endelse
+      spos = pos + strlen(separator)
+    endfor
+  endelse
 
-done:
-if keyword_set(trim) then arr = strtrim(arr,2) $
-else if keyword_set(remove_all) then arr = strcompress(arr, /REMOVE_ALL)
-return, arr
+  done:
+  if keyword_set(trim) then arr = strtrim(arr, 2) $
+  else if keyword_set(remove_all) then arr = strcompress(arr, /remove_all)
+  return, arr
 end

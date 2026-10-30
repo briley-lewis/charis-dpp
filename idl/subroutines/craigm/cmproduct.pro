@@ -12,7 +12,7 @@
 ; CALLING SEQUENCE:
 ;   Result = CMPRODUCT(ARRAY)
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   Calculates the product of all the elements of an array.  Vector
 ;   multiplication in groups of powers of two make this operation
@@ -50,33 +50,34 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-FUNCTION CMPRODUCT, ARRAY
-  ON_ERROR,2
-;
-;  Check the number of parameters.
-;
-  IF N_PARAMS() NE 1 THEN MESSAGE,'Syntax:  Result = PRODUCT(ARRAY)'
-;
-;  Check the type of ARRAY.
-;
-  SZ = SIZE(ARRAY)
-  TYPE = SZ(SZ(0)+1)
-  IF TYPE EQ 0 THEN MESSAGE,'ARRAY not defined'
-  IF TYPE EQ 7 THEN MESSAGE,'Operation illegal with string arrays'
-  IF TYPE EQ 8 THEN MESSAGE,'Operation illegal with structures'
-;
-;  Calculate the product.
-;
+function CMPRODUCT, ARRAY
+  compile_opt idl2
+  on_error, 2
+  ;
+  ; Check the number of parameters.
+  ;
+  if n_params() ne 1 then message, 'Syntax:  Result = PRODUCT(ARRAY)'
+  ;
+  ; Check the type of ARRAY.
+  ;
+  SZ = size(ARRAY)
+  TYPE = SZ[SZ[0] + 1]
+  if TYPE eq 0 then message, 'ARRAY not defined'
+  if TYPE eq 7 then message, 'Operation illegal with string arrays'
+  if TYPE eq 8 then message, 'Operation illegal with structures'
+  ;
+  ; Calculate the product.
+  ;
   X = ARRAY
-  N = N_ELEMENTS(X)
-  WHILE N GT 1 DO BEGIN
-      IF (N MOD 2) EQ 1 THEN X(0) = X(0) * X(N-1)
-      N2 = FLOOR(N/2)
-      X = X(0:N2-1) * X(N2:*)
-      N = N2
-  ENDWHILE
-;
-  RETURN,X(0)
-END
+  N = n_elements(X)
+  while N gt 1 do begin
+    if (N mod 2) eq 1 then X[0] = X[0] * X[N - 1]
+    N2 = floor(N / 2)
+    X = X[0 : N2 - 1] * X[N2 : *]
+    N = N2
+  endwhile
+  ;
+  RETURN, X[0]
+end

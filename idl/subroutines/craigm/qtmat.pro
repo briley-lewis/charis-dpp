@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -22,7 +22,7 @@
 ;  The function QTMAT computes one or more direction cosine matrices
 ;  (i.e., rotation matrices) from unit quaternions.
 ;
-;  The usage of the resulting matrix on a 3-vector X is either 
+;  The usage of the resulting matrix on a 3-vector X is either
 ;  MATRIX # X, or MATRIX ## X, depdending on the meaning of the
 ;  rotation (i.e., body-fixed or coordinate-fixed, see QTVROT).
 ;
@@ -69,7 +69,7 @@
 ;
 ; EXAMPLE:
 ;
-;   print, qtmat(qtcompose([0d,1,0], !dpi/4)) 
+;   print, qtmat(qtcompose([0d,1,0], !dpi/4))
 ;        0.70710678       0.0000000      0.70710678
 ;         0.0000000       1.0000000       0.0000000
 ;       -0.70710678       0.0000000      0.70710678
@@ -99,37 +99,43 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
-function qtmat, q, invert=invert
+; -
+function qtmat, q, invert = invert
+  compile_opt idl2
 
-; THIS IS ADAPTED FROM CHAPTER 12 BY F.L.MARKLEY
-  if n_params() EQ 0 then begin
-      info = 1
-      USAGE:
-      message, 'USAGE:', /info
-      message, 'MATRIX = QTMAT(Q)', info=info
-      return, 0
+  ; THIS IS ADAPTED FROM CHAPTER 12 BY F.L.MARKLEY
+  if n_params() eq 0 then begin
+    info = 1
+    usage:
+    message, 'USAGE:', /info
+    message, 'MATRIX = QTMAT(Q)', info = info
+    return, 0
   endif
-  nq = n_elements(q)/4
-  if nq LT 1 then goto, USAGE
+  nq = n_elements(q) / 4
+  if nq lt 1 then goto, usage
 
-  if NOT keyword_set(invert) then begin
-      q1 = q(0,*) & q2 = q(1,*) & q3 = q(2,*) & q4 = q(3,*)
+  if not keyword_set(invert) then begin
+    q1 = q[0, *]
+    q2 = q[1, *]
+    q3 = q[2, *]
+    q4 = q[3, *]
   endif else begin
-      q1 = -q(0,*) & q2 = -q(1,*) & q3 = -q(2,*) & q4 = q(3,*)
+    q1 = -q[0, *]
+    q2 = -q[1, *]
+    q3 = -q[2, *]
+    q4 = q[3, *]
   endelse
 
-  a = dblarr(3,3,nq)
-  A(0,0,*)=Q1*Q1-Q2*Q2-Q3*Q3+Q4*Q4
-  A(0,1,*)=2.D0*(Q1*Q2+Q3*Q4)
-  A(0,2,*)=2.D0*(Q1*Q3-Q2*Q4)
-  A(1,0,*)=2.D0*(Q1*Q2-Q3*Q4)
-  A(1,1,*)=-Q1*Q1+Q2*Q2-Q3*Q3+Q4*Q4
-  A(1,2,*)=2.D0*(Q2*Q3+Q1*Q4)
-  A(2,0,*)=2.D0*(Q1*Q3+Q2*Q4)
-  A(2,1,*)=2.D0*(Q2*Q3-Q1*Q4)
-  A(2,2,*)=-Q1*Q1-Q2*Q2+Q3*Q3+Q4*Q4
+  a = dblarr(3, 3, nq)
+  a[0, 0, *] = q1 * q1 - q2 * q2 - q3 * q3 + q4 * q4
+  a[0, 1, *] = 2.d0 * (q1 * q2 + q3 * q4)
+  a[0, 2, *] = 2.d0 * (q1 * q3 - q2 * q4)
+  a[1, 0, *] = 2.d0 * (q1 * q2 - q3 * q4)
+  a[1, 1, *] = -q1 * q1 + q2 * q2 - q3 * q3 + q4 * q4
+  a[1, 2, *] = 2.d0 * (q2 * q3 + q1 * q4)
+  a[2, 0, *] = 2.d0 * (q1 * q3 + q2 * q4)
+  a[2, 1, *] = 2.d0 * (q2 * q3 - q1 * q4)
+  a[2, 2, *] = -q1 * q1 - q2 * q2 + q3 * q3 + q4 * q4
 
   return, a
 end
-

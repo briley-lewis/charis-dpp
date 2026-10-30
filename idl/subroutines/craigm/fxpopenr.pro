@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -40,7 +40,7 @@
 ;            trying to read from the LUN with FXPREAD.
 ;
 ; Keywords
-; 
+;
 ;   errmsg - If set to defined value upon input, an error message is
 ;            returned upon output.  If no error occurs then ERRMSG is
 ;            not changed.  If an error occurs and ERRMSG is not
@@ -68,190 +68,190 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-;  Utility program to protect the pipe command
-PRO FXPOPENR_WRAP_CMD, CMD, SHELL
-  
-;  SHELL = '/bin/sh -c '
+; Utility program to protect the pipe command
+pro FXPOPENR_WRAP_CMD, CMD, SHELL
+  compile_opt idl2
 
-  WHILE STRMID(CMD, 0, 1) EQ '|' OR STRMID(CMD, 0, 1) EQ ' ' DO $
-    CMD = STRMID(CMD, 1, STRLEN(CMD)-1)
-;  CMD = SHELL + '"' + CMD + ' 2>/dev/null"'
+  ; SHELL = '/bin/sh -c '
+
+  while strmid(CMD, 0, 1) eq '|' or strmid(CMD, 0, 1) eq ' ' do $
+    CMD = strmid(CMD, 1, strlen(CMD) - 1)
+  ; CMD = SHELL + '"' + CMD + ' 2>/dev/null"'
   CMD = CMD + ' 2>/dev/null'
 
   RETURN
-END
+end
 
 ; Utility program to generate a name for the cache file.  It is
 ; uniquely generated based on the time, the command string, and the
 ; current call number.
-; 
-FUNCTION FXPOPENR_TMPNAME, CMD
-@fxfilter
-  COMMON FXPOPEN_TMPNAME, RANDOM_SEED, SEQ_COUNTER
-  IF N_ELEMENTS(RANDOM_SEED) EQ 0 THEN BEGIN
-      RANDOM_VAL  = LONG(SYSTIME(1))
-      RANDOM_SEED = LONG(RANDOMU(RANDOM_VAL)*DOUBLE(ISHFT(1L,31)))
-      SEQ_COUNTER = 0L
-  ENDIF
+;
+function FXPOPENR_TMPNAME, CMD
+  compile_opt idl2
+  @fxfilter
+  common FXPOPEN_TMPNAME, RANDOM_SEED, SEQ_COUNTER
+  if n_elements(RANDOM_SEED) eq 0 then begin
+    RANDOM_VAL = long(systime(1))
+    RANDOM_SEED = long(randomu(RANDOM_VAL) * double(ishft(1l, 31)))
+    SEQ_COUNTER = 0l
+  endif
 
-  ;; Take the first fifteen and  characters of the command
-  TMPNAME = STRCOMPRESS(CMD, /REMOVE_ALL)
+  ; ; Take the first fifteen and  characters of the command
+  TMPNAME = strcompress(CMD, /remove_all)
 
-  ;; Build a unique hash name based on the command, the current time,
-  ;; and a session-specific seed.  Possible problem here: if several
-  ;; sessions are started at the same time with the same command, and
-  ;; the commands are executed at the same second, then the temporary
-  ;; name will be the same.  I judge the likelihood of all of these
-  ;; events to be small.
-  
-  B = BYTE(CMD) & N = N_ELEMENTS(B)
-  ;; Construct a semi-unique hash value for the command string
-  HASH = 0L
-  FOR I = 0L, N-1 DO HASH = ISHFT(HASH, 2) XOR B(I)
-  HASH = HASH XOR LONG(SYSTIME(1)) XOR RANDOM_SEED XOR ISHFT(SEQ_COUNTER,16)
+  ; ; Build a unique hash name based on the command, the current time,
+  ; ; and a session-specific seed.  Possible problem here: if several
+  ; ; sessions are started at the same time with the same command, and
+  ; ; the commands are executed at the same second, then the temporary
+  ; ; name will be the same.  I judge the likelihood of all of these
+  ; ; events to be small.
+
+  B = byte(CMD)
+  N = n_elements(B)
+  ; ; Construct a semi-unique hash value for the command string
+  HASH = 0l
+  for I = 0l, N - 1 do HASH = ishft(HASH, 2) xor B[I]
+  HASH = HASH xor long(systime(1)) xor RANDOM_SEED xor ishft(SEQ_COUNTER, 16)
   SEQ_COUNTER = SEQ_COUNTER + 1
 
-  IF STRLEN(TMPNAME) GT 20 THEN BEGIN
-      TMPNAME = STRMID(TMPNAME, 0, 15) + STRMID(TMPNAME, N-6, 5)
-      N = 20L
-  ENDIF
+  if strlen(TMPNAME) gt 20 then begin
+    TMPNAME = strmid(TMPNAME, 0, 15) + strmid(TMPNAME, N - 6, 5)
+    N = 20l
+  endif
   NEWNAME = ''
-  ;; Strip away any non-alpha characters
-  FOR I = 0L, N-1 DO BEGIN
-      CC = STRMID(TMPNAME, I, 1)
-      IF NOT (CC EQ ' ' OR CC EQ '>' OR CC EQ '&' OR CC EQ '|' OR $
-              CC EQ '/' OR CC EQ '*' OR CC EQ '?' OR CC EQ '<' OR $
-              CC EQ '\' OR $
-              CC EQ '"' OR CC EQ "'") THEN $
-        NEWNAME = NEWNAME + CC
-  ENDFOR
-  IF NEWNAME EQ '' THEN NEWNAME = 'fxp'
+  ; ; Strip away any non-alpha characters
+  for I = 0l, N - 1 do begin
+    CC = strmid(TMPNAME, I, 1)
+    if not (CC eq ' ' or CC eq '>' or CC eq '&' or CC eq '|' or $
+      CC eq '/' or CC eq '*' or CC eq '?' or CC eq '<' or $
+      CC eq '\' or $
+      CC eq '"' or CC eq '''') then $
+      NEWNAME = NEWNAME + CC
+  endfor
+  if NEWNAME eq '' then NEWNAME = 'fxp'
 
-  RETURN, SCRATCH_DIR + NEWNAME + STRING(ABS(HASH), FORMAT='(Z8.8)')
-END
+  RETURN, SCRATCH_DIR + NEWNAME + string(abs(HASH), format = '(Z8.8)')
+end
 
-;; Main entry
-PRO FXPOPENR, UNIT, CMD, ERRMSG=ERRMSG, ERROR=error, COMPRESS=compress
+; ; Main entry
+pro FXPOPENR, UNIT, CMD, errmsg = ERRMSG, error = error, compress = compress
+  compile_opt idl2
 
-;; Access the general FXFILTER family of commons, and the
-;; FXPIPE_COMMON, which has pipe-specific info.
-  ERROR = -1
-@fxfilter
-@fxpcommn
+  ; ; Access the general FXFILTER family of commons, and the
+  ; ; FXPIPE_COMMON, which has pipe-specific info.
+  error = -1
+  @fxfilter
+  @fxpcommn
 
-  IF N_PARAMS() LT 2 THEN BEGIN
-      MESSAGE = 'Syntax:  FXPOPEN, UNIT, COMMAND'
-      GOTO, ERR_RETURN
-  ENDIF
+  if n_params() lt 2 then begin
+    MESSAGE = 'Syntax:  FXPOPEN, UNIT, COMMAND'
+    goto, err_return
+  endif
 
-  ;; Initialize filter flags
-  FFLAGS = 1L
+  ; ; Initialize filter flags
+  FFLAGS = 1l
 
-  if NOT keyword_set(compress) then begin
+  if not keyword_set(compress) then begin
+    ; ; Sorry, useful pipes are only available under Unix.
+    if strupcase(!version.os_family) ne 'UNIX' then begin
+      MESSAGE = 'ERROR: FXPOPENR ONLY FUNCTIONS ON UNIX SYSTEMS.'
+      goto, err_return
+    endif
 
-      ;; Sorry, useful pipes are only available under Unix.
-      IF STRUPCASE(!VERSION.OS_FAMILY) NE 'UNIX' THEN BEGIN
-          MESSAGE = 'ERROR: FXPOPENR ONLY FUNCTIONS ON UNIX SYSTEMS.'
-          GOTO, ERR_RETURN
-      ENDIF
+    ; ; --------- Begin pipe section
+    ; ; Wrap the command to make sure it is safe
+    NEWCMD = CMD
+    FXPOPENR_WRAP_CMD, NEWCMD, SHELL
 
-      ;; --------- Begin pipe section
-      ;; Wrap the command to make sure it is safe
-      NEWCMD = CMD
-      FXPOPENR_WRAP_CMD, NEWCMD, SHELL
-      
-      ;; Run the program
-      OLDSHELL = GETENV('SHELL')
-      ON_IOERROR, SPAWN_FAILED
-      IF OLDSHELL NE '/bin/sh' THEN SETENV, 'SHELL=/bin/sh'
-      SPAWN, NEWCMD, UNIT=UNIT, PID=PID
-      ON_IOERROR, NULL
-      SETENV, 'SHELL='+OLDSHELL(0)
-      
-      ;; Check for error conditions
-      IF UNIT LT 1L OR UNIT GT 128L THEN BEGIN
-          SPAWN_FAILED:
-          SETENV, 'SHELL='+OLDSHELL(0)
-          MESSAGE = 'ERROR: SPAWN of "'+NEWCMD+'" FAILED'
-          GOTO, ERR_RETURN
-      ENDIF
+    ; ; Run the program
+    OLDSHELL = getenv('SHELL')
+    on_ioerror, spawn_failed
+    if OLDSHELL ne '/bin/sh' then setenv, 'SHELL=/bin/sh'
+    spawn, NEWCMD, unit = UNIT, pid = PID
+    on_ioerror, null
+    setenv, 'SHELL=' + OLDSHELL[0]
 
-      FFLAGS = FFLAGS OR 2  ;; This is a pipe
-      ;; ---- End pipe section
+    ; ; Check for error conditions
+    if UNIT lt 1l or UNIT gt 128l then begin
+      spawn_failed:
+      setenv, 'SHELL=' + OLDSHELL[0]
+      MESSAGE = 'ERROR: SPAWN of "' + NEWCMD + '" FAILED'
+      goto, err_return
+    endif
+
+    FFLAGS = FFLAGS or 2 ; ; This is a pipe
+    ; ; ---- End pipe section
   endif else begin
-      
-      ;; Compressed data - no PID
-      PID = 0L
+    ; ; Compressed data - no PID
+    PID = 0l
 
-      OPENR, UNIT, CMD, /get_lun, /compress, error=error
-      if error NE 0 then begin
-          MESSAGE = 'ERROR: OPEN of compressed file "'+CMD+'" FAILED'
-          GOTO, ERR_RETURN
-      endif
+    openr, UNIT, CMD, /get_lun, /compress, error = error
+    if error ne 0 then begin
+      MESSAGE = 'ERROR: OPEN of compressed file "' + CMD + '" FAILED'
+      goto, err_return
+    endif
 
-      ;; FFLAGS (unchanged since it is not a pipe)
-
+    ; ; FFLAGS (unchanged since it is not a pipe)
   endelse
 
-  ;; Prepare the FXFILTER dispatch table for function calls
-  FILTERFLAG(UNIT)  = 1            ;; Flags: XXX will be updated below!
-  SEEK_CMD(UNIT)    = 'FXPSEEK'
-  READ_CMD(UNIT)    = 'FXPREAD'
-  WRITE_CMD(UNIT)   = '-'          ;; This pipe is not writable
-  CLOSE_CMD(UNIT)   = 'FXPCLOSE'
+  ; ; Prepare the FXFILTER dispatch table for function calls
+  FILTERFLAG(UNIT) = 1 ; ; Flags: XXX will be updated below!
+  SEEK_CMD(UNIT) = 'FXPSEEK'
+  READ_CMD(UNIT) = 'FXPREAD'
+  WRITE_CMD(UNIT) = '-' ; ; This pipe is not writable
+  CLOSE_CMD(UNIT) = 'FXPCLOSE'
 
-  ;; Start filling in the FXPIPE_COMMON
-  POINTER(UNIT)    = 0L            ;; Start of pipe
-  PROCESS_ID(UNIT) = PID           ;; Save process ID of pipe
-  
-  ;; Build a unique cache name
+  ; ; Start filling in the FXPIPE_COMMON
+  POINTER(UNIT) = 0l ; ; Start of pipe
+  PROCESS_ID(UNIT) = PID ; ; Save process ID of pipe
+
+  ; ; Build a unique cache name
   CACHE_FILENAME = FXPOPENR_TMPNAME(CMD)
 
-  ;; Open the output cache file, retrieving a LUN
-  ON_IOERROR, OPEN_ERROR
-  OPENW, CACHE, CACHE_FILENAME, /GET_LUN, /DELETE
-  ON_IOERROR, NULL
+  ; ; Open the output cache file, retrieving a LUN
+  on_ioerror, open_error
+  openw, CACHE, CACHE_FILENAME, /get_lun, /delete
+  on_ioerror, null
 
-  FFLAGS = FFLAGS OR 4             ;; On-disk backing store
+  FFLAGS = FFLAGS or 4 ; ; On-disk backing store
 
-  ;; Error condition on the cache file
-  IF CACHE LT 1 OR CACHE GT 128 THEN BEGIN
-      OPEN_ERROR:
+  ; ; Error condition on the cache file
+  if CACHE lt 1 or CACHE gt 128 then begin
+    open_error:
 
-      ;; Reset to default behavior
-      FILTERFLAG(UNIT)  = 0
-      SEEK_CMD(UNIT)    = ''
-      READ_CMD(UNIT)    = ''
-      WRITE_CMD(UNIT)   = ''
-      CLOSE_CMD(UNIT)   = ''
-      FREE_LUN, UNIT
+    ; ; Reset to default behavior
+    FILTERFLAG(UNIT) = 0
+    SEEK_CMD(UNIT) = ''
+    READ_CMD(UNIT) = ''
+    WRITE_CMD(UNIT) = ''
+    CLOSE_CMD(UNIT) = ''
+    free_lun, UNIT
 
-      MESSAGE = 'ERROR: Unable to open cache file ' + STRTRIM(CACHE_FILENAME,2)
-      GOTO, ERR_RETURN
-  ENDIF
+    MESSAGE = 'ERROR: Unable to open cache file ' + strtrim(CACHE_FILENAME, 2)
+    goto, err_return
+  endif
 
-  ;; Finish filling the pipe information
-  CACHE_UNIT(UNIT)  = CACHE
-  CACHE_FILE(UNIT)  = CACHE_FILENAME
-  POINTER(UNIT)     = 0  ;; At beginning of pipe
-  CACHE_LEN(UNIT)   = 0  ;; Currently no data cached
-  CACHE_MAX(UNIT)   = 0  ;; Currently no storage allocated for cache
-  EOF_REACHED(UNIT) = 0  ;; Not known to be at end-of-file
+  ; ; Finish filling the pipe information
+  CACHE_UNIT(UNIT) = CACHE
+  CACHE_FILE(UNIT) = CACHE_FILENAME
+  POINTER(UNIT) = 0 ; ; At beginning of pipe
+  CACHE_LEN(UNIT) = 0 ; ; Currently no data cached
+  CACHE_MAX(UNIT) = 0 ; ; Currently no storage allocated for cache
+  EOF_REACHED(UNIT) = 0 ; ; Not known to be at end-of-file
 
-  ;; Update filter flags
-  FILTERFLAG(UNIT)  = FFLAGS        
+  ; ; Update filter flags
+  FILTERFLAG(UNIT) = FFLAGS
 
-  GOOD_RETURN:
-  ERROR = 0
+  good_return:
+  error = 0
   RETURN
 
-  ERR_RETURN:
-  IF N_ELEMENTS(ERRMSG) NE 0 THEN BEGIN
-      ERRMSG = MESSAGE
-      RETURN
-  ENDIF ELSE MESSAGE, MESSAGE
+  err_return:
+  if n_elements(ERRMSG) ne 0 then begin
+    ERRMSG = MESSAGE
+    RETURN
+  endif else message, MESSAGE
   RETURN
-  
-END
+end

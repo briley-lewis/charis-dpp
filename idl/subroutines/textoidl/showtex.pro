@@ -47,74 +47,75 @@
 ;  This code comes with absolutely NO warranty; see DISCLAIMER for details.
 ;-
 ;
-PRO Showtex, FONT=fnt, HELP=help
+pro Showtex, font = fnt, help = help
+  compile_opt idl2
 
-; Return to caller on error.
-    On_error, 2
+  ; Return to caller on error.
+  on_error, 2
 
-; Print help if needed.
-    IF keyword_set(help) THEN BEGIN
-        print, '    Display TeX sequence translation table on current graphics device.'
-        print, '    showtex'
-        print, '    Keywords:'
-        print, '       /HELP       print this message and return'
-        print, '       FONT        set to 0 to use hardware fonts for current device,'
-        print, '                   -1 to use vector fonts (DEFAULT)'
-        print, '    NOTES:  - The only hardware font supported is PostScript.'
-        print, '            - The FONT keyword overrides the font selected in !p.font'
-        return
-    ENDIF
-    
-;  We begin by deciding on the font.  PostScript = 0 means use vector.
-    PostScript = 0
-    PlotTitle = 'Vector Fonts'
-    IF n_elements(fnt) EQ 0 THEN BEGIN ; get font from !p.font
-        IF !P.font NE -1 THEN BEGIN ; User wants hardware font.
-            PostScript = 1
-            PlotTitle = 'PostScript Fonts'
-        ENDIF 
-    ENDIF ELSE BEGIN            ; get font from FONT keyword
-        IF fnt NE -1 THEN BEGIN
-            PostScript = 1
-            PlotTitle = 'PostScript Fonts'
-        ENDIF
-    ENDELSE
-    
-;  Bomb out if user wants hardware font for non-PostScript device.
-    IF (PostScript EQ 1) AND (strupcase(!D.name) NE 'PS') THEN BEGIN   
-                                              ; Device isn't postscript 
-                                              ; and user wants hardware
-                                              ; font.  Not good.
-        print, 'Warning: No translation for device: ', !D.name
-        return
-    ENDIF
-   
-; Set !P.font to value indicated by FONT keyword, saving surrent
-; setting to reset at end.
-    OldPFont = !p.font
-    !p.font = PostScript - 1
+  ; Print help if needed.
+  if keyword_set(help) then begin
+    print, '    Display TeX sequence translation table on current graphics device.'
+    print, '    showtex'
+    print, '    Keywords:'
+    print, '       /HELP       print this message and return'
+    print, '       FONT        set to 0 to use hardware fonts for current device,'
+    print, '                   -1 to use vector fonts (DEFAULT)'
+    print, '    NOTES:  - The only hardware font supported is PostScript.'
+    print, '            - The FONT keyword overrides the font selected in !p.font'
+    return
+  endif
 
-    erase
-    seq = textoidl(/tex)
-    DisplayString = seq + '  ' + textoidl(seq)
+  ; We begin by deciding on the font.  PostScript = 0 means use vector.
+  PostScript = 0
+  PlotTitle = 'Vector Fonts'
+  if n_elements(fnt) eq 0 then begin ; get font from !p.font
+    if !p.font ne -1 then begin ; User wants hardware font.
+      PostScript = 1
+      PlotTitle = 'PostScript Fonts'
+    endif
+  endif else begin ; get font from FONT keyword
+    if fnt ne -1 then begin
+      PostScript = 1
+      PlotTitle = 'PostScript Fonts'
+    endif
+  endelse
 
-    nseq = n_elements(seq)
-    nrows = nseq/5 + 1          ; Five sequences per row.
-    dx = .9/5.
-    dy = .9/nrows
-    y=.95
-    xyouts,.5,y,PlotTitle,align=.5,/norm,size=2.5
-    count=0
-    FOR i = 1L, nrows DO BEGIN
-        y= y - dy
-        x = .1
-        FOR j = 1, 5 DO BEGIN
-            IF (count LT nseq ) THEN xyouts, x, y, DisplayString[count], align = .5, /norm
-            count = count+1
-            x = x + dx
-        ENDFOR
-    ENDFOR
+  ; Bomb out if user wants hardware font for non-PostScript device.
+  if (PostScript eq 1) and (strupcase(!d.name) ne 'PS') then begin
+    ; Device isn't postscript
+    ; and user wants hardware
+    ; font.  Not good.
+    print, 'Warning: No translation for device: ', !d.name
+    return
+  endif
 
-; Restore old !P.font.
-    !p.font = OldPFont
-END
+  ; Set !P.font to value indicated by FONT keyword, saving surrent
+  ; setting to reset at end.
+  OldPFont = !p.font
+  !p.font = PostScript - 1
+
+  erase
+  seq = Textoidl(/tex)
+  DisplayString = seq + '  ' + Textoidl(seq)
+
+  nseq = n_elements(seq)
+  nrows = nseq / 5 + 1 ; Five sequences per row.
+  dx = .9 / 5.
+  dy = .9 / nrows
+  y = .95
+  xyouts, .5, y, PlotTitle, align = .5, /norm, size = 2.5
+  count = 0
+  for i = 1l, nrows do begin
+    y = y - dy
+    x = .1
+    for j = 1, 5 do begin
+      if (count lt nseq) then xyouts, x, y, DisplayString[count], align = .5, /norm
+      count = count + 1
+      x = x + dx
+    endfor
+  endfor
+
+  ; Restore old !P.font.
+  !p.font = OldPFont
+end

@@ -12,7 +12,7 @@
 ; CALLING SEQUENCE:
 ;   ID = CMUNIQUE_ID([STRINGVAL])
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   CMUNIQUE_ID returns a "unique" 8 character identifier.
 ;   Programmers can use this routine to derive unique strings which
@@ -47,7 +47,7 @@
 ;   The 8-character identifier string.
 ;
 ; EXAMPLE:
-;   
+;
 ;   Print two distinct identifiers.
 ;     IDL> print, cmunique_id(), ' ', cmunique_id()
 ;     29C47600 79061C57
@@ -67,45 +67,44 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 function cmunique_id, fodder
+  compile_opt idl2
 
-  ;; Store persistent information in a common block, including the
-  ;; random number seed
-  COMMON CMUNIQUE_ID_COMMON, RANDOM_SEED, SEQ_COUNTER
-  IF N_ELEMENTS(RANDOM_SEED) EQ 0 THEN BEGIN
-      RANDOM_VAL  = LONG(SYSTIME(1))
-      RR          = RANDOM_VAL
-      RANDOM_SEED = LONG(RANDOMU(RR)*DOUBLE(ISHFT(1L,31)))
-      RANDOM_SEED = RR
-      SEQ_COUNTER = 0L
-  ENDIF
-
-  ;; Mix up a few random numbers.  The low-bit behavior of IDL's
-  ;; random number generator seems pretty poor.
-  rr = random_seed
-  hash1 = long(randomu(rr)*double(ishft(1L,31)))
-  hash2 = long(randomu(rr)*double(ishft(1L,31)))
-  hash = hash1 XOR (ishft(hash2,-16) OR ishft(hash2,+16))
-  random_seed = rr
-
-  ;; Include the fodder, which is any unique identifying text string
-  if n_elements(fodder) GT 0 then begin
-      b = byte(fodder(0))
-      n = n_elements(b)
-      for i = 0L, n-1 do hash = ishft(hash,2) XOR b(i)
+  ; ; Store persistent information in a common block, including the
+  ; ; random number seed
+  common CMUNIQUE_ID_COMMON, RANDOM_SEED, SEQ_COUNTER
+  if n_elements(RANDOM_SEED) eq 0 then begin
+    RANDOM_VAL = long(systime(1))
+    RR = RANDOM_VAL
+    RANDOM_SEED = long(randomu(RR) * double(ishft(1l, 31)))
+    RANDOM_SEED = RR
+    SEQ_COUNTER = 0l
   endif
 
-  ;; Finally add some other entropy terms like the time, and a unique
-  ;; counter.  For safety, add these at different bit zones in the
-  ;; output hash so they don't overlap (since time and the sequence
-  ;; counter are both monotonically increasing, they could counteract
-  ;; each other).
-  hash = hash XOR long(systime(1)) XOR ishft(SEQ_COUNTER,16)
-  seq_counter = seq_counter+1
+  ; ; Mix up a few random numbers.  The low-bit behavior of IDL's
+  ; ; random number generator seems pretty poor.
+  RR = RANDOM_SEED
+  hash1 = long(randomu(RR) * double(ishft(1l, 31)))
+  hash2 = long(randomu(RR) * double(ishft(1l, 31)))
+  hash = hash1 xor (ishft(hash2, -16) or ishft(hash2, + 16))
+  RANDOM_SEED = RR
 
-  ;; Return a hex-string of this hash value
-  return, string(abs(hash), format='(Z8.8)')
+  ; ; Include the fodder, which is any unique identifying text string
+  if n_elements(fodder) gt 0 then begin
+    b = byte(fodder[0])
+    n = n_elements(b)
+    for i = 0l, n - 1 do hash = ishft(hash, 2) xor b[i]
+  endif
+
+  ; ; Finally add some other entropy terms like the time, and a unique
+  ; ; counter.  For safety, add these at different bit zones in the
+  ; ; output hash so they don't overlap (since time and the sequence
+  ; ; counter are both monotonically increasing, they could counteract
+  ; ; each other).
+  hash = hash xor long(systime(1)) xor ishft(SEQ_COUNTER, 16)
+  SEQ_COUNTER = SEQ_COUNTER + 1
+
+  ; ; Return a hex-string of this hash value
+  return, string(abs(hash), format = '(Z8.8)')
 end
-
-

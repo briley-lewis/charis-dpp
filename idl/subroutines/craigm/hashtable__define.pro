@@ -58,11 +58,11 @@
 ;       "Fixed" the empty-string problem yet again, 23 Oct 2006, CM
 ;         (thanks again to William Dieckmann)
 ;       Decrement COUNT variable after deleting keys, 09 Mar 2007, CM
-;       Make ::REMOVE more efficient by using WHERE(COMPLEMENT=), 
+;       Make ::REMOVE more efficient by using WHERE(COMPLEMENT=),
 ;         12 Jun 2007, CM
 ;       Change array notation to square brackets and enforce with
 ;         compiler option, 15 Jun 2007, CM
-;       Add user-defined "null" value for missing elements, 
+;       Add user-defined "null" value for missing elements,
 ;         15 Jun 2007, CM
 ;       Convert to [] array index notation, 20 Jun 2007, CM
 ;       Change the two WHERE's in ::REMOVE to a single WHERE
@@ -74,7 +74,7 @@
 ;       Fix case where user stores many identical keys (more than
 ;         LENGTH), 09 Aug 2007, CM
 ;       Add POSITION keyword to ::REMOVE, 12 Nov 2008, CM
-; 
+;
 ;  $Id: hashtable__define.pro,v 1.12 2008/12/14 20:07:43 craigm Exp $
 ;-
 ; Copyright (C) 2003, 2004, 2006, 2007, 2008, Craig Markwardt
@@ -82,8 +82,7 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
-
+; -
 
 ;+
 ; =============================================================
@@ -132,42 +131,39 @@
 ;
 ; MODIFICATION HISTORY:
 ;       Written and documented, Nov 2003, CM
-; 	
+;
 ;-
 
-
-function hashtable::init, length=length0, no_duplicates=nodups, $
-                  null_value=null0,_EXTRA=extra
-
-  COMPILE_OPT strictarr
-  if n_elements(length0) EQ 0 then length = 1229L $
+function hashtable::init, length = length0, no_duplicates = nodups, $
+  null_value = null0, _extra = extra
+  compile_opt strictarr
+  if n_elements(length0) eq 0 then length = 1229l $
   else length = floor(length0[0])
-  if n_elements(null0) EQ 0 then null = 0L $
+  if n_elements(null0) eq 0 then null = 0l $
   else null = null0[0]
 
   self.length = length
   self.count = 0
   self.table = ptr_new(ptrarr(length))
-  self.flags = 0L
+  self.flags = 0l
   self.free_keys = 0
   self.free_values = 0
   self.null_value = ptr_new(null)
 
-  self.flags = (self.flags OR (keyword_set(nodups)*1L))
+  self.flags = (self.flags or (keyword_set(nodups) * 1l))
 
   return, 1
 end
 
 pro hashent__define
-  COMPILE_OPT strictarr
-  he = {hashent, $
-        hashval: 0UL, $
-        length: 0l, $
-        key: '', $
-        value: ptr_new()}
+  compile_opt strictarr
+  he = {Hashent, $
+    hashval: 0ul, $
+    length: 0l, $
+    key: '', $
+    value: ptr_new()}
   return
 end
-
 
 ;+
 ; =============================================================
@@ -181,7 +177,7 @@ end
 ; CALLING SEQUENCE:
 ;
 ;       OBJ_DESTROY, ht
-;       
+;
 ; DESCRIPTION:
 ;
 ;       This procedure performs all clean-up required to remove the
@@ -191,41 +187,41 @@ end
 ;
 ; OPTIONAL INPUTS:
 ;       None.
-;       
+;
 ;
 ; KEYWORD PARAMETERS:
 ;       None.
-;       
+;
 ;
 ; EXAMPLE:
 ;       OBJ_DESTROY, ht
-;       
+;
 ;
 ; MODIFICATION HISTORY:
 ;       Written and documented, Nov 2003, CM
-; 	
+;
 ;-
 
 pro hashtable::cleanup
-  COMPILE_OPT strictarr
+  compile_opt strictarr
   ht = self.table
   if ptr_valid(ht) then begin
-      ht = *ht
-      sz = size(ht)
-      if sz[sz[0]+1] EQ 10 then begin
-          wh = where(ptr_valid(ht) EQ 1, ct)
-          if ct GT 0 then begin
-              for i = 0L, ct-1 do begin
-                  ptr_free, (*ht[wh[i]]).value
-              endfor
-          endif
-          ptr_free, ht
+    ht = *ht
+    sz = size(ht)
+    if sz[sz[0] + 1] eq 10 then begin
+      wh = where(ptr_valid(ht) eq 1, ct)
+      if ct gt 0 then begin
+        for i = 0l, ct - 1 do begin
+          ptr_free, (*ht[wh[i]]).value
+        endfor
       endif
-      ptr_free, self.table
-      self.table = ptr_new()
+      ptr_free, ht
+    endif
+    ptr_free, self.table
+    self.table = ptr_new()
   endif
 
-  ;; Free the null value
+  ; ; Free the null value
   if ptr_valid(self.null_value) then ptr_free, self.null_value
   self.null_value = ptr_new()
 
@@ -233,36 +229,34 @@ pro hashtable::cleanup
 end
 
 function hashtable::bucket, hashval
-  COMPILE_OPT strictarr
-  return, hashval MOD (self.length)
+  compile_opt strictarr
+  return, hashval mod (self.length)
 end
 
-function hashtable::strhashval, str, radix=k0
+function hashtable::strhashval, str, radix = k0
+  compile_opt strictarr
+  ; ; Just picked a nice big prime number
+  if n_elements(k0) eq 0 then k = 17293ul else k = ulong(floor(k0[0]) > 1)
 
-  COMPILE_OPT strictarr
-  ;; Just picked a nice big prime number
-  if n_elements(k0) EQ 0 then k = 17293UL else k = ulong(floor(k0[0])>1)
+  b = ulong(byte(str)) ; ; Convert string(s) to integer
 
-  b = ulong(byte(str))  ;; Convert string(s) to integer
+  nstr = n_elements(str) ; ; Number of strings
+  len = strlen(str) > 1 ; ; Lengths of strings
+  nchar = n_elements(b[*, 0]) ; ; Max number of chars per string
 
-  nstr = n_elements(str) ;; Number of strings
-  len = strlen(str) > 1  ;; Lengths of strings
-  nchar = n_elements(b[*,0]) ;; Max number of chars per string
-
-  kn = k^(nchar-1-lindgen(nchar))  ;; factor raised to kth power
+  kn = k ^ (nchar - 1 - lindgen(nchar)) ; ; factor raised to kth power
 
   hashval = ulonarr(nstr)
-  mask32 = (ishft(1ULL,+32)-1)
-  for i = 0L, nstr-1 do begin
-      vec = kn[nchar-len[i]:*]*b[*,i]
-      hashval[i] = ulong64(total(vec, /double)) AND mask32
+  mask32 = (ishft(1ull, + 32) - 1)
+  for i = 0l, nstr - 1 do begin
+    vec = kn[nchar - len[i] : *] * b[*, i]
+    hashval[i] = ulong64(total(vec, /double)) and mask32
   endfor
 
   sz = size(str)
-  if sz[0] EQ 0 then return, hashval[0]
+  if sz[0] eq 0 then return, hashval[0]
   return, hashval
 end
-
 
 ;+
 ; =============================================================
@@ -275,7 +269,7 @@ end
 ;
 ; CALLING SEQUENCE:
 ;       HT->ADD, KEYNAME, VALUE, HASHVAL=HASHVAL
-;       
+;
 ; DESCRIPTION:
 ;
 ;       This method adds a new hash association to an existing hash
@@ -303,62 +297,61 @@ end
 ;
 ;       Adds the ('X',1), ('Y',2) and ('extra', STRUCT) pairs to the
 ;       HT hash table.
-;       
+;
 ;
 ; MODIFICATION HISTORY:
 ;       Written and documented, Nov 2003, CM
-; 	
+;
 ;-
 
-pro hashtable::add, key, value, hashval=hashval, position=position0, $
-             replace=replace, status=status, errmsg=errmsg
-
-  COMPILE_OPT strictarr
+pro hashtable::add, key, value, hashval = hashval, position = position0, $
+  replace = replace, status = status, errmsg = errmsg
+  compile_opt strictarr
   status = 0
 
-  ;; Compute hash value of key, if it wasn't already computed
-  if n_elements(hashval) EQ 0 then hashval = self->strhashval(key)
-  nodups = (self.flags AND 1) NE 0
-  
-  he = {hashent}
+  ; ; Compute hash value of key, if it wasn't already computed
+  if n_elements(hashval) eq 0 then hashval = self.strhashval(key)
+  nodups = (self.flags and 1) ne 0
+
+  he = {Hashent}
   he.hashval = hashval
   he.length = strlen(key)
   he.key = key
-  if n_elements(value) GT 0 then $
+  if n_elements(value) gt 0 then $
     he.value = ptr_new(value) $
   else $
     he.value = ptr_new()
-  
-  bucket = self->bucket(hashval)
-  if bucket[0] LT 0 OR bucket[0] GT self.length then $
+
+  bucket = self.bucket(hashval)
+  if bucket[0] lt 0 or bucket[0] gt self.length then $
     message, 'ERROR: hash value is out of bounds'
-  
+
   list = (*self.table)[bucket]
   if ptr_valid(list) then begin
-      list = *list
-      if (keyword_set(replace) OR nodups) then begin
-          ;; Replace the entry if found
-          wh = where(key EQ list.key, ct)
+    list = *list
+    if (keyword_set(replace) or nodups) then begin
+      ; ; Replace the entry if found
+      wh = where(key eq list.key, ct)
 
-          ;; Check against unwanted duplicates
-          if ct GT 0 AND nodups AND keyword_set(replace) EQ 0 then begin
-              message, 'ERROR: could not add duplicate hash entry'
-              return
-          endif
+      ; ; Check against unwanted duplicates
+      if ct gt 0 and nodups and keyword_set(replace) eq 0 then begin
+        message, 'ERROR: could not add duplicate hash entry'
+        return
+      endif
 
-          if ct EQ 0 then begin ;; Nope not found...
-              ;; ... add the entry to the top of the bucket
-              *(*self.table)[bucket] = [he, list]
-          endif else begin
-              *(list[wh[0]].value) = value
-              ptr_free, he.value
-          endelse
+      if ct eq 0 then begin ; ; Nope not found...
+        ; ; ... add the entry to the top of the bucket
+        *(*self.table)[bucket] = [he, list]
       endif else begin
-          ;; Add the entry to the top of the bucket
-          *(*self.table)[bucket] = [he, list]
+        *(list[wh[0]].value) = value
+        ptr_free, he.value
       endelse
+    endif else begin
+      ; ; Add the entry to the top of the bucket
+      *(*self.table)[bucket] = [he, list]
+    endelse
   endif else begin
-      (*self.table)[bucket] = ptr_new([he])
+    (*self.table)[bucket] = ptr_new([he])
   endelse
 
   self.count = self.count + 1
@@ -375,7 +368,7 @@ end
 ;
 ; PURPOSE:
 ;       Returns number of entries in the hash table.
-;       
+;
 ;
 ; CALLING SEQUENCE:
 ;       CT = HT->COUNT()
@@ -391,11 +384,11 @@ end
 ;
 ; MODIFICATION HISTORY:
 ;       Written and documented, Nov 2003, CM
-; 	
+;
 ;-
 
 function hashtable::count
-  COMPILE_OPT strictarr
+  compile_opt strictarr
   return, self.count
 end
 
@@ -446,68 +439,66 @@ end
 ;
 ; MODIFICATION HISTORY:
 ;       Written and documented, Nov 2003, CM
-; 	
+;
 ;-
 
-pro hashtable::remove, key, hashval=hashval, count=ct, all=all, $
-             position=position
+pro hashtable::remove, key, hashval = hashval, count = ct, all = all, $
+  position = position
+  compile_opt strictarr
+  ; ; Compute hash value of key, if it wasn't already computed
+  if n_elements(hashval) eq 0 then hashval = self.strhashval(key)
 
-  COMPILE_OPT strictarr
-  ;; Compute hash value of key, if it wasn't already computed
-  if n_elements(hashval) EQ 0 then hashval = self->strhashval(key)
+  ct = 0l
 
-  ct = 0L
-
-  bucket = self->bucket(hashval)
+  bucket = self.bucket(hashval)
 
   list = (*self.table)[bucket]
-  if ptr_valid(list) EQ 0 then return
+  if ptr_valid(list) eq 0 then return
 
   list = *list
 
   hashvals = list.hashval
   nkeys = n_elements(hashvals)
-  ;; WH contains the indices of all entries that match HASHVAL
-  ;;   (and therefore should be deleted)
-  ;; WHG contains the indices of all entries that don't match HASHVAL
-  ;;   (and therefore should be kept)
-  wh = where(hashval EQ hashvals AND key EQ list.key, ct, $
-             complement=whg, ncomplement=ctg)
-  if ct EQ 0 then return
+  ; ; WH contains the indices of all entries that match HASHVAL
+  ; ;   (and therefore should be deleted)
+  ; ; WHG contains the indices of all entries that don't match HASHVAL
+  ; ;   (and therefore should be kept)
+  wh = where(hashval eq hashvals and key eq list.key, ct, $
+    complement = whg, ncomplement = ctg)
+  if ct eq 0 then return
 
-  ;; Filter by POSITION
-  if n_elements(position) GT 0 then begin
-      mask = bytarr(ct)
-      mask[position] = 1
-      wh1 = where(mask, ct1, complement=whg1, ncomplement=ctg1)
-      if ct1 EQ 0 then return
+  ; ; Filter by POSITION
+  if n_elements(position) gt 0 then begin
+    mask = bytarr(ct)
+    mask[position] = 1
+    wh1 = where(mask, ct1, complement = whg1, ncomplement = ctg1)
+    if ct1 eq 0 then return
 
-      ;; If our position filter was a partial hit, then
-      ;; sweep the unhit ones to the "keep" list.
-      if ctg1 GT 0 then begin
-          whg = [whg, wh[whg1]]  ;; Add to keep list
-          ctg = n_elements(whg)
-          wh = wh[wh1]           ;; Remove from delete list
-          ct = n_elements(wh)
-      endif
+    ; ; If our position filter was a partial hit, then
+    ; ; sweep the unhit ones to the "keep" list.
+    if ctg1 gt 0 then begin
+      whg = [whg, wh[whg1]] ; ; Add to keep list
+      ctg = n_elements(whg)
+      wh = wh[wh1] ; ; Remove from delete list
+      ct = n_elements(wh)
+    endif
   end
 
-  if ctg EQ 0 then begin
-      ;; No good entries left; clear the bucket
-      ptr_free, list.value
-      ptr_free, (*self.table)[bucket]
-      (*self.table)[bucket] = ptr_new()
+  if ctg eq 0 then begin
+    ; ; No good entries left; clear the bucket
+    ptr_free, list.value
+    ptr_free, (*self.table)[bucket]
+    (*self.table)[bucket] = ptr_new()
   endif else begin
-      ;; Remove the entry from this bucket's list
-      ptr_free, list[wh].value
-      *((*self.table)[bucket]) = list[whg]
+    ; ; Remove the entry from this bucket's list
+    ptr_free, list[wh].value
+    * ((*self.table)[bucket]) = list[whg]
   endelse
 
   self.count = self.count - ct
-  
+
   return
 end
-
 
 ;+
 ; =============================================================
@@ -521,7 +512,7 @@ end
 ; CALLING SEQUENCE:
 ;       INSIDE = HT->ISCONTAINED(KEYNAME, COUNT=count, HASHVAL=HASHVAL,
 ;                                VALUE=value, POSITION=position)
-;       
+;
 ; DESCRIPTION:
 ;
 ;      This method determines whether a key is contained within the
@@ -531,7 +522,7 @@ end
 ;      can be returned in the VALUE keyword.  If more than one entry
 ;      with the same key are found, then POSITION determines which
 ;      value is returned.
-;      
+;
 ; INPUTS:
 ;       KEYNAME - a scalar string, the key name to be searched for.
 ;
@@ -559,7 +550,7 @@ end
 ; RETURNS:
 ;       Is the key contained within the table?  (Scalar integer:
 ;          1=YES, 0=NO)
-;       
+;
 ; EXAMPLE:
 ;       if HT->ISCONTAINED('X') EQ 1 then print, 'X found'
 ;
@@ -569,45 +560,46 @@ end
 ;
 ; MODIFICATION HISTORY:
 ;       Written and documented, Nov 2003, CM
-; 	
+;
 ;-
 
-function hashtable::iscontained, key, value=value, $
-                  hashval=hashval, errmsg=errmsg, $
-                  count=ct, position=index0
+function hashtable::iscontained, key, value = value, $
+  hashval = hashval, errmsg = errmsg, $
+  count = ct, position = index0
+  compile_opt strictarr
+  ; ; Compute hash value of key, if it wasn't already computed
+  if n_elements(hashval) eq 0 then hashval = self.strhashval(key)
 
-  COMPILE_OPT strictarr
-  ;; Compute hash value of key, if it wasn't already computed
-  if n_elements(hashval) EQ 0 then hashval = self->strhashval(key)
+  ct = 0l
+  value = 0
+  dummy = temporary(value)
 
-  ct = 0L
-  value = 0 & dummy = temporary(value)
+  bucket = self.bucket(hashval)
 
-  bucket = self->bucket(hashval)
-
-  if bucket LT 0 OR bucket GT self.length then return, 0
+  if bucket lt 0 or bucket gt self.length then return, 0
 
   list = (*self.table)[bucket]
-  if ptr_valid(list) EQ 0 then return, 0
+  if ptr_valid(list) eq 0 then return, 0
 
   list = *list
 
   hashvals = list.hashval
-  wh = where(key EQ list.key, ct)
-  if ct EQ 0 then return, 0
+  wh = where(key eq list.key, ct)
+  if ct eq 0 then return, 0
 
-  if ct EQ 1 then begin
-      he = list[wh[0]]
-      if arg_present(value) then value = *(he.value)
+  if ct eq 1 then begin
+    he = list[wh[0]]
+    if arg_present(value) then value = *(he.value)
   endif else begin
-      if n_elements(index0) EQ 0 then index = 0L $
-      else index = floor(index0[0])
+    if n_elements(index0) eq 0 then index = 0l $
+    else index = floor(index0[0])
 
-      index = index > 0 & index = index < (ct-1)
+    index = index > 0
+    index = index < (ct - 1)
 
-      if arg_present(value) then value = *(list[wh[index]].value)
+    if arg_present(value) then value = *(list[wh[index]].value)
   endelse
-  
+
   return, 1
 end
 
@@ -619,11 +611,11 @@ end
 ;
 ; PURPOSE:
 ;       Retrieves a value associated with a key from the hash table.
-;       
+;
 ;
 ; CALLING SEQUENCE:
 ;       VALUE = HT->GET('X', COUNT=count, POSITION=position, HASHVAL=hashval)
-;       
+;
 ; DESCRIPTION:
 ;
 ;       This method searches for the requested key in the hash table,
@@ -660,28 +652,27 @@ end
 ;       The value associated with KEYNAME is returned.  If KEYNAME was
 ;       not found, then COUNT is zero and the return value is
 ;       set to the "null" value (see ::INIT).
-;       
+;
 ;
 ; EXAMPLE:
 ;
 ;       X = HT->GET('X')
-;       
+;
 ;
 ; MODIFICATION HISTORY:
 ;       Written and documented, Nov 2003, CM
-; 	
+;
 ;-
 
-function hashtable::get, key, hashval=hashval, $
-                  count=ct, position=index0
+function hashtable::get, key, hashval = hashval, $
+  count = ct, position = index0
+  compile_opt strictarr
+  ct = 0l
 
-  COMPILE_OPT strictarr
-  ct = 0L
-  
-  keyfound = self->iscontained(key, hashval=hashval, value=value, $
-                               count=ct, position=index0)
-  if keyfound EQ 0 then return, *(self.null_value)
-  
+  keyfound = self.iscontained(key, hashval = hashval, value = value, $
+    count = ct, position = index0)
+  if keyfound eq 0 then return, *(self.null_value)
+
   return, value
 end
 
@@ -693,11 +684,11 @@ end
 ;
 ; PURPOSE:
 ;       Retrieves all the keys of the hash tables
-;       
+;
 ;
 ; CALLING SEQUENCE:
 ;       KEYS = HT->KEYS()
-;       
+;
 ; DESCRIPTION:
 ;
 ;       This method returns all of the keys in the hash table.  If
@@ -717,28 +708,27 @@ end
 ;
 ;       KEYS = HT->KEYS()
 ;       for i = 0, n_elements(keys)-1 do print, ht->get(keys(i))
-;       
+;
 ;
 ; MODIFICATION HISTORY:
 ;       Written and documented, Nov 2003, CM
-; 	
+;
 ;-
 
-function hashtable::keys, count=ct, _EXTRA=extra
-
-  COMPILE_OPT strictarr
+function hashtable::keys, count = ct, _extra = extra
+  compile_opt strictarr
   table = *(self.table)
   wh = where(ptr_valid(table), ct)
-  if ct EQ 0 then return, 0
+  if ct eq 0 then return, 0
 
   keys = ['']
-  for i = 0L, ct-1 do begin
-      bucket = *(table[wh[i]])
-      keys = [keys, bucket.key]
+  for i = 0l, ct - 1 do begin
+    bucket = *(table[wh[i]])
+    keys = [keys, bucket.key]
   endfor
 
-  keys = keys[1:*]
-  
+  keys = keys[1 : *]
+
   return, keys
 end
 
@@ -750,11 +740,11 @@ end
 ;
 ; PURPOSE:
 ;       Converts the hash table to an equivalent IDL structure
-;       
+;
 ;
 ; CALLING SEQUENCE:
 ;       STRUCT = HT->STRUCT()
-;       
+;
 ; DESCRIPTION:
 ;
 ;       This method converts the hash table into an equivalent IDL
@@ -776,28 +766,27 @@ end
 ;
 ;       HTSTRUCT = HT->STRUCT()
 ;       help, keys, htstruct
-;       
+;
 ;
 ; MODIFICATION HISTORY:
 ;       Written and documented, Nov 2003, CM
-; 	
+;
 ;-
 
-function hashtable::struct, count=ct, _EXTRA=extra
-  
-  COMPILE_OPT strictarr
+function hashtable::struct, count = ct, _extra = extra
+  compile_opt strictarr
   table = *(self.table)
   wh = where(ptr_valid(table), ct)
-  if ct EQ 0 then return, 0
+  if ct eq 0 then return, 0
 
-  for i = 0L, ct-1 do begin
-      bucket = *(table[wh[i]])
-      for j = 0, n_elements(bucket.key)-1 do begin
-          if n_elements(str) EQ 0 then $
-            str = create_struct(bucket[j].key, *(bucket[j].value)) $
-          else $
-            str = create_struct(str, bucket[j].key, *(bucket[j].value))
-      endfor
+  for i = 0l, ct - 1 do begin
+    bucket = *(table[wh[i]])
+    for j = 0, n_elements(bucket.key) - 1 do begin
+      if n_elements(str) eq 0 then $
+        str = create_struct(bucket[j].key, *(bucket[j].value)) $
+      else $
+        str = create_struct(str, bucket[j].key, *(bucket[j].value))
+    endfor
   endfor
 
   return, str
@@ -805,20 +794,17 @@ end
 
 ; =============================================================
 ; METHODNAME: HASHTABLE__DEFINE
-;  internal method: defines hash table data structure
+; internal method: defines hash table data structure
 pro hashtable__define
-
-  COMPILE_OPT strictarr
-  struct = {hashtable, $
-            table: ptr_new(), $  ;; Table of HASHENT structures
-            length: 0L, $        ;; Number of buckets in table
-            count: 0L, $         ;; Number of entries in table
-            flags: 0L, $         ;; Flags
-            free_keys: 0L, $
-            free_values: 0L, $
-            null_value: ptr_new() $
-           }
+  compile_opt strictarr
+  struct = {Hashtable, $
+    table: ptr_new(), $ ; ; Table of HASHENT structures
+    length: 0l, $ ; ; Number of buckets in table
+    count: 0l, $ ; ; Number of entries in table
+    flags: 0l, $ ; ; Flags
+    free_keys: 0l, $
+    free_values: 0l, $
+    null_value: ptr_new() $
+    }
   return
 end
-
-

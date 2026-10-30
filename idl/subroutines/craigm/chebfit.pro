@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -123,136 +123,143 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-;; Compute residuals for MPFIT
-function chebfit_eval, p, interval=interval, nterms=nterms, igood=igood, $
-                       _EXTRA=extra
+; ; Compute residuals for MPFIT
+function chebfit_eval, p, interval = interval, nterms = nterms, igood = igood, $
+  _extra = extra
+  compile_opt idl2
 
   common chebfit_common, x, y, err
 
-  if n_elements(igood) EQ 0 then begin
-      p1 = p
+  if n_elements(igood) eq 0 then begin
+    p1 = p
   endif else begin
-      p1 = replicate(p(0)*0, nterms)
-      p1(igood) = p
+    p1 = replicate(p[0] * 0, nterms)
+    p1[igood] = p
   endelse
 
-  ;; Compute the Chebyshev polynomial
-  f = chebeval(x, p1, interval=interval)
+  ; ; Compute the Chebyshev polynomial
+  f = chebeval(x, p1, interval = interval)
 
-  ;; Compute the deviates, applying either errors or weights
-  if n_elements(err) GT 0 then begin
-      result = (y-f)/err
-  endif else if n_elements(wts) GT 0 then begin
-      result = (y-f)*wts
+  ; ; Compute the deviates, applying either errors or weights
+  if n_elements(err) gt 0 then begin
+    result = (y - f) / err
+  endif else if n_elements(wts) gt 0 then begin
+    result = (y - f) * wts
   endif else begin
-      result = (y-f)
+    result = (y - f)
   endelse
-  
-  ;; Make sure the returned result is one-dimensional.
+
+  ; ; Make sure the returned result is one-dimensional.
   result = reform(result, n_elements(result), /overwrite)
   return, result
 end
 
-function chebfit, x, y, err, nmax=nterms0, interval=interval, $
-                  precision=prec, even=even, odd=odd, quiet=quiet, $
-                  initialize=init, reduce_algorithm=redalg0, $
-                  indices=igood, nocatch=nocatch, $
-                  yfit=yfit, perror=perror, bestnorm=bestnorm, dof=dof
+function chebfit, x, y, err, nmax = nterms0, interval = interval, $
+  precision = prec, even = even, odd = odd, quiet = quiet, $
+  initialize = init, reduce_algorithm = redalg0, $
+  indices = igood, nocatch = nocatch, $
+  yfit = yfit, perror = perror, bestnorm = bestnorm, dof = dof
+  compile_opt idl2
 
-  if n_params() EQ 0 then begin
-      message, 'USAGE:', /info
-      message, 'P = CHEBFIT(X, Y, ERR, INTERVAL=[a,b], NMAX=, ...)', /info
-      return, !values.d_nan
+  if n_params() eq 0 then begin
+    message, 'USAGE:', /info
+    message, 'P = CHEBFIT(X, Y, ERR, INTERVAL=[a,b], NMAX=, ...)', /info
+    return, !values.d_nan
   endif
 
-  if n_elements(nterms0) EQ 0 then nterms = 16L $
-  else                             nterms = floor(nterms0(0)) > 2L
+  if n_elements(nterms0) eq 0 then nterms = 16l $
+  else nterms = floor(nterms0[0]) > 2l
   nterms = nterms < n_elements(x)
-  if n_elements(interval) LT 2 then interval = [-1., 1.]
-  if n_elements(prec) EQ 0 then prec = 1.e-7
-  if n_elements(redalg0) EQ 0 then redalg = 2 else redalg = floor(redalg0(0))
-  if n_elements(quiet) EQ 0 then quiet = 1
+  if n_elements(interval) lt 2 then interval = [-1., 1.]
+  if n_elements(prec) eq 0 then prec = 1.e-7
+  if n_elements(redalg0) eq 0 then redalg = 2 else redalg = floor(redalg0[0])
+  if n_elements(quiet) eq 0 then quiet = 1
 
-  ;; Handle error conditions gracefully
-  if NOT keyword_set(nocatch) then begin
-      catch, catcherror
-      if catcherror NE 0 then begin
-          catch, /cancel
-          message, 'Error detected while fitting', /info
-          message, !err_string, /info
-          ier = -1L
-          return, 0L
-      endif
+  ; ; Handle error conditions gracefully
+  if not keyword_set(nocatch) then begin
+    catch, catcherror
+    if catcherror ne 0 then begin
+      catch, /cancel
+      message, 'Error detected while fitting', /info
+      message, !err_string, /info
+      ier = -1l
+      return, 0l
+    endif
   endif
 
-  if n_elements(p) LT nterms OR keyword_set(init) then begin
-      p = replicate(x(0)*0 + 1, nterms) / (findgen(nterms)+1)^2
-      p(0) = total(y)/n_elements(y)
-      ;; If mean is *exactly* zero, then shift it off slightly
-      if p(0) EQ 0 then p(0) = sqrt(total(y^2))/n_elements(y)/10
+  if n_elements(p) lt nterms or keyword_set(init) then begin
+    p = replicate(x[0] * 0 + 1, nterms) / (findgen(nterms) + 1) ^ 2
+    p[0] = total(y) / n_elements(y)
+    ; ; If mean is *exactly* zero, then shift it off slightly
+    if p[0] eq 0 then p[0] = sqrt(total(y ^ 2)) / n_elements(y) / 10
   endif
   p0 = p
   igood = lindgen(nterms)
 
-  if keyword_set(even) OR keyword_set(odd) then $
-    igood = lindgen(n_elements(p)/2)*2 + keyword_set(odd)
-  nt = min([nterms, max(igood)+1])
+  if keyword_set(even) or keyword_set(odd) then $
+    igood = lindgen(n_elements(p) / 2) * 2 + keyword_set(odd)
+  nt = min([nterms, max(igood) + 1])
 
-  ;; Cancel out old common entries
+  ; ; Cancel out old common entries
   common chebfit_common, xc, yc, errc
-  xc   = 0 & dummy = temporary(xc)
-  yc   = 0 & dummy = temporary(yc)
-  errc = 0 & dummy = temporary(errc)
-  
+  xc = 0
+  dummy = temporary(xc)
+  yc = 0
+  dummy = temporary(yc)
+  errc = 0
+  dummy = temporary(errc)
+
   xc = x
   yc = y
-  if n_elements(err) GT 0 then begin
-      errc = err
+  if n_elements(err) gt 0 then begin
+    errc = err
   endif
 
   fa = {interval: interval, igood: igood, nterms: nt}
-  p1 = mpfit('CHEBFIT_EVAL', p0(igood), functargs=fa, maxiter=5, quiet=quiet)
-  p0(igood) = p1
+  p1 = mpfit('CHEBFIT_EVAL', p0[igood], functargs = fa, maxiter = 5, quiet = quiet)
+  p0[igood] = p1
 
-  ;; Look for and remove the insignificant terms from the fit
-  if redalg GT 0 then begin
-      wh = where(abs(p1) GT prec(0), ct)
-      if ct EQ 0 then begin
-          ALL_ZERO:
-          message, 'WARNING: no significant Chebyshev terms were detected', $
-            /info
-          p = p0*0
-          return, 0L
-      endif
-      if max(wh) LT n_elements(igood)-1 then begin
-          imax = max(wh)
-          igood = igood(0:imax)
-          p1 = p1(0:imax)
-      endif
+  ; ; Look for and remove the insignificant terms from the fit
+  if redalg gt 0 then begin
+    wh = where(abs(p1) gt prec[0], ct)
+    if ct eq 0 then begin
+      all_zero:
+      message, 'WARNING: no significant Chebyshev terms were detected', $
+        /info
+      p = p0 * 0
+      return, 0l
+    endif
+    if max(wh) lt n_elements(igood) - 1 then begin
+      imax = max(wh)
+      igood = igood[0 : imax]
+      p1 = p1[0 : imax]
+    endif
 
-      if redalg EQ 2 then begin
-          wh = where(abs(p1) GT 0.1*prec, ct)
-          if ct EQ 0 then goto, ALL_ZERO
-          igood = igood(wh)
-          p1 = p1(wh)
-      endif
+    if redalg eq 2 then begin
+      wh = where(abs(p1) gt 0.1 * prec, ct)
+      if ct eq 0 then goto, all_zero
+      igood = igood[wh]
+      p1 = p1[wh]
+    endif
   endif
 
-  nt = min([nterms, max(igood)+1])
+  nt = min([nterms, max(igood) + 1])
   fa = {interval: interval, igood: igood, nterms: nt}
-  p2 = mpfit('CHEBFIT_EVAL', p1, functargs=fa, maxiter=10, quiet=quiet, $
-             perror=dp2, bestnorm=bestnorm, dof=dof)
+  p2 = mpfit('CHEBFIT_EVAL', p1, functargs = fa, maxiter = 10, quiet = quiet, $
+    perror = dp2, bestnorm = bestnorm, dof = dof)
 
-  xc = 0 & yc = 0 & errc = 0
-  p = p0*0 
+  xc = 0
+  yc = 0
+  errc = 0
+  p = p0 * 0
   perror = p
-  p(igood) = p2
-  perror(igood) = dp2
+  p[igood] = p2
+  perror[igood] = dp2
 
   if arg_present(yfit) then $
-    yfit = chebeval(x, p, interval=interval)
+    yfit = chebeval(x, p, interval = interval)
 
   return, p
 end

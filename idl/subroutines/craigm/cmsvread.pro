@@ -13,8 +13,8 @@
 ;
 ;   CMSVREAD, UNIT, DATA [, NAME=NAME, /NO_DATA, VERSION=VERSION,
 ;                           TIMESTAMP=TIMESTAMP ]
-;   
-; DESCRIPTION: 
+;
+; DESCRIPTION:
 ;
 ;   CMSVREAD reads a single IDL variable from an open IDL SAVE file.
 ;   The file should already have been opened as a normal file using
@@ -104,121 +104,127 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
-pro cmsvread, unit0, data, timestamp=tstamp, version=ver, $
-              name=name, size=sz, no_data=nodata, structure_name=stname, $
-              promote64=promote64, $
-              quiet=quiet, status=status, errmsg=errmsg
+; -
+pro cmsvread, unit0, data, timestamp = tstamp, version = ver, $
+  name = name, size = sz, no_data = nodata, structure_name = stname, $
+  promote64 = promote64, $
+  quiet = quiet, status = status, errmsg = errmsg
+  compile_opt idl2
 
   status = 0
   catch, catcherr
-  if catcherr EQ 0 then lib = cmsvlib(/query) else lib = 0
+  if catcherr eq 0 then lib = cmsvlib(/query) else lib = 0
   catch, /cancel
-  if lib EQ 0 then begin
-      errmsg = 'ERROR: The CMSVLIB library must be in your IDL path.'
-      if keyword_set(quiet) then return else message, errmsg
+  if lib eq 0 then begin
+    errmsg = 'ERROR: The CMSVLIB library must be in your IDL path.'
+    if keyword_set(quiet) then return else message, errmsg
   endif
 
-  name   = 0 & dummy = temporary(name)
-  data   = 0 & dummy = temporary(data)
-  sz     = 0 & dummy = temporary(sz)
-  tp     = 0 & dummy = temporary(tp)
-  stname = 0 & dummy = temporary(stname)
+  name = 0
+  dummy = temporary(name)
+  data = 0
+  dummy = temporary(data)
+  sz = 0
+  dummy = temporary(sz)
+  tp = 0
+  dummy = temporary(tp)
+  stname = 0
+  dummy = temporary(stname)
 
-  if n_elements(unit0) EQ 0 then begin
-      errmsg = 'ERROR: UNIT is not defined'
-      if keyword_set(quiet) then return else message, errmsg
+  if n_elements(unit0) eq 0 then begin
+    errmsg = 'ERROR: UNIT is not defined'
+    if keyword_set(quiet) then return else message, errmsg
   endif
-  unit = floor(unit0(0))
+  unit = floor(unit0[0])
 
   stat = fstat(unit)
-  if stat.read EQ 0 OR stat.open EQ 0 then begin
-      errmsg = 'ERROR: UNIT is not open for reading'
-      if keyword_set(quiet) then return else message, errmsg
+  if stat.read eq 0 or stat.open eq 0 then begin
+    errmsg = 'ERROR: UNIT is not open for reading'
+    if keyword_set(quiet) then return else message, errmsg
   endif
-  
-  ;; Thanks to Liam Gumley to show that one can check the file pointer
-  ;; to see if we are at the start.
 
-  ;; We are at the beginning of the file, make sure this is a proper
-  ;; IDL save file.
-  if stat.cur_ptr EQ 0 then begin
-      cmsv_open, unit, 'FILENAME', pointer, access='R', /reopen, $
-        status=status, errmsg=errmsg
-      if status EQ 0 then begin
-          if keyword_set(quiet) then return else message, errmsg
-      endif
+  ; ; Thanks to Liam Gumley to show that one can check the file pointer
+  ; ; to see if we are at the start.
+
+  ; ; We are at the beginning of the file, make sure this is a proper
+  ; ; IDL save file.
+  if stat.cur_ptr eq 0 then begin
+    cmsv_open, unit, 'FILENAME', pointer, access = 'R', /reopen, $
+      status = status, errmsg = errmsg
+    if status eq 0 then begin
+      if keyword_set(quiet) then return else message, errmsg
+    endif
   endif
 
   done = 0
-  while NOT done do begin
-      block = 0 & dummy = temporary(block)
-      cmsv_rrec, block, p1, bdata, unit=unit, next_block=pnext, /init, $
-        block_type=bt, block_name=bn, status=status, errmsg=errmsg, $
-        promote64=promote64, /autopromote64
-      if status EQ 0 then begin
+  while not done do begin
+    block = 0
+    dummy = temporary(block)
+    cmsv_rrec, block, p1, bdata, unit = unit, next_block = pnext, /init, $
+      block_type = bt, block_name = bn, status = status, errmsg = errmsg, $
+      promote64 = promote64, /autopromote64
+    if status eq 0 then begin
+      if keyword_set(quiet) then return else message, errmsg
+    endif
+
+    case bn of
+      'END_MARKER': begin
+        done = 1
+      end
+
+      'TIMESTAMP': begin
+        tstamp = bdata
+      end
+
+      'VERSION': begin
+        ver = bdata
+      end
+
+      'VARIABLE': begin
+        sysvar = 0
+        do_variable:
+        tp = 0
+        cmsv_rvtype, block, p1, name, sz, status = status, template = tp, $
+          unit = unit, system = sysvar, errmsg = errmsg, $
+          structure_name = stname
+        if status eq 0 or name eq '' then begin
+          status = 0
+          if errmsg eq '' then $
+            errmsg = 'ERROR: could not read variable name'
           if keyword_set(quiet) then return else message, errmsg
-      endif
+        endif
 
-      case bn of 
-          'END_MARKER': begin
-              done = 1
-          end
+        if not keyword_set(nodata) then begin
+          tp1 = sz[sz[0] + 1]
+          if tp1 eq 0 or tp1 eq 10 or tp1 eq 11 then begin
+            status = 0
+            if tp1 eq 0 then $
+              errmsg = 'ERROR: variable type is undefined' $
+            else if tp1 eq 10 or tp1 eq 11 then $
+              errmsg = 'ERROR: CMSVREAD cannot read heap or objects'
+            if keyword_set(quiet) then return else message, errmsg
+          endif
 
-          'TIMESTAMP': begin
-              tstamp = bdata
-          end
+          cmsv_rdata, block, p1, sz, data, template = tp, unit = unit, $
+            status = status, errmsg = errmsg
+          tp = 0
+          if status eq 0 then begin
+            errmsg = 'ERROR: could not read data'
+            if keyword_set(quiet) then return else message, errmsg
+          endif
+        endif
+        done = 1
+      end
 
-          'VERSION': begin
-              ver = bdata
-          end
+      'SYSTEM_VARIABLE': begin
+        sysvar = 1
+        goto, do_variable
+      end
 
-          'VARIABLE': begin
-              sysvar = 0
-              DO_VARIABLE:
-              tp = 0
-              cmsv_rvtype, block, p1, name, sz, status=status, template=tp, $
-                unit=unit, system=sysvar, errmsg=errmsg, $
-                structure_name=stname
-              if status EQ 0 OR name EQ '' then begin
-                  status = 0
-                  if errmsg EQ '' then $
-                    errmsg = 'ERROR: could not read variable name'
-                  if keyword_set(quiet) then return else message, errmsg
-              endif
+      else: dummy = 1
+    endcase
 
-              if NOT keyword_set(nodata) then begin
-                  tp1 = sz(sz(0)+1)
-                  if tp1 EQ 0 OR tp1 EQ 10 OR tp1 EQ 11 then begin
-                      status = 0
-                      if tp1 EQ 0 then $
-                        errmsg = 'ERROR: variable type is undefined' $
-                      else if tp1 EQ 10 OR tp1 EQ 11 then $
-                        errmsg = 'ERROR: CMSVREAD cannot read heap or objects'
-                      if keyword_set(quiet) then return else message, errmsg
-                  endif
-
-                  cmsv_rdata, block, p1, sz, data, template=tp, unit=unit, $
-                    status=status, errmsg=errmsg
-                  tp = 0
-                  if status EQ 0 then begin
-                      errmsg = 'ERROR: could not read data'
-                      if keyword_set(quiet) then return else message, errmsg
-                  endif
-              endif
-              done = 1
-          end
-          
-          'SYSTEM_VARIABLE': begin
-              sysvar = 1
-              goto, DO_VARIABLE
-          end
-
-
-          ELSE: dummy = 1
-      endcase
-
-      point_lun, unit, pnext
+    point_lun, unit, pnext
   endwhile
 
   status = 1

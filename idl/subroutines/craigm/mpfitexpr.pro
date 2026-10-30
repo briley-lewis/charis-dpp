@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -28,7 +28,7 @@
 ;  Given the data and their uncertainties, MPFITEXPR finds the best set
 ;  of model parameters which match the data (in a least-squares
 ;  sense) and returns them in an array.
-;  
+;
 ;  The user must supply the following items:
 ;   - An array of independent variable values ("X").
 ;   - An array of "measured" *dependent* variable values ("Y").
@@ -107,31 +107,31 @@
 ;  Each parameter is associated with one element of the array, in
 ;  numerical order.  The structure can have the following entries
 ;  (none are required):
-;  
+;
 ;     .VALUE - the starting parameter value (but see the START_PARAMS
 ;              parameter for more information).
-;  
+;
 ;     .FIXED - a boolean value, whether the parameter is to be held
 ;              fixed or not.  Fixed parameters are not varied by
 ;              MPFIT, but are passed on to MYFUNCT for evaluation.
-;  
+;
 ;     .LIMITED - a two-element boolean array.  If the first/second
 ;                element is set, then the parameter is bounded on the
 ;                lower/upper side.  A parameter can be bounded on both
 ;                sides.  Both LIMITED and LIMITS must be given
 ;                together.
-;  
+;
 ;     .LIMITS - a two-element float or double array.  Gives the
 ;               parameter limits on the lower and upper sides,
 ;               respectively.  Zero, one or two of these values can be
 ;               set, depending on the values of LIMITED.  Both LIMITED
 ;               and LIMITS must be given together.
-;  
+;
 ;     .PARNAME - a string, giving the name of the parameter.  The
 ;                fitting code of MPFIT does not use this tag in any
 ;                way.  However, the default ITERPROC will print the
 ;                parameter name if available.
-;  
+;
 ;     .STEP - the step size to be used in calculating the numerical
 ;             derivatives.  If set to zero, then the step size is
 ;             computed automatically.  Ignored when AUTODERIVATIVE=0.
@@ -167,7 +167,7 @@
 ;                  one iteration.
 ;
 ;                  A value of 0 indicates no maximum.  Default: 0.
-;  
+;
 ;     .TIED - a string expression which "ties" the parameter to other
 ;             free or fixed parameters as an equality constraint.  Any
 ;             expression involving constants and the parameter array P
@@ -193,7 +193,7 @@
 ;  Therefore programmers are urged to avoid using tags starting with
 ;  "MP", but otherwise they are free to include their own fields
 ;  within the PARINFO structure, which will be ignored by MPFIT.
-;  
+;
 ;  PARINFO Example:
 ;  parinfo = replicate({value:0.D, fixed:0, limited:[0,0], $
 ;                       limits:[0.D,0]}, 5)
@@ -201,7 +201,7 @@
 ;  parinfo[4].limited[0] = 1
 ;  parinfo[4].limits[0]  = 50.D
 ;  parinfo[*].value = [5.7D, 2.2, 500., 1.5, 2000.]
-;  
+;
 ;  A total of 5 parameters, with starting values of 5.7,
 ;  2.2, 500, 1.5, and 2000 are given.  The first parameter
 ;  is fixed at a value of 5.7, and the last parameter is
@@ -213,7 +213,7 @@
 ;  This function is designed to work with IDL 5.0 or greater.  Because
 ;  this function uses the IDL EXECUTE() function, it will not work
 ;  with the free version of the IDL Virtual machine.
-;  
+;
 ;
 ; INPUTS:
 ;   MYFUNCT - a string variable containing an IDL expression.  The
@@ -261,7 +261,7 @@
 ;                  initialized to zero.  This technique is not fully
 ;                  reliable, so users are advised to pass explicit
 ;                  parameter starting values.
-; 
+;
 ;
 ; RETURNS:
 ;
@@ -326,11 +326,11 @@
 ;                PARINFO=parinfo, QUIET=quiet, ...
 ;                ; perform custom iteration update
 ;              END
-;         
+;
 ;              ITERPROC must either accept all three keyword
 ;              parameters (FUNCTARGS, PARINFO and QUIET), or at least
 ;              accept them via the _EXTRA keyword.
-;          
+;
 ;              MYFUNCT is the user-supplied function to be minimized,
 ;              P is the current set of model parameters, ITER is the
 ;              iteration number, and FUNCTARGS are the arguments to be
@@ -381,7 +381,7 @@
 ;   PARINFO - Provides a mechanism for more sophisticated constraints
 ;             to be placed on parameter values.  When PARINFO is not
 ;             passed, then it is assumed that all parameters are free
-;             and unconstrained.  Values in PARINFO are never 
+;             and unconstrained.  Values in PARINFO are never
 ;             modified during a call to MPFIT.
 ;
 ;             See description above for the structure of PARINFO.
@@ -396,7 +396,7 @@
 ;            If the fit is unweighted (i.e. no errors were given, or
 ;            the weights were uniformly set to unity), then PERROR
 ;            will probably not represent the true parameter
-;            uncertainties.  
+;            uncertainties.
 ;
 ;            *If* you can assume that the true reduced chi-squared
 ;            value is unity -- meaning that the fit is implicitly
@@ -415,27 +415,27 @@
 ;            following values:
 ;
 ;	   0  improper input parameters.
-;         
+;
 ;	   1  both actual and predicted relative reductions
 ;	      in the sum of squares are at most FTOL.
-;         
+;
 ;	   2  relative error between two consecutive iterates
 ;	      is at most XTOL
-;         
+;
 ;	   3  conditions for STATUS = 1 and STATUS = 2 both hold.
-;         
+;
 ;	   4  the cosine of the angle between fvec and any
 ;	      column of the jacobian is at most GTOL in
 ;	      absolute value.
-;         
+;
 ;	   5  the maximum number of iterations has been reached
-;         
+;
 ;	   6  FTOL is too small. no further reduction in
 ;	      the sum of squares is possible.
-;         
+;
 ;	   7  XTOL is too small. no further improvement in
 ;	      the approximate solution x is possible.
-;         
+;
 ;	   8  GTOL is too small. fvec is orthogonal to the
 ;	      columns of the jacobian to machine precision.
 ;
@@ -464,7 +464,7 @@
 ; EXAMPLE:
 ;
 ;   ; First, generate some synthetic data
-;   x  = dindgen(200) * 0.1 - 10.                   ; Independent variable 
+;   x  = dindgen(200) * 0.1 - 10.                   ; Independent variable
 ;   yi = gauss1(x, [2.2D, 1.4, 3000.]) + 1000       ; "Ideal" Y variable
 ;   y  = yi + randomn(seed, 200) * sqrt(yi)         ; Measured, w/ noise
 ;   sy = sqrt(y)                                    ; Poisson errors
@@ -503,7 +503,7 @@
 ; REFERENCES:
 ;
 ;   MINPACK-1, Jorge More', available from netlib (www.netlib.org).
-;   "Optimization Software Guide," Jorge More' and Stephen Wright, 
+;   "Optimization Software Guide," Jorge More' and Stephen Wright,
 ;     SIAM, *Frontiers in Applied Mathematics*, Number 14.
 ;
 ; MODIFICATION HISTORY:
@@ -552,209 +552,220 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-FORWARD_FUNCTION mpevalexpr, mpfitexpr_eval, mpfitexpr, mpfit
+forward_function mpevalexpr, mpfitexpr_eval, mpfitexpr, mpfit
 
 ; Utility function which simply returns the value of the expression,
 ; evaluated at each point in x, using the parameters p.
-function mpevalexpr, _expr, x, p, functargs=private
-
-  COMPILE_OPT strictarr
-  _cmd = '_f = '+_expr
+function mpevalexpr, _expr, x, p, functargs = private
+  compile_opt strictarr
+  _cmd = '_f = ' + _expr
   _err = execute(_cmd)
   return, _f
 end
 
 ; This is the call-back function for MPFIT.  It evaluates the
 ; expression, subtracts the data, and returns the residuals.
-function mpfitexpr_eval, p, _EXTRA=private
-
-  COMPILE_OPT strictarr
+function mpfitexpr_eval, p, _extra = private
+  compile_opt strictarr
   common mpfitexpr_common, _expr, x, y, err, _wts, _f
 
-  ;; Compute the model value by executing the expression
-  _f = 0.D
-  _cmd = '_f = '+_expr
+  ; ; Compute the model value by executing the expression
+  _f = 0.d
+  _cmd = '_f = ' + _expr
   _xxx = execute(_cmd)
-  if _xxx EQ 0 then message, 'ERROR: command execution failed.'
+  if _xxx eq 0 then message, 'ERROR: command execution failed.'
 
-  ;; Compute the deviates, applying either errors or weights
-  if n_elements(err) GT 0 then begin
-      result = (y-_f)/err
-  endif else if n_elements(_wts) GT 0 then begin
-      result = (y-_f)*_wts
+  ; ; Compute the deviates, applying either errors or weights
+  if n_elements(err) gt 0 then begin
+    result = (y - _f) / err
+  endif else if n_elements(_wts) gt 0 then begin
+    result = (y - _f) * _wts
   endif else begin
-      result = (y-_f)
+    result = (y - _f)
   endelse
 
-  ;; The returned result should be one-dimensional
+  ; ; The returned result should be one-dimensional
   result = reform(result, n_elements(result), /overwrite)
   return, result
 end
 
-;; This is the main entry point for this module
-function mpfitexpr, expr, x, y, err, p, WEIGHTS=wts, $
-                    BESTNORM=bestnorm, STATUS=status, nfev=nfev, $
-                    parinfo=parinfo, query=query, functargs=fcnargs, $
-                    covar=covar, perror=perror, yfit=yfit, $
-                    niter=niter, nfree=nfree, npegged=npegged, dof=dof, $
-                    quiet=quiet, _EXTRA=extra, errmsg=errmsg
-
-  COMPILE_OPT strictarr
-  status = 0L
+; ; This is the main entry point for this module
+function mpfitexpr, expr, x, y, err, p, weights = wts, $
+  bestnorm = bestnorm, status = status, nfev = nfev, $
+  parinfo = parinfo, query = query, functargs = fcnargs, $
+  covar = covar, perror = perror, yfit = yfit, $
+  niter = niter, nfree = nfree, npegged = npegged, dof = dof, $
+  quiet = quiet, _extra = extra, errmsg = errmsg
+  compile_opt strictarr
+  status = 0l
   errmsg = ''
 
-  ;; Detect MPFIT and crash if it was not found
+  ; ; Detect MPFIT and crash if it was not found
   catch, catcherror
-  if catcherror NE 0 then begin
-      MPFIT_NOTFOUND:
-      catch, /cancel
-      message, 'ERROR: the required function MPFIT must be in your IDL path', /info
-      return, !values.d_nan
+  if catcherror ne 0 then begin
+    mpfit_notfound:
+    catch, /cancel
+    message, 'ERROR: the required function MPFIT must be in your IDL path', /info
+    return, !values.d_nan
   endif
-  if mpfit(/query) NE 1 then goto, MPFIT_NOTFOUND
+  if mpfit(/query) ne 1 then goto, mpfit_notfound
   catch, /cancel
   if keyword_set(query) then return, 1
 
-  if n_params() EQ 0 then begin
-      message, "USAGE: PARMS = MPFITEXPR('EXPR', X, Y, ERR, "+ $
-        "START_PARAMS, ... )", /info
-      return, !values.d_nan
+  if n_params() eq 0 then begin
+    message, 'USAGE: PARMS = MPFITEXPR(''EXPR'', X, Y, ERR, ' + $
+      'START_PARAMS, ... )', /info
+    return, !values.d_nan
   endif
-  if n_elements(x) EQ 0 OR n_elements(y) EQ 0 then begin
-      message, 'ERROR: X and Y must be defined', /info
-      return, !values.d_nan
+  if n_elements(x) eq 0 or n_elements(y) eq 0 then begin
+    message, 'ERROR: X and Y must be defined', /info
+    return, !values.d_nan
   endif
 
-  ;; If no parameters are given, then parse the input expression,
-  ;; and determine the number of parameters automatically.
-  if (n_elements(parinfo) GT 0) AND (n_elements(p) EQ 0) then $
+  ; ; If no parameters are given, then parse the input expression,
+  ; ; and determine the number of parameters automatically.
+  if (n_elements(parinfo) gt 0) and (n_elements(p) eq 0) then $
     p = parinfo[*].value
-  if (n_elements(p) EQ 0) then begin
-      pos = 0L
-      nparams = 0L
-      ee = strupcase(expr)
-      ;; These are character constants representing the boundaries of
-      ;; variable names.
-      ca = (byte('A'))[0]
-      cz = (byte('Z'))[0]
-      c0 = (byte('0'))[0]
-      c9 = (byte('9'))[0]
-      c_ = (byte('_'))[0]  ;; Underscore can be in a variable name
-      ll = strlen(ee)
-      pnames = ['']
+  if (n_elements(p) eq 0) then begin
+    pos = 0l
+    nparams = 0l
+    ee = strupcase(expr)
+    ; ; These are character constants representing the boundaries of
+    ; ; variable names.
+    ca = (byte('A'))[0]
+    cz = (byte('Z'))[0]
+    c0 = (byte('0'))[0]
+    c9 = (byte('9'))[0]
+    c_ = (byte('_'))[0] ; ; Underscore can be in a variable name
+    ll = strlen(ee)
+    pnames = ['']
 
-      ;; Now step through, looking for variables looking like p[0], etc.
-      repeat begin
-          i = [strpos(ee, 'P(', pos), strpos(ee, 'P[', pos)]
-          wh = where(i GE 0, ct)
-          if ct LE 0 then goto, DONE_PARAMS
-          i = min(i[wh])
+    ; ; Now step through, looking for variables looking like p[0], etc.
+    repeat begin
+      i = [strpos(ee, 'P(', pos), strpos(ee, 'P[', pos)]
+      wh = where(i ge 0, ct)
+      if ct le 0 then goto, done_params
+      i = min(i[wh])
 
-          ;; None found, finished
-          if i LT 0 then goto, DONE_PARAMS
-          ;; Too close to the end of the string
-          if i GT ll-4 then goto, DONE_PARAMS
+      ; ; None found, finished
+      if i lt 0 then goto, done_params
+      ; ; Too close to the end of the string
+      if i gt ll - 4 then goto, done_params
 
-          ;; Have to be careful here, to be sure that this isn't just
-          ;; a variable name ending in "p"
-          maybe = 0
-          ;; If this is the first character
-          if i EQ 0 then maybe = 1 $
-          else begin
-              ;; Or if the preceding character is a non-variable character
-              c = (byte(strmid(ee, i-1, 1)))[0]
-              if NOT ( (c GE ca AND c LE cz) OR (c GE c0 AND c LE c9) $
-                       OR c EQ c_ ) then maybe = 1
-          endelse
-          if maybe then begin
-              ;; If we found one, then strip out the value inside the
-              ;; parentheses.
-              rest = strmid(ee, i+2, ll-i-2)
-              next = str_sep(rest, ')', /trim)
-              next = next[0]
-              pnames = [pnames, next]
-          endif
-          pos = i+1
-      endrep until pos GE ll
-
-      DONE_PARAMS:
-      if n_elements(pnames) EQ 1 then begin
-          message, 'ERROR: no parameters to fit', /info
-          return, !values.d_nan
+      ; ; Have to be careful here, to be sure that this isn't just
+      ; ; a variable name ending in "p"
+      maybe = 0
+      ; ; If this is the first character
+      if i eq 0 then maybe = 1 $
+      else begin
+        ; ; Or if the preceding character is a non-variable character
+        c = (byte(strmid(ee, i - 1, 1)))[0]
+        if not ((c ge ca and c le cz) or (c ge c0 and c le c9) $
+        or c eq c_) then maybe = 1
+      endelse
+      if maybe then begin
+        ; ; If we found one, then strip out the value inside the
+        ; ; parentheses.
+        rest = strmid(ee, i + 2, ll - i - 2)
+        next = STR_SEP(rest, ')', /trim)
+        next = next[0]
+        pnames = [pnames, next]
       endif
+      pos = i + 1
+    endrep until pos ge ll
 
-      ;; Finally, we take the maximum parameter number
-      pnames = pnames[1:*]
-      nparams = max(long(pnames)) + 1
-      if NOT keyword_set(quiet) then $
-        message, '  Number of parameters: '+strtrim(nparams,2) $
-        + ' (initialized to zero)', /info
-
-      ;; Create a parameter vector, starting at zero
-      p = dblarr(nparams)
-  endif
-
-  ;; Use common block to pass data back and forth
-  common mpfitexpr_common, fc, xc, yc, ec, wc, mc
-  fc = expr & xc = x & yc = y & mc = 0L
-  ;; These optional parameters must be undefined first
-  ec = 0 & dummy = size(temporary(ec))
-  wc = 0 & dummy = size(temporary(wc))
-
-  if n_elements(wts) GT 0 then begin
-      wc = sqrt(abs(wts))
-  endif else if n_elements(err) GT 0 then begin
-      wh = where(err EQ 0, ct)
-      if ct GT 0 then begin
-          message, 'ERROR: ERROR value must not be zero.  Use WEIGHTS.', $
-            /info
-          return, !values.d_nan
-      endif
-      ec = err
-  endif
-
-  ;; Test out the function, as mpfit would call it, to see if it works
-  ;; okay.  There is no sense in calling the fitter if the function
-  ;; itself doesn't work.
-  catch, catcherror
-  if catcherror NE 0 then begin
-      CATCH_ERROR:
-      catch, /cancel
-      message, 'ERROR: execution of "'+expr+'" failed.', /info
-      message, '       check syntax and parameter usage', /info
-      xc = 0 & yc = 0 & ec = 0 & wc = 0 & ac = 0
+    done_params:
+    if n_elements(pnames) eq 1 then begin
+      message, 'ERROR: no parameters to fit', /info
       return, !values.d_nan
+    endif
+
+    ; ; Finally, we take the maximum parameter number
+    pnames = pnames[1 : *]
+    nparams = max(long(pnames)) + 1
+    if not keyword_set(quiet) then $
+      message, '  Number of parameters: ' + strtrim(nparams, 2) $
+      + ' (initialized to zero)', /info
+
+    ; ; Create a parameter vector, starting at zero
+    p = dblarr(nparams)
   endif
 
-  ;; Initialize.  Function that is actually called is mpfitexpr_eval,
-  ;; which is a wrapper that sets up the expression evaluation.
+  ; ; Use common block to pass data back and forth
+  common mpfitexpr_common, fc, xc, yc, ec, wc, mc
+  fc = expr
+  xc = x
+  yc = y
+  mc = 0l
+  ; ; These optional parameters must be undefined first
+  ec = 0
+  dummy = size(temporary(ec))
+  wc = 0
+  dummy = size(temporary(wc))
+
+  if n_elements(wts) gt 0 then begin
+    wc = sqrt(abs(wts))
+  endif else if n_elements(err) gt 0 then begin
+    wh = where(err eq 0, ct)
+    if ct gt 0 then begin
+      message, 'ERROR: ERROR value must not be zero.  Use WEIGHTS.', $
+        /info
+      return, !values.d_nan
+    endif
+    ec = err
+  endif
+
+  ; ; Test out the function, as mpfit would call it, to see if it works
+  ; ; okay.  There is no sense in calling the fitter if the function
+  ; ; itself doesn't work.
+  catch, catcherror
+  if catcherror ne 0 then begin
+    catch_error:
+    catch, /cancel
+    message, 'ERROR: execution of "' + expr + '" failed.', /info
+    message, '       check syntax and parameter usage', /info
+    xc = 0
+    yc = 0
+    ec = 0
+    wc = 0
+    ac = 0
+    return, !values.d_nan
+  endif
+
+  ; ; Initialize.  Function that is actually called is mpfitexpr_eval,
+  ; ; which is a wrapper that sets up the expression evaluation.
   fcn = 'mpfitexpr_eval'
 
-  ;; FCNARGS are passed by MPFIT directly to MPFITEXPR_EVAL.  These
-  ;; actually contain the data, the expression, and a slot to return
-  ;; the model function.
-  fvec = call_function(fcn, p, _EXTRA=fcnargs)
-  if n_elements(fvec) EQ 1 then $
-    if NOT finite(fvec[0]) then goto, CATCH_ERROR
-  ;; No errors caught if reached this stage
+  ; ; FCNARGS are passed by MPFIT directly to MPFITEXPR_EVAL.  These
+  ; ; actually contain the data, the expression, and a slot to return
+  ; ; the model function.
+  fvec = call_function(fcn, p, _extra = fcnargs)
+  if n_elements(fvec) eq 1 then $
+    if not finite(fvec[0]) then goto, catch_error
+  ; ; No errors caught if reached this stage
   catch, /cancel
 
-  ;; Call MPFIT
+  ; ; Call MPFIT
   result = mpfit(fcn, p, $
-                 parinfo=parinfo, STATUS=status, nfev=nfev, BESTNORM=bestnorm,$
-                 covar=covar, perror=perror, functargs=fcnargs, $
-                 niter=niter, nfree=nfree, npegged=npegged, dof=dof, $
-                 ERRMSG=errmsg, quiet=quiet, _EXTRA=extra)
+    parinfo = parinfo, status = status, nfev = nfev, bestnorm = bestnorm, $
+    covar = covar, perror = perror, functargs = fcnargs, $
+    niter = niter, nfree = nfree, npegged = npegged, dof = dof, $
+    errmsg = errmsg, quiet = quiet, _extra = extra)
 
-  ;; Retrieve the fit value
+  ; ; Retrieve the fit value
   yfit = temporary(mc)
-  ;; Some cleanup
-  xc = 0 & yc = 0 & wc = 0 & ec = 0 & mc = 0 & ac = 0
+  ; ; Some cleanup
+  xc = 0
+  yc = 0
+  wc = 0
+  ec = 0
+  mc = 0
+  ac = 0
 
-  ;; Print error message if there is one.
-  if NOT keyword_set(quiet) AND errmsg NE '' then $
+  ; ; Print error message if there is one.
+  if not keyword_set(quiet) and errmsg ne '' then $
     message, errmsg, /info
 
   return, result

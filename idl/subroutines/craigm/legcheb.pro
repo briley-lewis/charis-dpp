@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -72,85 +72,86 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-function legcheb, a, reset=reset
+function legcheb, a, reset = reset
+  compile_opt idl2
 
   common legcheb_common, ink
 
   n1 = n_elements(a)
-  n  = n1-1
+  n = n1 - 1
 
-  ;; Internal routine: reset the common block
+  ; ; Internal routine: reset the common block
   if keyword_set(reset) then begin
-      ink = 0 & dummy = temporary(ink)
-      return, -1d
+    ink = 0
+    dummy = temporary(ink)
+    return, -1d
   endif
 
-  ;; A common block is used to store the matrix which converts from
-  ;; one representation to another.  This matrix needs to be expanded
-  ;; if the input vector (size N1) is longer than the size of the
-  ;; matrix (NINK x NINK).
+  ; ; A common block is used to store the matrix which converts from
+  ; ; one representation to another.  This matrix needs to be expanded
+  ; ; if the input vector (size N1) is longer than the size of the
+  ; ; matrix (NINK x NINK).
 
   nink = sqrt(n_elements(ink))
-  if nink LT n1 then begin
+  if nink lt n1 then begin
+    ; ; If we've never been called before, initialize the 2x2 array
+    ; ; with hard coded numbers
+    if n_elements(ink) eq 0 then begin
+      ink = reform([[2d, 0d], [0d, 2d / 3d]], 2, 2)
+      nink = 2
+    endif
 
-      ;; If we've never been called before, initialize the 2x2 array
-      ;; with hard coded numbers
-      if n_elements(ink) EQ 0 then begin
-          ink = reform([[2d,0d],[0d, 2d/3d]], 2,2)
-          nink = 2
-      endif
+    ; ; Insert the new array into the old array
+    inknew = dblarr(n1, n1)
+    inknew[0 : nink - 1, 0 : nink - 1] = ink
+    ink = reform(inknew, n1, n1)
 
-      ;; Insert the new array into the old array
-      inknew = dblarr(n1,n1)
-      inknew(0:nink-1,0:nink-1) = ink
-      ink = reform(inknew,n1,n1)
-      
-      ;; Compute the diagonal components, based on recurrence relation
-      ;; in Piessens (1974)
-      for nn = nink, n1-1 do begin
-          ;; Recurrence relation for diagonal components
-          ;; ORIG: ink(nn,nn) = ink(nn-1,nn-1)*4d*nn^2/(2d*nn+1)/(2d*nn)
-          ink(nn,nn) = ink(nn-1,nn-1)*2d*nn/(2d*nn+1)
-      endfor
+    ; ; Compute the diagonal components, based on recurrence relation
+    ; ; in Piessens (1974)
+    for nn = nink, n1 - 1 do begin
+      ; ; Recurrence relation for diagonal components
+      ; ; ORIG: ink(nn,nn) = ink(nn-1,nn-1)*4d*nn^2/(2d*nn+1)/(2d*nn)
+      ink[nn, nn] = ink[nn - 1, nn - 1] * 2d * nn / (2d * nn + 1)
+    endfor
 
-      ;; Special case: first row, because of a 0/0 condition
-      kk = dindgen(n1/2)*2
-      ink(kk,0) = -2d/(kk*kk - 1)
-      
-      ;; Fill remaining columns of the INK array, using the recurrence
-      ;; of eqn 6 in Piessens
-      for nn = 1, n1-1 do begin
-          ;; KSTART is the starting index, which could be larger than
-          ;; NINK because the elements left of the diagonal are always
-          ;; zero.  The NINK-1 vs NINK-2 logic is because the cells
-          ;; alternate nonzero quantities.
-          kstart = nink-1
-          if ink(kstart,nn) EQ 0 then kstart = nink-2
-          kstart = kstart>nn
+    ; ; Special case: first row, because of a 0/0 condition
+    kk = dindgen(n1 / 2) * 2
+    ink[kk, 0] = -2d / (kk * kk - 1)
 
-          ;; Recurrence used here.
-          for kk = kstart, n1-3, 2 do if ink(kk,nn) NE 0 then begin
-              ink(kk+2,nn) = (ink(kk,nn) $
-                              * (double((kk-1)*kk - nn*(nn+1)) $
-                                 / ((kk+3)*(kk+2) - nn*(nn+1))) $
-                              * (double(kk+2)/kk))
-          end
-      endfor
+    ; ; Fill remaining columns of the INK array, using the recurrence
+    ; ; of eqn 6 in Piessens
+    for nn = 1, n1 - 1 do begin
+      ; ; KSTART is the starting index, which could be larger than
+      ; ; NINK because the elements left of the diagonal are always
+      ; ; zero.  The NINK-1 vs NINK-2 logic is because the cells
+      ; ; alternate nonzero quantities.
+      kstart = nink - 1
+      if ink[kstart, nn] eq 0 then kstart = nink - 2
+      kstart = kstart > nn
+
+      ; ; Recurrence used here.
+      for kk = kstart, n1 - 3, 2 do if ink[kk, nn] ne 0 then begin
+        ink[kk + 2, nn] = (ink[kk, nn] $
+          * (double((kk - 1) * kk - nn * (nn + 1)) $
+            / ((kk + 3) * (kk + 2) - nn * (nn + 1))) $
+          * (double(kk + 2) / kk))
+      end
+    endfor
   endif
 
-  ;; Extract relevant portion of INK matrix
+  ; ; Extract relevant portion of INK matrix
   nn = dindgen(n1)
-  mat = ink(0:n1-1,0:n1-1)
+  mat = ink[0 : n1 - 1, 0 : n1 - 1]
 
-  ;; Keep same data type for A and B
-  b = reform(a)*0.
+  ; ; Keep same data type for A and B
+  b = reform(a) * 0.
 
-  ;; Compute B by matrix multiplication
-  b(*) = (mat ## a(*))
+  ; ; Compute B by matrix multiplication
+  b[*] = (mat ## a[*])
 
-  ;; Apply final multiplicative factor, the normalization of the
-  ;; Legendre polynomials.
-  return, b*(0.5d + nn)
+  ; ; Apply final multiplicative factor, the normalization of the
+  ; ; Legendre polynomials.
+  return, b * (0.5d + nn)
 end

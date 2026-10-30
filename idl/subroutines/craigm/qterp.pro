@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -127,7 +127,7 @@
 ;   QNEW = QTERP(TGRID, QGRID, TNEW, /SLERP)
 ;
 ;   --->  (interpolated results in QNEW)
-;  
+;
 ;       0.0000000       0.0000000       0.0000000       1.0000000
 ;     0.039259816       0.0000000       0.0000000      0.99922904
 ;     0.078459096       0.0000000       0.0000000      0.99691733
@@ -139,7 +139,7 @@
 ;      0.30901699       0.0000000       0.0000000      0.95105652
 ;      0.34611706       0.0000000       0.0000000      0.93819134
 ;      0.38268343       0.0000000       0.0000000      0.92387953
-;   
+;
 ;
 ; SEE ALSO
 ;   QTANG, QTAXIS, QTCOMPOSE, QTERP, QTEXP, QTFIND, QTINV, QTLOG,
@@ -162,47 +162,48 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-function qterp, t0, q0, t1, qdiff=qdiff, reset=reset, slerp=slerp
+function qterp, t0, q0, t1, qdiff = qdiff, reset = reset, slerp = slerp
+  compile_opt idl2
 
-  if n_params() EQ 0 then begin
-      info = 1
-      USAGE:
-      message, 'USAGE:', /info
-      message, 'QNEW = QTERP(TGRID, QGRIDJ, TNEW, [/SLERP, QDIFF=, /RESET])',$
-        info=info
-      return, 0
+  if n_params() eq 0 then begin
+    info = 1
+    usage:
+    message, 'USAGE:', /info
+    message, 'QNEW = QTERP(TGRID, QGRIDJ, TNEW, [/SLERP, QDIFF=, /RESET])', $
+      info = info
+    return, 0
   endif
 
-  nq = n_elements(q0)/4
-  if nq EQ 0 then goto, USAGE
+  nq = n_elements(q0) / 4
+  if nq eq 0 then goto, usage
 
-  ;; If there is only one quaternion, replicate it, since there is
-  ;; nothing to interpolate
-  if nq EQ 1 then $
-    return, rebin(reform(q0,4,1),4,n_elements(t1))
+  ; ; If there is only one quaternion, replicate it, since there is
+  ; ; nothing to interpolate
+  if nq eq 1 then $
+    return, rebin(reform(q0, 4, 1), 4, n_elements(t1))
 
   if keyword_set(slerp) then begin
-      if n_elements(qdiff)/4 NE nq-1 OR keyword_set(reset) then begin
-          qdiff = qtmult(q0(*,0:nq-2), /inv1, q0(*,1:*))
+    if n_elements(qdiff) / 4 ne nq - 1 or keyword_set(reset) then begin
+      qdiff = qtmult(q0[*, 0 : nq - 2], /inv1, q0[*, 1 : *])
 
-          ;; Normalize the quaternions to get the smallest path
-          wh = where(qdiff(3,*) LT 0, ct)
-          if ct GT 0 then qdiff(*,wh) = -qdiff(*,wh)
-      endif
-      ii = value_locate(t0, t1) < (nq-2) > 0
-      hh = (t1-t0(ii))/(t0(ii+1)-t0(ii))
+      ; ; Normalize the quaternions to get the smallest path
+      wh = where(qdiff[3, *] lt 0, ct)
+      if ct gt 0 then qdiff[*, wh] = -qdiff[*, wh]
+    endif
+    ii = value_locate(t0, t1) < (nq - 2) > 0
+    hh = (t1 - t0[ii]) / (t0[ii + 1] - t0[ii])
 
-      return, qtmult(q0(*,ii), qtpow(qdiff(*,ii),hh))
+    return, qtmult(q0[*, ii], qtpow(qdiff[*, ii], hh))
   endif
-  
-  q1 = (q0(*,0) # t1) * 0
+
+  q1 = (q0[*, 0] # t1) * 0
   for i = 0, 3 do $
-    q1(i,*) = spl_interp(t0, q0(i,*), spl_init(t0, q0(i,*)), t1)
-  tot = sqrt(total(q1^2,1))
+    q1[i, *] = spl_interp(t0, q0[i, *], spl_init(t0, q0[i, *]), t1)
+  tot = sqrt(total(q1 ^ 2, 1))
   for i = 0, 3 do $
-    q1(i,*) = q1(i,*) / tot
+    q1[i, *] = q1[i, *] / tot
 
   return, q1
 end

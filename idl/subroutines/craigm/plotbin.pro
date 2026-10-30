@@ -12,7 +12,7 @@
 ; CALLING SEQUENCE:
 ;   PLOTBIN, x, y, WIDTH=width, PIXCENTER=pixcenter, ...
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   PLOTBIN makes an unfilled histogram plot.  The width of each
 ;   histogram bin can be specified individually, and the alignment of
@@ -92,7 +92,7 @@
 ;   Documented, CM, July 1999
 ;   Added MIDPOINT keyword, 21 Feb 2000
 ;   Added EDGE keyword, 21 Apr 2000
-;   Corrected way that PIXCENTER works (Thanks to 
+;   Corrected way that PIXCENTER works (Thanks to
 ;     J. Guerber), CM, 28 Mar 2002
 ;   Changed _EXTRA handling to use EXECUTE internally.  Unfortunately
 ;     makes it incompatible with VM version of IDL, 03 Aug 2003, CM
@@ -107,77 +107,77 @@
 ; Permission to use, copy and distribute unmodified copies for
 ; non-commercial purposes, and to modify and use for personal or
 ; internal use, is granted.  All other rights are reserved.
-;-
-;%insert HERE
-;%include subcell.pro
-pro plotbin, x0, y0, width=width, pixcenter=pixcenter, plotvert=plotvert, $
-             subpanel=subpanel, panel=panel, midpoint=midpoint, edge=edge, $
-             _EXTRA=extra
+; -
+; %insert HERE
+; %include subcell.pro
+pro plotbin, x0, y0, width = width, pixcenter = pixcenter, plotvert = plotvert, $
+  subpanel = subpanel, panel = panel, midpoint = midpoint, edge = edge, $
+  _extra = extra
+  compile_opt idl2
 
-  ;; Account for a single "Y" value
-  if n_params() EQ 1 then begin
-      x = dindgen(n_elements(x0))
-      y = x0
+  ; ; Account for a single "Y" value
+  if n_params() eq 1 then begin
+    x = dindgen(n_elements(x0))
+    y = x0
   endif else begin
-      x = x0
-      y = y0
+    x = x0
+    y = y0
   endelse
 
   numx = n_elements(x)
   numy = n_elements(y)
   nump = numx < numy
   xtop = fltarr(2, nump)
-  if numx LE 0 OR numy LE 0 then begin
-      message, 'ERROR: X and Y must contain at least one data point'
-      return
+  if numx le 0 or numy le 0 then begin
+    message, 'ERROR: X and Y must contain at least one data point'
+    return
   endif
   if keyword_set(midpoint) then begin
-      if n_elements(width) EQ 0 then width = 1
-      if nump EQ 1 then xtop(*) = x(0)+width(0)*[-0.5,0.5] $
-      else begin
-          xtop(0,1:*) = 0.5*(x(1:nump-1)+x(0:nump-2))
-          xtop(1,0:nump-2) = xtop(0,1:*)
-          xtop(0,0)      = 2*x(0)      - xtop(1,0)
-          xtop(1,nump-1) = 2*x(nump-1) - xtop(0,nump-1)
-      endelse
+    if n_elements(width) eq 0 then width = 1
+    if nump eq 1 then xtop[*] = x[0] + width[0] * [-0.5, 0.5] $
+    else begin
+      xtop[0, 1 : *] = 0.5 * (x[1 : nump - 1] + x[0 : nump - 2])
+      xtop[1, 0 : nump - 2] = xtop[0, 1 : *]
+      xtop[0, 0] = 2 * x[0] - xtop[1, 0]
+      xtop[1, nump - 1] = 2 * x[nump - 1] - xtop[0, nump - 1]
+    endelse
   endif else if keyword_set(edge) then begin
-      if n_elements(x) NE numy+1 then begin
-          message, 'ERROR: X must contain one more element than Y'
-          return
-      endif
-      xtop(0,*) = x(0:nump-1)
-      xtop(1,*) = x(1:nump)
+    if n_elements(x) ne numy + 1 then begin
+      message, 'ERROR: X must contain one more element than Y'
+      return
+    endif
+    xtop[0, *] = x[0 : nump - 1]
+    xtop[1, *] = x[1 : nump]
   endif else begin
-      if n_elements(x) EQ 1 AND n_elements(width) EQ 0 then width = x(0)*0+1
-      if n_elements(width) EQ 0 then width = (x(1)-x(0))
-      if n_elements(width) EQ 1 then width = width(0)
-      if n_elements(width) GT 1 AND n_elements(width) LT nump then begin
-          message, 'ERROR: WIDTH must be the same size as X & Y (or be scalar)'
-          return
-      endif
-      if n_elements(pixcenter) EQ 0 then pixcenter = 0.5
-      xtop(0,*) = x(0:nump-1) - width*pixcenter
-      xtop(1,*) = x(0:nump-1) + width*(1.-pixcenter)
+    if n_elements(x) eq 1 and n_elements(width) eq 0 then width = x[0] * 0 + 1
+    if n_elements(width) eq 0 then width = (x[1] - x[0])
+    if n_elements(width) eq 1 then width = width[0]
+    if n_elements(width) gt 1 and n_elements(width) lt nump then begin
+      message, 'ERROR: WIDTH must be the same size as X & Y (or be scalar)'
+      return
+    endif
+    if n_elements(pixcenter) eq 0 then pixcenter = 0.5
+    xtop[0, *] = x[0 : nump - 1] - width * pixcenter
+    xtop[1, *] = x[0 : nump - 1] + width * (1. - pixcenter)
   endelse
 
-  ytop = rebin(reform(y(0:nump-1),1,nump),2,nump)
+  ytop = rebin(reform(y[0 : nump - 1], 1, nump), 2, nump)
 
-  ;; Vertical plot: swap X/Y
+  ; ; Vertical plot: swap X/Y
   if keyword_set(plotvert) then begin
-      temp = temporary(xtop)
-      xtop = temporary(ytop)
-      ytop = temporary(temp)
+    temp = temporary(xtop)
+    xtop = temporary(ytop)
+    ytop = temporary(temp)
   endif
 
-  ;; Default is full-screen
-  if n_elements(panel) EQ 0 AND n_elements(subpanel) EQ 0 then begin
-      call_procedure, 'plot', xtop, ytop, _EXTRA=extra
+  ; ; Default is full-screen
+  if n_elements(panel) eq 0 and n_elements(subpanel) eq 0 then begin
+    call_procedure, 'plot', xtop, ytop, _extra = extra
   endif else begin
-      if n_elements(panel) EQ 0 then panel=[0.0,0.0,1.0,1.0]
-      call_procedure, 'plot', xtop, ytop, /NORMAL, $
-        position=subcell(subpanel, panel, /marg), _EXTRA=extra
+    if n_elements(panel) eq 0 then panel = [0.0, 0.0, 1.0, 1.0]
+    call_procedure, 'plot', xtop, ytop, /normal, $
+      position = subcell(subpanel, panel, /marg), _extra = extra
   endelse
 
   return
 end
-

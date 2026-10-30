@@ -11,8 +11,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   VALUE = CMSVLIB(/QUERY)
-;   
-; DESCRIPTION: 
+;
+; DESCRIPTION:
 ;
 ;   This function initializes the CMSVLIB library to read, write and
 ;   interrogate IDL save files.  Use the QUERY keyword to determine
@@ -23,10 +23,10 @@
 ;    High-level
 ;      CMSAVE - save variables to a save file
 ;      CMRESTORE - restore variables from a save file
-;      CMSAVEDIR - list contents of a save file 
+;      CMSAVEDIR - list contents of a save file
 ;      CMSVLIB (function) - this file
 ;
-;    Mid-level  
+;    Mid-level
 ;      CMSV_OPEN - open a save file for reading or writing
 ;      CMSVREAD - read non-pointer data from file
 ;      CMSVWRITE - write non-pointer data to file
@@ -47,11 +47,11 @@
 ;      TAGSIZE (function) - determine the types of all tags in a structure
 ;      HELPFORM (function) - create HELP-like string describing a variable
 ;
-;   Users should consult 
+;   Users should consult
 ;
 ;   This procedure is part of the CMSVLIB SAVE library for IDL by
 ;   Craig Markwardt.  You must have the full CMSVLIB core package
-;   installed in order for this procedure to function properly.  
+;   installed in order for this procedure to function properly.
 ;
 ;
 ; ==================================================================
@@ -92,16 +92,17 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-function cmsvlib, version=version, query=query
+function cmsvlib, version = version, query = query
+  compile_opt idl2
 
   forward_function cmsv_rraw
 
   catch, catcherr
-  if catcherr EQ 0 then cmsv_open, /query
+  if catcherr eq 0 then cmsv_open, /query
   catch, /cancel
-  if catcherr NE 0 then $
+  if catcherr ne 0 then $
     message, 'ERROR: The complete CMSVLIB library must be in your IDL path.'
 
   version = '1.0'

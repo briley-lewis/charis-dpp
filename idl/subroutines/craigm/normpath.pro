@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -81,50 +81,51 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-pro normpath, from0, normalized, current=cwd0
+pro normpath, from0, normalized, current = cwd0
+  compile_opt idl2
 
   normalized = 1
   dummy = temporary(normalized)
-  if n_params() EQ 0 then begin
-      message, 'USAGE:', /info
-      message, '    NORMPATH, UNNORMSTR, NORMSTR',/info
-      message, '      UNNORMSTR - scalar string, path to be normalized',/info
-      message, '      NORMSTR - upon return, normalized result',/info
-      return
+  if n_params() eq 0 then begin
+    message, 'USAGE:', /info
+    message, '    NORMPATH, UNNORMSTR, NORMSTR', /info
+    message, '      UNNORMSTR - scalar string, path to be normalized', /info
+    message, '      NORMSTR - upon return, normalized result', /info
+    return
   endif
   psep = path_sep()
-  up   = path_sep(/parent)
-  if up EQ '..' then here = '.' else here = '@HERE/DIR@'
+  up = path_sep(/parent)
+  if up eq '..' then here = '.' else here = '@HERE/DIR@'
 
-  ;; Default current directory is taken from task, if not otherwise
-  ;; supplied
+  ; ; Default current directory is taken from task, if not otherwise
+  ; ; supplied
   from = from0
-  if n_elements(cwd0) GT 0 AND strpos(from0,psep) NE 0 then $
-    from = strtrim(cwd0(0),2) + psep + from
+  if n_elements(cwd0) gt 0 and strpos(from0, psep) ne 0 then $
+    from = strtrim(cwd0[0], 2) + psep + from
 
-  fromc = str_sep(from, psep)
-  if fromc(0) EQ '' then fromc(0) = '/@ROOT@'
+  fromc = STR_SEP(from, psep)
+  if fromc[0] eq '' then fromc[0] = '/@ROOT@'
   fromd = ['']
-  for i = 0, n_elements(fromc)-1 do begin
-      if fromc(i) EQ up then begin
-          nd = n_elements(fromd)
-          if nd EQ 1 OR fromd(nd-1) EQ up then begin
-              fromd = [fromd, up]
-          endif else begin
-              if fromd(nd-1) NE '/@ROOT@' then $
-                fromd = fromd(0:nd-2)
-          endelse
-      endif else if (fromc(i) EQ here or fromc(i) EQ '') then begin
-          ;; Do nothing for current-dir
+  for i = 0, n_elements(fromc) - 1 do begin
+    if fromc[i] eq up then begin
+      nd = n_elements(fromd)
+      if nd eq 1 or fromd[nd - 1] eq up then begin
+        fromd = [fromd, up]
       endif else begin
-          fromd = [fromd, fromc(i)]
+        if fromd[nd - 1] ne '/@ROOT@' then $
+          fromd = fromd[0 : nd - 2]
       endelse
+    endif else if (fromc[i] eq here or fromc[i] eq '') then begin
+      ; ; Do nothing for current-dir
+    endif else begin
+      fromd = [fromd, fromc[i]]
+    endelse
   endfor
-  
-  fromd = fromd(1:*)
-  if fromd(0) EQ '/@ROOT@' then fromd(0) = ''
+
+  fromd = fromd[1 : *]
+  if fromd[0] eq '/@ROOT@' then fromd[0] = ''
 
   forward_function strjoin
   normalized = strjoin(fromd, psep)

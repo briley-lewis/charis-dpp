@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -80,9 +80,9 @@
 ;   IDL> print, qtmult(q1, q2)
 ;        0.81519615      0.23375373      0.14606554      0.50939109
 ;
-;   Form a rotation quaternion of 32 degrees around the Z axis, and 
+;   Form a rotation quaternion of 32 degrees around the Z axis, and
 ;   116 degrees around the X axis, then multiply the two quaternions.
-;   
+;
 ; SEE ALSO
 ;   QTANG, QTAXIS, QTCOMPOSE, QTERP, QTEXP, QTFIND, QTINV, QTLOG,
 ;   QTMAT, QTMULT, QTMULTN, QTPOW, QTVROT
@@ -102,66 +102,83 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-function qtmult, aqt, bqt, inv1=inverse1, inv2=inverse2
+function qtmult, aqt, bqt, inv1 = inverse1, inv2 = inverse2
+  compile_opt idl2
 
-; THIS ROUTINE MULTIPLIES QUATERNIONS
-; CQT CORRESPONDS TO THE ROTATION AQT FOLLOWED BY BQT
-; ASSUMING S/C COORDINATES ARE INITIALLY ALIGN WITH INERTIAL COORD.
-; THEN ROTATION AQT DESCRIBES ROTATION SUCH THAT THE SUBROUTINE
-;   QTXRA GIVES THE INERTIAL COORDINATES OF THE S/C X-AXIS
-;   THE FIRST 3 COMPONENTS OF AQT GIVE THE EIGENAXIS EXPRESSED
-;   IN S/C COORDINATES BEFORE THE ROTATION (=INTERTIAL COORD.).
-; THE BQT ROTATION FOLLOWS THE AQT ROTATION. CQT THEN DESCRIBES
-;   THIS COMBINATION SUCH THAT QTXRA GIVES THE INERTIAL COORDINATES
-;   OF THE S/C X-AXIS AFTER BOTH ROTATIONS. 
-;   THE FIRST 3 COMPONENTS OF BQT GIVE THE EIGENAXIS EXPRESSED
-;   IN S/C COORDINATES AFTER THE AQT ROTATION.
+  ; THIS ROUTINE MULTIPLIES QUATERNIONS
+  ; CQT CORRESPONDS TO THE ROTATION AQT FOLLOWED BY BQT
+  ; ASSUMING S/C COORDINATES ARE INITIALLY ALIGN WITH INERTIAL COORD.
+  ; THEN ROTATION AQT DESCRIBES ROTATION SUCH THAT THE SUBROUTINE
+  ; QTXRA GIVES THE INERTIAL COORDINATES OF THE S/C X-AXIS
+  ; THE FIRST 3 COMPONENTS OF AQT GIVE THE EIGENAXIS EXPRESSED
+  ; IN S/C COORDINATES BEFORE THE ROTATION (=INTERTIAL COORD.).
+  ; THE BQT ROTATION FOLLOWS THE AQT ROTATION. CQT THEN DESCRIBES
+  ; THIS COMBINATION SUCH THAT QTXRA GIVES THE INERTIAL COORDINATES
+  ; OF THE S/C X-AXIS AFTER BOTH ROTATIONS.
+  ; THE FIRST 3 COMPONENTS OF BQT GIVE THE EIGENAXIS EXPRESSED
+  ; IN S/C COORDINATES AFTER THE AQT ROTATION.
 
-  if n_params() EQ 0 then begin
-      info = 1
-      USAGE:
-      message, 'USAGE:', /info
-      message, 'QNEW = QTMULT(Q1, Q2)', info=info
-      return, 0
+  if n_params() eq 0 then begin
+    info = 1
+    usage:
+    message, 'USAGE:', /info
+    message, 'QNEW = QTMULT(Q1, Q2)', info = info
+    return, 0
   endif
 
   sz1 = size(aqt)
   sz2 = size(bqt)
-  if sz1(0) LT 1 OR sz2(0) LT 1 then $
+  if sz1[0] lt 1 or sz2[0] lt 1 then $
     message, 'ERROR: Q1 and Q2 must be quaternions'
-  if sz1(1) NE 4 OR sz2(1) NE 4 then $
+  if sz1[1] ne 4 or sz2[1] ne 4 then $
     message, 'ERROR: Q1 and Q2 must be quaternions'
-  n1 = n_elements(aqt)/4
-  n2 = n_elements(bqt)/4
-  if n1 NE n2 AND n1 NE 1 AND n2 NE 1 then $
+  n1 = n_elements(aqt) / 4
+  n2 = n_elements(bqt) / 4
+  if n1 ne n2 and n1 ne 1 and n2 ne 1 then $
     message, 'ERROR: Q1 and Q2 must both have the same number of quaternions'
 
-  nq = n1>n2
-  cqt = make_array(value=aqt(0)*bqt(0)*0, dimension=[4,nq])
+  nq = n1 > n2
+  cqt = make_array(value = aqt[0] * bqt[0] * 0, dimension = [4, nq])
 
-  if n1 GT 1 then begin
-      aqt0 = aqt(0,*) & aqt1 = aqt(1,*) & aqt2 = aqt(2,*) & aqt3 = aqt(3,*)
+  if n1 gt 1 then begin
+    aqt0 = aqt[0, *]
+    aqt1 = aqt[1, *]
+    aqt2 = aqt[2, *]
+    aqt3 = aqt[3, *]
   endif else begin
-      aqt0 = aqt(0) & aqt1 = aqt(1) & aqt2 = aqt(2) & aqt3 = aqt(3)
+    aqt0 = aqt[0]
+    aqt1 = aqt[1]
+    aqt2 = aqt[2]
+    aqt3 = aqt[3]
   endelse
-  if n2 GT 1 then begin
-      bqt0 = bqt(0,*) & bqt1 = bqt(1,*) & bqt2 = bqt(2,*) & bqt3 = bqt(3,*)
+  if n2 gt 1 then begin
+    bqt0 = bqt[0, *]
+    bqt1 = bqt[1, *]
+    bqt2 = bqt[2, *]
+    bqt3 = bqt[3, *]
   endif else begin
-      bqt0 = bqt(0) & bqt1 = bqt(1) & bqt2 = bqt(2) & bqt3 = bqt(3)
+    bqt0 = bqt[0]
+    bqt1 = bqt[1]
+    bqt2 = bqt[2]
+    bqt3 = bqt[3]
   endelse
   if keyword_set(inverse1) then begin
-      aqt0 = -aqt0 & aqt1 = -aqt1 & aqt2 = -aqt2
+    aqt0 = -aqt0
+    aqt1 = -aqt1
+    aqt2 = -aqt2
   endif
   if keyword_set(inverse2) then begin
-      bqt0 = -bqt0 & bqt1 = -bqt1 & bqt2 = -bqt2
+    bqt0 = -bqt0
+    bqt1 = -bqt1
+    bqt2 = -bqt2
   endif
 
-  CQT(0,0) = AQT0*BQT3 + AQT1*BQT2 - AQT2*BQT1 + AQT3*BQT0
-  CQT(1,0) =-AQT0*BQT2 + AQT1*BQT3 + AQT2*BQT0 + AQT3*BQT1
-  CQT(2,0) = AQT0*BQT1 - AQT1*BQT0 + AQT2*BQT3 + AQT3*BQT2
-  CQT(3,0) =-AQT0*BQT0 - AQT1*BQT1 - AQT2*BQT2 + AQT3*BQT3
-  
+  cqt[0, 0] = aqt0 * bqt3 + aqt1 * bqt2 - aqt2 * bqt1 + aqt3 * bqt0
+  cqt[1, 0] = -aqt0 * bqt2 + aqt1 * bqt3 + aqt2 * bqt0 + aqt3 * bqt1
+  cqt[2, 0] = aqt0 * bqt1 - aqt1 * bqt0 + aqt2 * bqt3 + aqt3 * bqt2
+  cqt[3, 0] = -aqt0 * bqt0 - aqt1 * bqt1 - aqt2 * bqt2 + aqt3 * bqt3
+
   return, cqt
 end

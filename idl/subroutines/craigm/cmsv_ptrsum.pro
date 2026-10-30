@@ -11,8 +11,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   CMSV_PTRSUM, VAR, LIST
-;   
-; DESCRIPTION: 
+;
+; DESCRIPTION:
 ;
 ;   This procedure constructs an inventory of heap data that is
 ;   accessible to a single variable.  It searches all array elements,
@@ -21,7 +21,7 @@
 ;   need to be saved to disk.
 ;
 ;   This procedure is part of the CMSVLIB SAVE library for IDL by
-;   Craig Markwardt. 
+;   Craig Markwardt.
 ;
 ; ==================================================================
 ;   Research Systems, Inc. has issued a separate license intended
@@ -69,50 +69,50 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
-pro cmsv_ptrsum, data, result, null=null0, has_objects=hobj
+; -
+pro cmsv_ptrsum, data, result, null = null0, has_objects = hobj
+  compile_opt idl2
 
   forward_function ptr_new
   common cmsv_ptrsum_data, version, null
 
-  if n_elements(version) EQ 0 then version = double(!version.release)
-  if version LT 5D then begin
-      result = 0L
-      return
+  if n_elements(version) eq 0 then version = double(!version.release)
+  if version lt 5d then begin
+    result = 0l
+    return
   endif
-  if n_elements(null) EQ 0 then null = ptr_new()
+  if n_elements(null) eq 0 then null = ptr_new()
   if keyword_set(null0) then begin
-      data = null
-      return
+    data = null
+    return
   endif
 
   pd = null
   sz = size(data)
-  tp = sz(sz(0)+1)
-  if tp EQ 8 then begin
-      for i = 0L, n_tags(data(0))-1 do begin
-          cmsv_ptrsum, data.(i), x, has_objects=hobj
-          sz = size(data.(i))
-          if sz(sz(0)+1) EQ 11 then hobj = 1
-          if n_elements(x) GT 1 then pd = [pd, x] $
-          else if x(0) NE null then pd = [pd, x]
-      endfor
-  endif else if tp EQ 10 then begin
-      pd = [pd, data(*)]
-      for i = 0, n_elements(data)-1 do begin
-          wh = where(data(i) EQ pd, ct)
-          if ct EQ 0 then begin   ;; Prevent cycles!!!
-              cmsv_ptrsum, *(data(i)), x
-              sz = size(*(data(i)))
-              if sz(sz(0)+1) EQ 11 then hobj = 1
-              if n_elements(x) GT 1 then pd = [pd, x] $
-              else if x(0) NE null then pd = [pd, x]
-          endif
-      endfor
+  tp = sz[sz[0] + 1]
+  if tp eq 8 then begin
+    for i = 0l, n_tags(data[0]) - 1 do begin
+      cmsv_ptrsum, data.(i), x, has_objects = hobj
+      sz = size(data.(i))
+      if sz[sz[0] + 1] eq 11 then hobj = 1
+      if n_elements(x) gt 1 then pd = [pd, x] $
+      else if x[0] ne null then pd = [pd, x]
+    endfor
+  endif else if tp eq 10 then begin
+    pd = [pd, data[*]]
+    for i = 0, n_elements(data) - 1 do begin
+      wh = where(data[i] eq pd, ct)
+      if ct eq 0 then begin ; ; Prevent cycles!!!
+        cmsv_ptrsum, *(data[i]), x
+        sz = size(*(data[i]))
+        if sz[sz[0] + 1] eq 11 then hobj = 1
+        if n_elements(x) gt 1 then pd = [pd, x] $
+        else if x[0] ne null then pd = [pd, x]
+      endif
+    endfor
   endif
-  if n_elements(pd) GT 1 then pd = pd(uniq(pd, sort(pd)))
+  if n_elements(pd) gt 1 then pd = pd[uniq(pd, sort(pd))]
 
   result = pd
   return
 end
-

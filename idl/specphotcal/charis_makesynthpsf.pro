@@ -1,158 +1,154 @@
-pro charis_makesynthpsf,pfname,synthtype=synthtype,fwhm=fwhm,rmax=rmax,psfsize=psfsize,$
-;fsize=fsize,
-smoothval=smoothval,$
-;scalefwhm=scalefwhm,$
-suffname=suffname,outname=outname,help=help
+pro charis_makesynthpsf, pfname, synthtype = synthtype, fwhm = fwhm, rmax = rmax, psfsize = psfsize, $
+  ; fsize=fsize,
+  smoothval = smoothval, $
+  ; scalefwhm=scalefwhm,$
+  suffname = suffname, outname = outname, help = help
+  compile_opt idl2
 
-;creates a synthetic PSF, a drop-in replacement for charis_makeemppsf 
-;...in case you have a different type of source (e.g. a spatially extended protoplanet-y thing)
+  ; creates a synthetic PSF, a drop-in replacement for charis_makeemppsf
+  ; ...in case you have a different type of source (e.g. a spatially extended protoplanet-y thing)
 
-;****Critical Keywords ****
-;synthtype - 'flat' [a constant intensity over some radius], 'gaussian' [a gaussian distribution with some fwhm]
-;rmax - for 'flat' case, the radial extent of the flat intensity profile
-;smoothval - for 'flat' case, the radius over which the edge of the profile is smoothed
-;fwhm - for 'gaussian', the fwhm of the gaussian function
+  ; ****Critical Keywords ****
+  ; synthtype - 'flat' [a constant intensity over some radius], 'gaussian' [a gaussian distribution with some fwhm]
+  ; rmax - for 'flat' case, the radial extent of the flat intensity profile
+  ; smoothval - for 'flat' case, the radius over which the edge of the profile is smoothed
+  ; fwhm - for 'gaussian', the fwhm of the gaussian function
 
-if (N_PARAMS() eq 0 or keyword_set(help)) then begin
-print,"charis_makesynthpsf,pfname,synthtype=synthtype,fwhm=fwhm,rmax=rmax,psfsize=psfsize,"
-print,"smoothval=smoothval,outname=outname"
+  if (n_params() eq 0 or keyword_set(help)) then begin
+    print, 'charis_makesynthpsf,pfname,synthtype=synthtype,fwhm=fwhm,rmax=rmax,psfsize=psfsize,'
+    print, 'smoothval=smoothval,outname=outname'
 
-print,""
-print,"Example: charis_makesynthpsf,'HR8799_low.info',synthtype='gaussian',fwhm=10,outname='gauss3med.fits'"
-print,"***Keywords***"
-print,'*pfname - parameter file (e.g. HR8799_low.info)'
-print,"psfsize - size of the synthetic PSF"
-print,"synthtype - 'flat' [a constant intensity over some radius], 'gaussian' [a gaussian distribution with some fwhm]"
-print,"rmax - for 'flat' case, the radial extent of the flat intensity profile"
-print,"smoothval - for 'flat' case, the radius over which the edge of the profile is smoothed"
-print,"fwhm - for 'gaussian', the fwhm of the gaussian function"
-print,"outname - name of the output file"
-goto,skiptotheend
+    print, ''
+    print, 'Example: charis_makesynthpsf,''HR8799_low.info'',synthtype=''gaussian'',fwhm=10,outname=''gauss3med.fits'''
+    print, '***Keywords***'
+    print, '*pfname - parameter file (e.g. HR8799_low.info)'
+    print, 'psfsize - size of the synthetic PSF'
+    print, 'synthtype - ''flat'' [a constant intensity over some radius], ''gaussian'' [a gaussian distribution with some fwhm]'
+    print, 'rmax - for ''flat'' case, the radial extent of the flat intensity profile'
+    print, 'smoothval - for ''flat'' case, the radius over which the edge of the profile is smoothed'
+    print, 'fwhm - for ''gaussian'', the fwhm of the gaussian function'
+    print, 'outname - name of the output file'
+    goto, skiptotheend
+  endif
 
-endif
+  ; if ~keyword_set(outname) then outname='psfcube.fits'
 
-;if ~keyword_set(outname) then outname='psfcube.fits'
+  datadir = './reduc/'
+  datadir1 = datadir + 'reg/'
+  ; create directory for PSF model if it is not there ...
+  reducdir = './psfmodel/'
+  file_mkdir, reducdir
 
-datadir='./reduc/'
-datadir1=datadir+'reg/'
-;create directory for PSF model if it is not there ...
-reducdir='./psfmodel/'
-file_mkdir,reducdir
+  ; if ~keyword_set(fsize) then fsize=21
 
-;if ~keyword_set(fsize) then fsize=21
+  if ~keyword_set(psfsize) then psfsize = 21
+  dist_circle, subarray_dist, psfsize
 
-if ~keyword_set(psfsize) then psfsize=21
-dist_circle,subarray_dist,psfsize
+  if ~keyword_set(pick) then begin
+    prefname = 'n'
 
-if ~keyword_set(pick) then begin
+    if ~keyword_set(suffname) then begin
+      test = file_search(datadir1 + '*reg_cal.fits')
+      if n_elements(test) gt 0 then begin
+        suffname = 'reg_cal'
+      endif else begin
+        suffname = 'reg'
+      endelse
+    endif
 
-prefname='n'
+    param, 'fnum_sat', flist, /get, pfname = pfname
+    filenum = nbrlist(flist)
+    files = filelist(filenum, nfiles, prefix = prefname, suffix = suffname)
 
-if ~keyword_set(suffname) then begin 
-test=file_search(datadir1+'*reg_cal.fits')
-if n_elements(test) gt 0 then begin
-suffname='reg_cal'
-endif else begin
-suffname='reg'
-endelse
-endif
+    test = readfits(datadir1 + files[0], /exten, h1)
+    h0 = headfits(datadir1 + files[0], ext = 0)
+  endif else begin
+    files = dialog_pickfile(title = 'Pick Files', /multiple)
+    test = readfits(files[0], /exten, h1)
+    h0 = headfits(files[0], ext = 0)
+  endelse
 
-param,'fnum_sat',flist,/get,pfname=pfname
-filenum=nbrlist(flist)
-files=filelist(filenum,nfiles,prefix=prefname,suffix=suffname)
+  ; Now Get the Wavelength Vector
+  get_charis_wvlh, h0, wvlhs
+  lambda = wvlhs * 1d-3
+  nwvlh = n_elements(lambda)
+  nfiles = n_elements(files)
 
-test=readfits(datadir1+files[0],/exten,h1)
-h0=headfits(datadir1+files[0],ext=0)
+  dim = sxpar(h1, 'naxis1')
+  xc = dim / 2
+  yc = dim / 2
 
-endif else begin
+  dpsf = 21
 
-files=dialog_pickfile(Title="Pick Files",/multiple)
-test=readfits(files[0],/exten,h1)
-h0=headfits(files[0],ext=0)
+  if keyword_set(psfsize) then dpsf = psfsize
 
-endelse
+  ; dist_circle,subarray_dist,fsize
+  dist_circle, subarray_dist, psfsize
 
-;Now Get the Wavelength Vector
-get_charis_wvlh,h0,wvlhs
-lambda=wvlhs*1d-3
-nwvlh=n_elements(lambda)
-nfiles=n_elements(files)
+  psf_image = fltarr(dpsf, dpsf, nwvlh)
+  cubecol = fltarr(dpsf, dpsf)
 
-dim=sxpar(h1,'naxis1')
-xc=dim/2 & yc=dim/2
+  if ~keyword_set(synthtype) then synthtype = 'flat'
+  if ~keyword_set(smoothval) then smoothval = 2
 
-dpsf=21
+  if ~keyword_set(fwhm) then begin
+    Dtel = charis_get_constant(name = 'Dtel')
+    fwhm = 0.206 * lambda / Dtel
+    goto, skipconstantfwhm
+  endif
 
-if keyword_set(psfsize) then dpsf=psfsize
+  ; if ~keyword_set(scalefwhm) then begin
+  ; if n_elements(fwhm) gt 1 then fwhm=median(fwhm,/even)
+  if n_elements(fwhm) eq 1 then fwhm = replicate(fwhm, nwvlh)
+  ; endif
 
-;dist_circle,subarray_dist,fsize
-dist_circle,subarray_dist,psfsize
+  skipconstantfwhm:
 
-psf_image=fltarr(dpsf,dpsf,nwvlh)
-cubecol=fltarr(dpsf,dpsf)
+  pixscale = charis_get_constant(name = 'pixscale')
 
-if ~keyword_set(synthtype) then synthtype='flat'
-if ~keyword_set(smoothval) then smoothval=2
+  ; assume that if you entered FWHM larger than 1, you 'meant' to do FWHM in pixels
+  if fwhm[0] lt 1 then fwhm /= pixscale ; charis pixel scale
 
-if ~keyword_set(fwhm) then begin
-Dtel=charis_get_constant(name='Dtel')
-fwhm=0.206*lambda/Dtel
-goto,skipconstantfwhm
-endif
+  ; endif
+  case synthtype of
+    'flat': begin
+      if ~keyword_set(rmax) then rmax = 5 ; so size is ~10 lambda/D
+      good = where(subarray_dist le rmax)
+      cubecol[good] = 1
+      cubecol = smooth(cubecol, smoothval, /nan)
+      cubecol /= total(cubecol)
+      for il = 0l, nwvlh - 1 do psf_image[*, *, il] = cubecol
+    end
 
-;if ~keyword_set(scalefwhm) then begin
-;if n_elements(fwhm) gt 1 then fwhm=median(fwhm,/even)
-if n_elements(fwhm) eq 1 then fwhm=replicate(fwhm,nwvlh)
-;endif
+    'gaussian': begin
+      for il = 0l, nwvlh - 1 do begin
+        psf_image[*, *, il] = psf_gaussian(npixel = dpsf, fwhm = fwhm[il], /double, /normalize)
+        if keyword_set(rmax) then begin
+          slice = psf_image[*, *, il]
+          dist_circle, g, dpsf
+          slice[where(g gt rmax)] = 0
+          slice /= total(slice)
+          psf_image[*, *, il] = slice
+        endif
+      endfor
+      cubecol = median(psf_image, dimension = 3, /even)
+      ; cubecol=psf_image[*,*,0]
+    end
+  endcase
 
-skipconstantfwhm:
+  if ~keyword_set(outname) then begin
+    outname = 'synthcube_med.fits'
+    outnamecol = 'synth_medcol.fits'
+  endif else begin
+    outnamecol0 = strsplit(outname, '.', /extract)
+    outnamecol = outnamecol0[0] + 'col.fits'
+  endelse
 
-pixscale=charis_get_constant(name='pixscale')
+  writefits, reducdir + outname, 0
+  writefits, reducdir + outname, psf_image, /append
 
-;assume that if you entered FWHM larger than 1, you 'meant' to do FWHM in pixels
-if fwhm[0] lt 1 then fwhm/=pixscale  ;charis pixel scale
+  cube = median(psf_image, dimension = 3, /even)
+  writefits, reducdir + outnamecol, cubecol
 
-;endif
-case synthtype of 
-  'flat':begin 
-           if ~keyword_set(rmax) then rmax=5  ;so size is ~10 lambda/D
-           good=where(subarray_dist le rmax)
-           cubecol[good]=1
-           cubecol=smooth(cubecol,smoothval,/nan)
-           cubecol/=total(cubecol)
-           for il=0L,nwvlh-1 do psf_image[*,*,il]=cubecol
-         end
-
-  'gaussian':begin
-           for il=0L,nwvlh-1 do begin
-              psf_image[*,*,il]=psf_gaussian(npixel=dpsf,fwhm=fwhm[il],/double,/normalize)
-             if keyword_set(rmax) then begin
-             slice=psf_image[*,*,il]
-             dist_circle,g,dpsf
-             slice[where(g gt rmax)]=0
-             slice/=total(slice)
-             psf_image[*,*,il]=slice
-             endif
-           endfor
-           cubecol=median(psf_image,dimension=3,/even)
-           ;cubecol=psf_image[*,*,0]
-             end
-
-endcase
-
-if ~keyword_set(outname) then begin
-outname ='synthcube_med.fits'
-outnamecol='synth_medcol.fits'
-endif else begin
-outnamecol0=strsplit(outname,'.',/extract)
-outnamecol=outnamecol0[0]+'col.fits'
-endelse
-
-writefits,reducdir+outname,0
-writefits,reducdir+outname,psf_image,/append
-
-cube=median(psf_image,dimension=3,/even)
-writefits,reducdir+outnamecol,cubecol
-
-skiptotheend:
+  skiptotheend:
 end

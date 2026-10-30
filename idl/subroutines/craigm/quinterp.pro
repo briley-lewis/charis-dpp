@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -93,7 +93,7 @@
 ;  oplot, xtab, ytab, psym=1, symsize=2
 ;  for i = 0, n_elements(xtab)-1 do $   ;; Also plot slopes
 ;    oplot, xtab(i)+[-0.5,0.5], ytab(i)+[-0.5,0.5]*yptab(i)
-; 
+;
 ;
 ; MODIFICATION HISTORY:
 ;   Written and documented, CM, 08 Oct 2008
@@ -106,95 +106,94 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
-
+; -
 
 pro quinterp, xtab, ytab, yptab, ypptab, xint, yint, $
-              ypint=ypint, yppint=yppint, $
-              missing=missing0
+  ypint = ypint, yppint = yppint, $
+  missing = missing0
+  compile_opt idl2
 
   ntab = n_elements(xtab)
 
-  if n_elements(xtab) EQ 0 OR n_elements(ytab) EQ 0 then begin
-      message, 'ERROR: XTAB and YTAB must be passed'
+  if n_elements(xtab) eq 0 or n_elements(ytab) eq 0 then begin
+    message, 'ERROR: XTAB and YTAB must be passed'
   endif
-  if (n_elements(xtab) NE n_elements(ytab) OR $
-      n_elements(xtab) NE n_elements(yptab) OR $
-      n_elements(xtab) NE n_elements(ypptab)) then begin
-      message, $
-        'ERROR: Number of elements of XTAB, YTAB, YPTAB and YPPTAB must agree'
+  if (n_elements(xtab) ne n_elements(ytab) or $
+    n_elements(xtab) ne n_elements(yptab) or $
+    n_elements(xtab) ne n_elements(ypptab)) then begin
+    message, $
+      'ERROR: Number of elements of XTAB, YTAB, YPTAB and YPPTAB must agree'
   endif
-  if n_elements(xint) EQ 0 then begin
-      message, 'ERROR: XINT must be passed'
+  if n_elements(xint) eq 0 then begin
+    message, 'ERROR: XINT must be passed'
   endif
-  if n_elements(missing0) EQ 0 then begin
-      miss = 0d
+  if n_elements(missing0) eq 0 then begin
+    miss = 0d
   endif else begin
-      miss = missing0(0)
+    miss = missing0[0]
   endelse
 
-  ;; Locate previous tabulated value
+  ; ; Locate previous tabulated value
   ii = value_locate(xtab, xint)
 
-  ;; Here we make a safety check, in case the desired point(s) is
-  ;; above or below the interior of the interpolation range.  In that
-  ;; case, we will need to extrapolate, based on the next nearest
-  ;; interval.
-  iis = ii > 0 < (ntab-2)
-  whbad = where(xint LT xtab(0) OR xint GT xtab(ntab-1), ctbad)
+  ; ; Here we make a safety check, in case the desired point(s) is
+  ; ; above or below the interior of the interpolation range.  In that
+  ; ; case, we will need to extrapolate, based on the next nearest
+  ; ; interval.
+  iis = ii > 0 < (ntab - 2)
+  whbad = where(xint lt xtab[0] or xint gt xtab[ntab - 1], ctbad)
 
-  ;; Distance from interpolated abcissae to previous tabulated abcissa
-  dx = (xint - xtab(iis))
-  
-  ;; Distance between adjoining tabulated abcissae and ordinates
-  xs = xtab(iis+1) - xtab(iis)
-  ys = ytab(iis+1) - ytab(iis) 
+  ; ; Distance from interpolated abcissae to previous tabulated abcissa
+  dx = (xint - xtab[iis])
 
-  ;; Rescale or pull out quantities of interest
-  dx   = dx/xs              ;; Rescale DX
-  y0   = ytab(iis)          ;; No rescaling of Y - start of interval
-  y1   = ytab(iis+1)        ;; No rescaling of Y - end of interval
-  yp0  = yptab(iis)*xs      ;; Rescale tabulated derivatives - start of interval
-  yp1  = yptab(iis+1)*xs    ;; Rescale tabulated derivatives - end of interval
-  ypp0 = ypptab(iis)*xs*xs  ;; Rescale tabulated 2nd der. - start of interval
-  ypp1 = ypptab(iis+1)*xs*xs;; Rescale tabulated 2nd der. - end of interval
+  ; ; Distance between adjoining tabulated abcissae and ordinates
+  xs = xtab[iis + 1] - xtab[iis]
+  ys = ytab[iis + 1] - ytab[iis]
 
+  ; ; Rescale or pull out quantities of interest
+  dx = dx / xs ; ; Rescale DX
+  y0 = ytab[iis] ; ; No rescaling of Y - start of interval
+  y1 = ytab[iis + 1] ; ; No rescaling of Y - end of interval
+  yp0 = yptab[iis] * xs ; ; Rescale tabulated derivatives - start of interval
+  yp1 = yptab[iis + 1] * xs ; ; Rescale tabulated derivatives - end of interval
+  ypp0 = ypptab[iis] * xs * xs ; ; Rescale tabulated 2nd der. - start of interval
+  ypp1 = ypptab[iis + 1] * xs * xs ; ; Rescale tabulated 2nd der. - end of interval
 
-  ;; Compute values of t^n for quintic (n = 0 .. 5)
+  ; ; Compute values of t^n for quintic (n = 0 .. 5)
   t0 = 1d
   t1 = dx
-  t2 = dx*dx
-  t3 = dx*t2
-  t4 = dx*t3
-  t5 = dx*t4
+  t2 = dx * dx
+  t3 = dx * t2
+  t4 = dx * t3
+  t5 = dx * t4
 
-  ;; Quintic Hermite polynomial
-  yint = ((-6*t5 + 15*t4 - 10*t3 + 1 )*y0 + $
-          ( 6*t5 - 15*t4 + 10*t3     )*y1 + $
-          (-3*t5 +  8*t4 -  6*t3 + t1)*yp0 + $
-          (-3*t5 +  7*t4 -  4*t3     )*yp1 + $
-          (  -t5 +  3*t4 -  3*t3 + t2)*ypp0/2d + $
-          (   t5 -  2*t4 +    t3     )*ypp1/2d)
-  if ctbad GT 0 then yint(whbad) = miss
-  
+  ; ; Quintic Hermite polynomial
+  yint = ((-6 * t5 + 15 * t4 - 10 * t3 + 1) * y0 + $
+    (6 * t5 - 15 * t4 + 10 * t3) * y1 + $
+    (-3 * t5 + 8 * t4 - 6 * t3 + t1) * yp0 + $
+    (-3 * t5 + 7 * t4 - 4 * t3) * yp1 + $
+    (-t5 + 3 * t4 - 3 * t3 + t2) * ypp0 / 2d + $
+    (t5 - 2 * t4 + t3) * ypp1 / 2d)
+  if ctbad gt 0 then yint[whbad] = miss
+
   if arg_present(ypint) then begin
-      ypint = ((-30*t4 + 60*t3 - 30*t2       )*y0 + $
-               ( 30*t4 - 60*t3 + 30*t2       )*y1 + $
-               (-15*t4 + 32*t3 - 18*t2 + 1   )*yp0 + $
-               (-15*t4 + 28*t3 - 12*t2       )*yp1 + $
-               ( -5*t4 + 12*t3 -  9*t2 + 2*t1)*ypp0/2d + $
-               (  5*t4 -  8*t3 +  3*t2       )*ypp1/2d) / xs
-      if ctbad GT 0 then ypint(whbad) = miss
+    ypint = ((-30 * t4 + 60 * t3 - 30 * t2) * y0 + $
+      (30 * t4 - 60 * t3 + 30 * t2) * y1 + $
+      (-15 * t4 + 32 * t3 - 18 * t2 + 1) * yp0 + $
+      (-15 * t4 + 28 * t3 - 12 * t2) * yp1 + $
+      (-5 * t4 + 12 * t3 - 9 * t2 + 2 * t1) * ypp0 / 2d + $
+      (5 * t4 - 8 * t3 + 3 * t2) * ypp1 / 2d) / xs
+    if ctbad gt 0 then ypint[whbad] = miss
   endif
-  
+
   if arg_present(yppint) then begin
-      yppint = ((-120*t3 + 180*t2 - 60*t1     )*y0 + $
-                ( 120*t3 - 180*t2 + 60*t1     )*y1 + $
-                ( -60*t3 +  96*t2 - 36*t1     )*yp0 + $
-                ( -60*t3 +  84*t2 - 24*t1     )*yp1 + $
-                ( -20*t3 +  36*t2 - 18*t1 + 2d)*ypp0/2d + $
-                (  20*t3 -  24*t2 +  6*t1     )*ypp1/2d) / (xs*xs)
-      if ctbad GT 0 then yppint(whbad) = miss
+    yppint = ((-120 * t3 + 180 * t2 - 60 * t1) * y0 + $
+      (120 * t3 - 180 * t2 + 60 * t1) * y1 + $
+      (-60 * t3 + 96 * t2 - 36 * t1) * yp0 + $
+      (-60 * t3 + 84 * t2 - 24 * t1) * yp1 + $
+      (-20 * t3 + 36 * t2 - 18 * t1 + 2d) * ypp0 / 2d + $
+      (20 * t3 - 24 * t2 + 6 * t1) * ypp1 / 2d) / (xs * xs)
+    if ctbad gt 0 then yppint[whbad] = miss
   endif
 
   return

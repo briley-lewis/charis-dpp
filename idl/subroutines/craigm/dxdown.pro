@@ -12,7 +12,7 @@
 ; CALLING SEQUENCE:
 ;   DXDOWN [ , NLEVELS ]
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   DXDOWN moves the debugging "focus" deeper down the IDL call stack.
 ;   By using this procedure and DXUP, one can navigate up and down an
@@ -53,20 +53,20 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 pro dxdown, nlevels0
-@dxcommon.pro
+  compile_opt idl2
+  @dxcommon.pro
 
-  ;; Be sure we are on the same level as last time... otherwise reset
+  ; ; Be sure we are on the same level as last time... otherwise reset
   dxlreset
-  
-  if n_elements(nlevels0) EQ 0 then nlevels0 = 1L
-  nlevels = floor(nlevels0(0)) > 1
 
-  maxlev = routine_names(/level)-1
-  if (dblevel + nlevels) GT maxlev then $
-    print, 'WARNING: lowermost level is '+strtrim(maxlev, 2)
+  if n_elements(nlevels0) eq 0 then nlevels0 = 1l
+  nlevels = floor(nlevels0[0]) > 1
+
+  maxlev = routine_names(/level) - 1
+  if (dblevel + nlevels) gt maxlev then $
+    print, 'WARNING: lowermost level is ' + strtrim(maxlev, 2)
   dblevel = (dblevel + nlevels) < maxlev
   dxplevel, /current
-
 end

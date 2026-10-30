@@ -12,7 +12,7 @@
 ; CALLING SEQUENCE:
 ;   NEWARR = ARRINSERT(INIT, INSERT, [AT=POSITION] )
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   ARRINSERT inserts the contents of one array (INSERT) into
 ;   another (INIT), and returns the new array (NEWARR).
@@ -99,77 +99,80 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
-function arrinsert, init, insert, at=at0, count=count, overwrite=overwrite, $
-                    empty1=empty1, empty2=empty2
+; -
+function arrinsert, init, insert, at = at0, count = count, overwrite = overwrite, $
+  empty1 = empty1, empty2 = empty2
+  compile_opt idl2
 
   on_error, 2
 
-  ;; Total number of elements in output
-  count = (n_elements(init)*(keyword_set(empty1) EQ 0) + $
-           n_elements(insert)*(keyword_set(empty2) EQ 0))
+  ; ; Total number of elements in output
+  count = (n_elements(init) * (keyword_set(empty1) eq 0) + $
+    n_elements(insert) * (keyword_set(empty2) eq 0))
 
-  ;; Account for various "empty" special cases.
-  ;; INIT and INSERT are empty
-  if (n_elements(init) EQ 0 OR keyword_set(empty1)) AND $
-    (n_elements(insert) EQ 0 OR keyword_set(empty2)) then return, -1L
-  ;; INIT alone is empty
-  if (n_elements(init) EQ 0 OR keyword_set(empty1)) then $
+  ; ; Account for various "empty" special cases.
+  ; ; INIT and INSERT are empty
+  if (n_elements(init) eq 0 or keyword_set(empty1)) and $
+    (n_elements(insert) eq 0 or keyword_set(empty2)) then return, -1l
+  ; ; INIT alone is empty
+  if (n_elements(init) eq 0 or keyword_set(empty1)) then $
     return, reform([insert], n_elements(insert))
-  ;; INSERT alone is empty
-  if (n_elements(insert) EQ 0 OR keyword_set(empty2)) then $
-    return, reform([init], n_elements(init), overwrite=keyword_set(overwrite))
+  ; ; INSERT alone is empty
+  if (n_elements(insert) eq 0 or keyword_set(empty2)) then $
+    return, reform([init], n_elements(init), overwrite = keyword_set(overwrite))
 
-  n1 = n_elements(init)   & sz1 = size(init)    & tp1 = sz1(sz1(0)+1)
-  n2 = n_elements(insert) & sz2 = size(insert)  & tp2 = sz2(sz2(0)+1)
+  n1 = n_elements(init)
+  sz1 = size(init)
+  tp1 = sz1[sz1[0] + 1]
+  n2 = n_elements(insert)
+  sz2 = size(insert)
+  tp2 = sz2[sz2[0] + 1]
 
-  ;; Compute insertion position using AT keyword
-  if n_elements(at0) EQ 0 then at = 0L else at = long(at0(0))
-  if at LT 0 then at = (n1 + 1L + at) > 0
+  ; ; Compute insertion position using AT keyword
+  if n_elements(at0) eq 0 then at = 0l else at = long(at0[0])
+  if at lt 0 then at = (n1 + 1l + at) > 0
   at = (at > 0) < n1
 
-  ;; Allow data to have different types, but they must be at least of
-  ;; the same "base" type.  That is, you can't combine a number with a
-  ;; string, etc.
-  ;; basetype 0:undefined 1:real number 6:complex number 7:string
-  ;;     8:structure 10:pointer 11:object
+  ; ; Allow data to have different types, but they must be at least of
+  ; ; the same "base" type.  That is, you can't combine a number with a
+  ; ; string, etc.
+  ; ; basetype 0:undefined 1:real number 6:complex number 7:string
+  ; ;     8:structure 10:pointer 11:object
 
-  ;;          0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
-  basetype = [0, 1, 1, 1, 1, 1, 6, 7, 8, 6,10,11, 1, 1, 1, 1]
+  ; ;          0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
+  basetype = [0, 1, 1, 1, 1, 1, 6, 7, 8, 6, 10, 11, 1, 1, 1, 1]
 
-  if tp1 LT 0 OR tp1 GE 16 OR tp2 LT 0 OR tp2 GE 16 then $
+  if tp1 lt 0 or tp1 ge 16 or tp2 lt 0 or tp2 ge 16 then $
     message, 'ERROR: unrecognized data types for operands'
-  if basetype(tp1) NE basetype(tp2) then $
+  if basetype[tp1] ne basetype[tp2] then $
     message, 'ERROR: operands must have same data type'
 
-  if keyword_set(overwrite) then ct = n2 else ct = n1+n2
+  if keyword_set(overwrite) then ct = n2 else ct = n1 + n2
 
-  ;; Create new output array
-  if tp1 EQ 8 then out = make_array(value=init(0), ct) $
-  else             out = make_array(type=tp1, ct, /nozero)
+  ; ; Create new output array
+  if tp1 eq 8 then out = make_array(value = init[0], ct) $
+  else out = make_array(type = tp1, ct, /nozero)
 
   if keyword_set(overwrite) then begin
+    ; ; Overwrite, so we try to conserve as much memory as possible,
+    ; ; and reduce the amount of copying
 
-      ;; Overwrite, so we try to conserve as much memory as possible,
-      ;; and reduce the amount of copying
-
-      if at LT n1/2 then begin  ;; Closer to begining
-          out = [temporary(out), temporary(init)]
-          if at GT 0 then out(0) = out(n2:at+n2-1)
-      endif else begin          ;; Closer to end
-          out = [temporary(init), temporary(out)]
-          if at LT n1 then out(at+n2) = out(at:n1-1)
-      endelse
+    if at lt n1 / 2 then begin ; ; Closer to begining
+      out = [temporary(out), temporary(init)]
+      if at gt 0 then out[0] = out[n2 : at + n2 - 1]
+    endif else begin ; ; Closer to end
+      out = [temporary(init), temporary(out)]
+      if at lt n1 then out[at + n2] = out[at : n1 - 1]
+    endelse
   endif else begin
+    ; ; Otherwise, copy the old data into place
 
-      ;; Otherwise, copy the old data into place
-
-      if at GT 0  then out(0) = init(0:at-1)
-      if at LT n1 then out(at+n2) = init(at:*)
+    if at gt 0 then out[0] = init[0 : at - 1]
+    if at lt n1 then out[at + n2] = init[at : *]
   endelse
 
-  ;; Insert the new data
-  out(at) = reform([insert], n2)
+  ; ; Insert the new data
+  out[at] = reform([insert], n2)
 
   return, out
 end

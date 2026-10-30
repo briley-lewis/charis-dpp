@@ -12,7 +12,7 @@
 ; CALLING SEQUENCE:
 ;   WH = GTIWHERE(TIME, GTI, COUNT=, INTERVALS=, /INVERT, /INCLUDE)
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   The function GTIWHERE is an efficient method to determine which
 ;   good time interval (GTI) a particular time sample falls into, if
@@ -86,7 +86,7 @@
 ;   Added usage message, CM, 2006 Aug 18
 ;   Handle the case if /INVERT and /INCLUDE, which changes the
 ;     boundary conditions slightly, CM, 2007 Dec 15
-;   Handle case of empty input GTI and /INVERT; also handle 
+;   Handle case of empty input GTI and /INVERT; also handle
 ;     INVERT in case where MIN(TIME) touches MIN(GTI), CM, 2008 Jul 08
 ;
 ;  $Id: gtiwhere.pro,v 1.6 2008/07/08 20:24:18 craigm Exp $
@@ -97,80 +97,80 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
-function gtiwhere, time, gti, count=count, INTERVALS=vv, $
-                   invert=invert, include=include, query=query
+; -
+function gtiwhere, time, gti, count = count, intervals = vv, $
+  invert = invert, include = include, query = query
+  compile_opt idl2
 
   if keyword_set(query) then return, 1
-  
-  count = 0L
-  vv = -1L
 
-  if n_params() EQ 0 then begin
-      message, 'USAGE: GTIWHERE(TIME, GTI, COUNT=, INTERVALS=, /INVERT, /INCLUDE)', /info
-      goto, FINISH
+  count = 0l
+  vv = -1l
+
+  if n_params() eq 0 then begin
+    message, 'USAGE: GTIWHERE(TIME, GTI, COUNT=, INTERVALS=, /INVERT, /INCLUDE)', /info
+    goto, finish
   endif
 
-  if n_elements(gti) LT 2 then begin
-      if keyword_set(invert) then begin
-          ;; All times are accepted when /INVERT is set and GTI is null
-          count = n_elements(time)
-          vv = lonarr(count)
-          wh = lindgen(count)
-      endif
-      goto, FINISH
+  if n_elements(gti) lt 2 then begin
+    if keyword_set(invert) then begin
+      ; ; All times are accepted when /INVERT is set and GTI is null
+      count = n_elements(time)
+      vv = lonarr(count)
+      wh = lindgen(count)
+    endif
+    goto, finish
   endif
-          
-  ngti = n_elements(gti)/2
+
+  ngti = n_elements(gti) / 2
 
   if keyword_set(invert) then begin
-      vgti = [ min([gti(*), time-1]), gti(*), max([gti(*), time+1]) ]
-      ngti = ngti + 1
+    vgti = [min([gti[*], time - 1]), gti[*], max([gti[*], time + 1])]
+    ngti = ngti + 1
   endif else begin
-      vgti = gti
+    vgti = gti
   endelse
   vgti = reform(vgti, 2, ngti, /overwrite)
 
-  if ngti LT 5 then begin
-      ;; Optimization for a few GTIs, which is faster by using WHERE
-      ;; rather than VALUE_LOCATE
-      mint = min(time, max=maxt)
-      vv = lonarr(n_elements(time))
+  if ngti lt 5 then begin
+    ; ; Optimization for a few GTIs, which is faster by using WHERE
+    ; ; rather than VALUE_LOCATE
+    mint = min(time, max = maxt)
+    vv = lonarr(n_elements(time))
 
-      for i = 0L, ngti-1 do begin
-          if mint GT vgti(1,i) then goto, NEXT_INTERVAL
-          if maxt LT vgti(0,i) then goto, NEXT_INTERVAL
-          if keyword_set(include) AND keyword_set(invert) then begin
-              wh1 = where(time GT vgti(0,i) AND time LT vgti(1,i), ct1)
-          endif else if keyword_set(include) then begin
-              wh1 = where(time GE vgti(0,i) AND time LE vgti(1,i), ct1)
-          endif else begin
-              wh1 = where(time GE vgti(0,i) AND time LT vgti(1,i), ct1)
-          endelse
-          
-          if ct1 GT 0 then begin
-              if count EQ 0 then wh = wh1 else wh = [ wh, wh1 ]
-              count = count + ct1
-              vv(wh1) = i
-          endif
-          NEXT_INTERVAL:
-      endfor
-
-  endif else begin
-      ;; Standard uses VALUE_LOCATE which is faster for all but the
-      ;; cases NGTI between 1 and 5.
-      vv = value_locate(vgti(0,*), time)
-      if keyword_set(include) AND keyword_set(invert) then begin
-          wh = where( (vv GT 0) AND (time LT vgti(1,vv>0)), count )
+    for i = 0l, ngti - 1 do begin
+      if mint gt vgti[1, i] then goto, next_interval
+      if maxt lt vgti[0, i] then goto, next_interval
+      if keyword_set(include) and keyword_set(invert) then begin
+        wh1 = where(time gt vgti[0, i] and time lt vgti[1, i], ct1)
       endif else if keyword_set(include) then begin
-          wh = where( (vv GE 0) AND (time LE vgti(1,vv>0)), count )
+        wh1 = where(time ge vgti[0, i] and time le vgti[1, i], ct1)
       endif else begin
-          wh = where( (vv GE 0) AND (time LT vgti(1,vv>0)), count )
+        wh1 = where(time ge vgti[0, i] and time lt vgti[1, i], ct1)
       endelse
+
+      if ct1 gt 0 then begin
+        if count eq 0 then wh = wh1 else wh = [wh, wh1]
+        count = count + ct1
+        vv[wh1] = i
+      endif
+      next_interval:
+    endfor
+  endif else begin
+    ; ; Standard uses VALUE_LOCATE which is faster for all but the
+    ; ; cases NGTI between 1 and 5.
+    vv = value_locate(vgti[0, *], time)
+    if keyword_set(include) and keyword_set(invert) then begin
+      wh = where((vv gt 0) and (time lt vgti[1, vv > 0]), count)
+    endif else if keyword_set(include) then begin
+      wh = where((vv ge 0) and (time le vgti[1, vv > 0]), count)
+    endif else begin
+      wh = where((vv ge 0) and (time lt vgti[1, vv > 0]), count)
+    endelse
   endelse
 
-  FINISH:
-  if count LE 0 then return, 0L
-  vv = vv(wh)
+  finish:
+  if count le 0 then return, 0l
+  vv = vv[wh]
   return, wh
 end

@@ -14,8 +14,8 @@
 ;        BLOCK_TYPE=BLOCK_TYPE, BLOCK_NAME=BLOCK_NAME, NEXT_BLOCK=NEXT_BLOCK, $
 ;        INITIALIZE=INITIALIZE, FULL=FULL, PROMOTE64=PROMOTE64, $
 ;        OFFSET=OFFSET, STATUS=STATUS, ERRMSG=ERRMSG
-;   
-; DESCRIPTION: 
+;
+; DESCRIPTION:
 ;
 ;   This procedure reads the header of an IDL SAVE record.  The header
 ;   consists of four bytes at the beginning of each record which
@@ -131,7 +131,7 @@
 ;
 ;   Users should consult CMSV_RDATA for instructions on how to read
 ;   heap data.
-;   
+;
 ;
 ; BLOCK, POINTER, OFFSET
 ;
@@ -160,11 +160,11 @@
 ;
 ;   BLOCK                          |------*--------|
 ;                                  0      ^ POINTER
-;     
+;
 ;
 ;   This procedure is part of the CMSVLIB SAVE library for IDL by
 ;   Craig Markwardt.  You must have the full CMSVLIB core package
-;   installed in order for this procedure to function properly.  
+;   installed in order for this procedure to function properly.
 ;
 ;
 ; INPUTS:
@@ -231,266 +231,276 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
 ; ----------------- Read common block descriptor ----------------------
 
-pro cmsv_rcomm, block, pointer, names, unit=unit, offset=offset, $
-                status=status, errmsg=errmsg
+pro cmsv_rcomm, block, pointer, names, unit = unit, offset = offset, $
+  status = status, errmsg = errmsg
+  compile_opt idl2
 
   status = 0
-  if n_elements(pointer) EQ 0 then pointer = 0L
-  names = 0 & dummy = temporary(names)
-  
-  ncommon = cmsv_rraw(/long, block, pointer, unit=unit, $
-                      status=status, errmsg=errmsg)
-  if status EQ 0 then return
-  if ncommon LE 0 then begin
-      status = 0
-      errmsg = 'ERROR: CMSV_RREC: invalid common record block'
-      return
+  if n_elements(pointer) eq 0 then pointer = 0l
+  names = 0
+  dummy = temporary(names)
+
+  ncommon = cmsv_rraw(/long, block, pointer, unit = unit, $
+    status = status, errmsg = errmsg)
+  if status eq 0 then return
+  if ncommon le 0 then begin
+    status = 0
+    errmsg = 'ERROR: CMSV_RREC: invalid common record block'
+    return
   endif
 
-  names = cmsv_rraw(/string, block, pointer, ncommon+1, unit=unit, $
-                    status=status, errmsg=errmsg)
+  names = cmsv_rraw(/string, block, pointer, ncommon + 1, unit = unit, $
+    status = status, errmsg = errmsg)
   return
 end
 
-
 ; ----------------- Read heap index ---------------------------------
 
-pro cmsv_rheap, block, pointer, index, unit=unit, offset=offset, $
-                status=status, errmsg=errmsg
+pro cmsv_rheap, block, pointer, index, unit = unit, offset = offset, $
+  status = status, errmsg = errmsg
+  compile_opt idl2
 
-  ;; HEAP_INDEX
-  ;;   LONG - N_HEAP - number of heap values
-  ;;   LONGxN_HEAP - heap indices
+  ; ; HEAP_INDEX
+  ; ;   LONG - N_HEAP - number of heap values
+  ; ;   LONGxN_HEAP - heap indices
 
-  if n_elements(pointer) EQ 0 then pointer = 0L
-  index = 0 & dummy = temporary(index)
+  if n_elements(pointer) eq 0 then pointer = 0l
+  index = 0
+  dummy = temporary(index)
 
-  n_heap = cmsv_rraw(/long, block, pointer, unit=unit, $
-                     status=status, errmsg=errmsg)
+  n_heap = cmsv_rraw(/long, block, pointer, unit = unit, $
+    status = status, errmsg = errmsg)
   if status then $
-    index = cmsv_rraw(/long, block, pointer, n_heap, unit=unit, $
-                      status=status, errmsg=errmsg)
+    index = cmsv_rraw(/long, block, pointer, n_heap, unit = unit, $
+      status = status, errmsg = errmsg)
 
   return
 end
 
 ; ------------------------ Read time stamp record -----------------------
 
-pro cmsv_rstamp, block, pointer, tstamp, unit=unit, offset=offset, $
-                 status=status, errmsg=errmsg
+pro cmsv_rstamp, block, pointer, tstamp, unit = unit, offset = offset, $
+  status = status, errmsg = errmsg
+  compile_opt idl2
 
-  ;; TIMESTAMP
-  ;;   BYTEx400 - empty (?) legacy area
-  ;;   STRING - save date (as a string)
-  ;;   STRING - user name
-  ;;   STRING - hostname
+  ; ; TIMESTAMP
+  ; ;   BYTEx400 - empty (?) legacy area
+  ; ;   STRING - save date (as a string)
+  ; ;   STRING - user name
+  ; ;   STRING - hostname
   status = 0
-  if n_elements(pointer) EQ 0 then pointer = 0L
+  if n_elements(pointer) eq 0 then pointer = 0l
   pointer = pointer + '400'xl
-  tstamp = 0 & dummy = temporary(tstamp)
+  tstamp = 0
+  dummy = temporary(tstamp)
 
-  strings = cmsv_rraw(/string, block, pointer, 3, unit=unit, $
-                      status=status, errmsg=errmsg)
-  if status EQ 0 then return
+  strings = cmsv_rraw(/string, block, pointer, 3, unit = unit, $
+    status = status, errmsg = errmsg)
+  if status eq 0 then return
 
-  tstamp = {save_date: strings(0), save_user: strings(1), save_host:strings(2)}
+  tstamp = {save_date: strings[0], save_user: strings[1], save_host: strings[2]}
   return
 end
 
-
 ; ---------------------- Read Version Info ---------------------------
 
-pro cmsv_rversion, block, pointer, vers, unit=unit, offset=offset, $
-                   status=status, errmsg=errmsg
-  ;; VERSION_STAMP
-  ;;   LONG - Major version number
-  ;;   STRING_DATA - Host architecture ( = !version.arch )
-  ;;   STRING_DATA - Host OS ( = !version.os )
-  ;;   STRING_DATA - IDL release ( = !version.release )
+pro cmsv_rversion, block, pointer, vers, unit = unit, offset = offset, $
+  status = status, errmsg = errmsg
+  compile_opt idl2
+  ; ; VERSION_STAMP
+  ; ;   LONG - Major version number
+  ; ;   STRING_DATA - Host architecture ( = !version.arch )
+  ; ;   STRING_DATA - Host OS ( = !version.os )
+  ; ;   STRING_DATA - IDL release ( = !version.release )
 
-  if n_elements(pointer) EQ 0 then pointer = 0L
+  if n_elements(pointer) eq 0 then pointer = 0l
   major_release = 5
-  vers = 0 & dummy = temporary(vers)
+  vers = 0
+  dummy = temporary(vers)
 
-  arch = '' & os = '' & release = ''
-  major_release = cmsv_rraw(/long, block, pointer, unit=unit, $
-                            status=status, errmsg=errmsg)
-  if status EQ 0 then return
+  arch = ''
+  os = ''
+  release = ''
+  major_release = cmsv_rraw(/long, block, pointer, unit = unit, $
+    status = status, errmsg = errmsg)
+  if status eq 0 then return
 
-  strings = cmsv_rraw(/string, block, pointer, 3L, status=status, $
-                      unit=unit, errmsg=errmsg)
-  if status EQ 0 then return
+  strings = cmsv_rraw(/string, block, pointer, 3l, status = status, $
+    unit = unit, errmsg = errmsg)
+  if status eq 0 then return
   status = 1
-  
-  vers = {format_version: major_release, arch: strings(0), $
-          os: strings(1), release: strings(2)}
+
+  vers = {format_version: major_release, arch: strings[0], $
+    os: strings[1], release: strings[2]}
   return
 end
 
 ; --------------------------- Read Identification --------------------
 
-pro cmsv_rident, block, pointer, ident, unit=unit, offset=offset, $
-                 status=status, errmsg=errmsg
+pro cmsv_rident, block, pointer, ident, unit = unit, offset = offset, $
+  status = status, errmsg = errmsg
+  compile_opt idl2
 
-  ;; IDENT
-  ;;   STRING - author
-  ;;   STRING - title
-  ;;   STRING - idcode
+  ; ; IDENT
+  ; ;   STRING - author
+  ; ;   STRING - title
+  ; ;   STRING - idcode
 
-  strings = cmsv_rraw(/string, block, pointer, 3, unit=unit, $
-                      status=status, errmsg=errmsg)
-  if status EQ 0 then return
+  strings = cmsv_rraw(/string, block, pointer, 3, unit = unit, $
+    status = status, errmsg = errmsg)
+  if status eq 0 then return
 
-  ident = {author: strings(0), title: strings(1), idcode:strings(2)}
+  ident = {author: strings[0], title: strings[1], idcode: strings[2]}
   return
 end
 
 ; --------------------------- Read Notice --------------------
 
-pro cmsv_rnotice, block, pointer, notice, unit=unit, offset=offset, $
-                  status=status, errmsg=errmsg
+pro cmsv_rnotice, block, pointer, notice, unit = unit, offset = offset, $
+  status = status, errmsg = errmsg
+  compile_opt idl2
 
-  ;; NOTICE
-  ;;   STRING - notice text
+  ; ; NOTICE
+  ; ;   STRING - notice text
 
-  string = cmsv_rraw(/string, block, pointer, 1, unit=unit, $
-                      status=status, errmsg=errmsg)
-  if status EQ 0 then return
+  string = cmsv_rraw(/string, block, pointer, 1, unit = unit, $
+    status = status, errmsg = errmsg)
+  if status eq 0 then return
 
   notice = {text: string}
   return
 end
 
-
 ; ---------------------------- Main Read Routine ---------------------
 
-pro cmsv_rrec, block, pointer, data, unit=unit, offset=offset, $
-               status=status, errmsg=errmsg, compressed=compressed, $
-               block_type=blocktype, block_name=blockname, next_block=np, $
-               initialize=init, full=full, promote64=prom, $
-               qblocknames=qblock, autopromote64=autoprom
+pro cmsv_rrec, block, pointer, data, unit = unit, offset = offset, $
+  status = status, errmsg = errmsg, compressed = compressed, $
+  block_type = blocktype, block_name = blockname, next_block = np, $
+  initialize = init, full = full, promote64 = prom, $
+  qblocknames = qblock, autopromote64 = autoprom
+  compile_opt idl2
 
   common cmsave_block_names, block_ntypenames, block_typenames
-  if n_elements(block_ntypenames) EQ 0 then begin
-      block_ntypenames    = 20
-      block_typenames     = strarr(block_ntypenames+1)+'UNKNOWN'
-      block_typenames(0)  = 'START_MARKER'
-      block_typenames(1)  = 'COMMON_BLOCK'
-      block_typenames(2)  = 'VARIABLE'
-      block_typenames(3)  = 'SYSTEM_VARIABLE'
-      block_typenames(6)  = 'END_MARKER'
-      block_typenames(10) = 'TIMESTAMP'
-      block_typenames(12) = 'COMPILED'
-      block_typenames(13) = 'IDENTIFICATION'
-      block_typenames(14) = 'VERSION'
-      block_typenames(15) = 'HEAP_INDEX'
-      block_typenames(16) = 'HEAP_DATA'
-      block_typenames(17) = 'PROMOTE64'
-      block_typenames(19) = 'NOTICE'
+  if n_elements(block_ntypenames) eq 0 then begin
+    block_ntypenames = 20
+    block_typenames = strarr(block_ntypenames + 1) + 'UNKNOWN'
+    block_typenames[0] = 'START_MARKER'
+    block_typenames[1] = 'COMMON_BLOCK'
+    block_typenames[2] = 'VARIABLE'
+    block_typenames[3] = 'SYSTEM_VARIABLE'
+    block_typenames[6] = 'END_MARKER'
+    block_typenames[10] = 'TIMESTAMP'
+    block_typenames[12] = 'COMPILED'
+    block_typenames[13] = 'IDENTIFICATION'
+    block_typenames[14] = 'VERSION'
+    block_typenames[15] = 'HEAP_INDEX'
+    block_typenames[16] = 'HEAP_DATA'
+    block_typenames[17] = 'PROMOTE64'
+    block_typenames[19] = 'NOTICE'
   endif
 
   if keyword_set(qblock) then begin
-      data = block_typenames
-      return
+    data = block_typenames
+    return
   end
 
   status = 0
   errmsg = ''
 
-  if n_elements(pointer) EQ 0 then pointer = 0L
-  pointer = floor(pointer(0))
+  if n_elements(pointer) eq 0 then pointer = 0l
+  pointer = floor(pointer[0])
   if keyword_set(init) then begin
-      block = 0 & dummy = temporary(block)
-      pointer = 0L
+    block = 0
+    dummy = temporary(block)
+    pointer = 0l
   endif
 
   pointer0 = pointer
-  nlongs = 4L
-  rechead = cmsv_rraw(/long, block, pointer, nlongs, unit=unit(0), $
-                      status=status, errmsg=errmsg)
-  if status EQ 0 then return
-  
-  blocktype = rechead(0)
-  blockname = block_typenames(blocktype < block_ntypenames)
+  nlongs = 4l
+  rechead = cmsv_rraw(/long, block, pointer, nlongs, unit = unit[0], $
+    status = status, errmsg = errmsg)
+  if status eq 0 then return
 
-  np = rechead(1)
+  blocktype = rechead[0]
+  blockname = block_typenames[blocktype < block_ntypenames]
+
+  np = rechead[1]
   doprom = 0
   if keyword_set(prom) then $
     doprom = 1 $
-  else if (keyword_set(autoprom) AND $
-           (rechead(1) EQ 0 AND rechead(2) NE 0)) then $
+  else if (keyword_set(autoprom) and $
+    (rechead[1] eq 0 and rechead[2] ne 0)) then $
     doprom = 1
 
   if keyword_set(doprom) then begin
-      ;; If file offset is to be promoted to 64-bit then we compute it
-      ;; here.  The additional logic is to preserve 32-bit offsets in
-      ;; most cases, and promote only if absolutely needed.  Signal an
-      ;; error in earlier versions of IDL that don't support 64-bit
-      ;; numbers.
-      np = rechead(2) + rechead(1)
-      if rechead(1) NE 0 AND rechead(2) NE 0 then begin
-          if double(!version.release) LT 5.2D then begin
-              errmsg = ('ERROR: CMSV_RREC: file contains a 64-bit file '+ $
-                        'offset which is unstorable by this version of IDL')
-              status = 0
-              return
-          endif
-          np = cmsv_rraw(/long, block, pointer-3L*4L, type='ULONG64', $
-                         status=status, errmsg=errmsg)
-          if status EQ 0 then return
+    ; ; If file offset is to be promoted to 64-bit then we compute it
+    ; ; here.  The additional logic is to preserve 32-bit offsets in
+    ; ; most cases, and promote only if absolutely needed.  Signal an
+    ; ; error in earlier versions of IDL that don't support 64-bit
+    ; ; numbers.
+    np = rechead[2] + rechead[1]
+    if rechead[1] ne 0 and rechead[2] ne 0 then begin
+      if double(!version.release) lt 5.2d then begin
+        errmsg = ('ERROR: CMSV_RREC: file contains a 64-bit file ' + $
+          'offset which is unstorable by this version of IDL')
+        status = 0
+        return
       endif
+      np = cmsv_rraw(/long, block, pointer - 3l * 4l, type = 'ULONG64', $
+        status = status, errmsg = errmsg)
+      if status eq 0 then return
+    endif
 
-      ;; A 64-bit header has an extra long in it.  Read that now.
-      ;; It should be zero.
-      val0 = cmsv_rraw(/long, block, pointer, status=status, errmsg=errmsg)
-      if status EQ 0 then return
-      if val0 NE 0 then begin
-          errmsg = 'ERROR: CMSV_RREC: inconsistent 64-bit header'
-          status = 0
-          return
-      endif
-
+    ; ; A 64-bit header has an extra long in it.  Read that now.
+    ; ; It should be zero.
+    val0 = cmsv_rraw(/long, block, pointer, status = status, errmsg = errmsg)
+    if status eq 0 then return
+    if val0 ne 0 then begin
+      errmsg = 'ERROR: CMSV_RREC: inconsistent 64-bit header'
+      status = 0
+      return
+    endif
   endif
 
-  ;; Activate 64-bit promotion.  Blocks after this current one will
-  ;; have 64-bit file offsets rather than 32-bit ones.
-  if blocktype EQ 17 then prom = 1
+  ; ; Activate 64-bit promotion.  Blocks after this current one will
+  ; ; have 64-bit file offsets rather than 32-bit ones.
+  if blocktype eq 17 then prom = 1
 
   if keyword_set(full) then begin
-      if n_elements(offset) EQ 0 then offset = 0L
-      nbytes = np - (pointer0 + floor(offset(0)))
-      if nbytes GT 0 then begin
-          dummy = cmsv_rraw(block, 0L, nbytes, /byte, /buffer, unit=unit, $
-                            status=status, errmsg=errmsg)
-          if status EQ 0 then return
-          block = block(0:nbytes-1)
-      endif
+    if n_elements(offset) eq 0 then offset = 0l
+    nbytes = np - (pointer0 + floor(offset[0]))
+    if nbytes gt 0 then begin
+      dummy = cmsv_rraw(block, 0l, nbytes, /byte, /buffer, unit = unit, $
+        status = status, errmsg = errmsg)
+      if status eq 0 then return
+      block = block[0 : nbytes - 1]
+    endif
   endif
 
-  ;; Can't read compressed data for the moment
+  ; ; Can't read compressed data for the moment
   if keyword_set(compressed) then begin
-      status = 1
-      return
+    status = 1
+    return
   endif
 
-  case blockname of 
-      'COMMON_BLOCK': cmsv_rcomm, block, pointer, data, unit=unit, $
-        status=status, errmsg=errmsg
-      'HEAP_INDEX': cmsv_rheap, block, pointer, data, unit=unit, $
-        status=status, errmsg=errmsg
-      'VERSION': cmsv_rversion, block, pointer, data, unit=unit, $
-        status=status, errmsg=errmsg
-      'TIMESTAMP': cmsv_rstamp, block, pointer, data, unit=unit, $
-        status=status, errmsg=errmsg
-      'IDENTIFICATION': cmsv_rident, block, pointer, data, unit=unit, $
-        status=status, errmsg=errmsg
-      'NOTICE': cmsv_rnotice, block, pointer, data, unit=unit, $
-        status=status, errmsg=errmsg
-      ELSE: status = 1
+  case blockname of
+    'COMMON_BLOCK': cmsv_rcomm, block, pointer, data, unit = unit, $
+      status = status, errmsg = errmsg
+    'HEAP_INDEX': cmsv_rheap, block, pointer, data, unit = unit, $
+      status = status, errmsg = errmsg
+    'VERSION': cmsv_rversion, block, pointer, data, unit = unit, $
+      status = status, errmsg = errmsg
+    'TIMESTAMP': cmsv_rstamp, block, pointer, data, unit = unit, $
+      status = status, errmsg = errmsg
+    'IDENTIFICATION': cmsv_rident, block, pointer, data, unit = unit, $
+      status = status, errmsg = errmsg
+    'NOTICE': cmsv_rnotice, block, pointer, data, unit = unit, $
+      status = status, errmsg = errmsg
+    else: status = 1
   end
 
   return

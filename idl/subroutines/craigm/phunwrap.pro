@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -79,42 +79,42 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-function phunwrap, ph, tolerance=tol0, maxval=maxval0
+function phunwrap, ph, tolerance = tol0, maxval = maxval0
+  compile_opt idl2
 
   common phunwrap_common, idlver
-  if n_elements(idlver) EQ 0 then begin
-      idlver = !version.release
+  if n_elements(idlver) eq 0 then begin
+    idlver = !version.release
   endif
 
+  if n_elements(maxval0) eq 0 then maxval = 2d * !dpi else maxval = maxval0[0]
+  if n_elements(tol0) eq 0 then tol = 0.5 * maxval else tol = tol0[0] * maxval
 
-  if n_elements(maxval0) EQ 0 then maxval = 2d*!dpi else maxval = maxval0(0)
-  if n_elements(tol0) EQ 0 then tol = 0.5*maxval else tol = tol0(0)*maxval
-
-  if n_elements(ph) LT 2 then return, ph
+  if n_elements(ph) lt 2 then return, ph
 
   sz = size(ph)
-  tp = sz(sz(0)+1)
+  tp = sz[sz[0] + 1]
 
-  ;; First order difference 
-  case tp of 
-      12: dph = [0, long(ph)-long(ph(1:*))]
-      13: dph = [0, long64(ph)-long64(ph(1:*))]
-      15: dph = [0, long64(ph)-long64(ph(1:*))]
-      else: dph = [0, ph - ph(1:*)]
+  ; ; First order difference
+  case tp of
+    12: dph = [0, long(ph) - long(ph[1 : *])]
+    13: dph = [0, long64(ph) - long64(ph[1 : *])]
+    15: dph = [0, long64(ph) - long64(ph[1 : *])]
+    else: dph = [0, ph - ph[1 : *]]
   endcase
-  
-  p = maxval * (fix((dph GT tol) EQ 1) - fix((dph LT (-tol)) EQ 1))
-  if idlver GT 5.25 then begin
-      ;; Use built-in version if available
-      r = total(p, /cumulative) 
+
+  p = maxval * (fix((dph gt tol) eq 1) - fix((dph lt (-tol)) eq 1))
+  if idlver gt 5.25 then begin
+    ; ; Use built-in version if available
+    r = total(p, /cumulative)
   endif else begin
-      ;; .. if not, then use the lame FOR loop
-      r = p
-      for i = 1L, n_elements(r)-1 do $
-        r(i) = r(i) + r(i-1)
+    ; ; .. if not, then use the lame FOR loop
+    r = p
+    for i = 1l, n_elements(r) - 1 do $
+      r[i] = r[i] + r[i - 1]
   endelse
 
-  return, ph+r
+  return, ph + r
 end

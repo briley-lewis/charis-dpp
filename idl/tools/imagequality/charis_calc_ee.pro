@@ -1,100 +1,88 @@
-pro charis_calc_ee,pick=pick,position=position,il=il,prad=prad,dpsf=dpsf,bckgd=bckgd,help=help
+pro charis_calc_ee, pick = pick, position = position, il = il, prad = prad, dpsf = dpsf, bckgd = bckgd, help = help
+  compile_opt idl2
 
-print,"charis_calc_ee,pick=pick,position=position,il=il,prad=prad,dpsf=dpsf,bckgd=bckgd,help=help"
-print,""
-print,"quick script that calculates encircled energy from empirical PSF derived from sat spots"
-print,"***Keywords"
-print,"*pick - pick the file, otherwise perform on psfcube_med.fits"
-print,"*position - position of psf [default: center of cube]"
-print,"*il - wavelength channel"
-print,"*prad - subtract off radial profile? [OK if the PSF is off-axis]"
-print,"*dpsf - defines range of E.E. calculation"
-print,"*bckgd - subtract a pre-defined background value"
-print,"*
+  print, 'charis_calc_ee,pick=pick,position=position,il=il,prad=prad,dpsf=dpsf,bckgd=bckgd,help=help'
+  print, ''
+  print, 'quick script that calculates encircled energy from empirical PSF derived from sat spots'
+  print, '***Keywords'
+  print, '*pick - pick the file, otherwise perform on psfcube_med.fits'
+  print, '*position - position of psf [default: center of cube]'
+  print, '*il - wavelength channel'
+  print, '*prad - subtract off radial profile? [OK if the PSF is off-axis]'
+  print, '*dpsf - defines range of E.E. calculation'
+  print, '*bckgd - subtract a pre-defined background value'
+  print, '*'
 
+  if ~keyword_set(rbk) then rbk = [10, 15]
 
-if ~keyword_set(rbk) then rbk=[10,15]
+  if ~keyword_set(il) then il = 10
 
-if ~keyword_set(il) then il=10
+  ; quick script that calculates encircled energy of a given image
 
+  if keyword_set(pick) then begin
+    file_in = dialog_pickfile(title = 'Select Data Cube for Calculation')
 
-;quick script that calculates encircled energy of a given image
+    cube = readfits(file_in, /ext, /silent)
+  endif else begin
+    datadir = './psfmodel/'
+    file_in = 'psfcube_med.fits'
 
+    cube = readfits(datadir + file_in, /ext, /silent)
+  endelse
 
+  ; now calculate the encircled energe per passband
 
-if keyword_set(pick) then  begin
+  sz = size(cube, /dim)
 
-file_in=dialog_pickfile(Title="Select Data Cube for Calculation")
+  if n_elements(sz) eq 2 then nwvlh = 1 else nwvlh = sz[2]
 
-cube=readfits(file_in,/ext,/silent)
+  if ~keyword_set(dpsf) then dpsf = 41
 
-endif else begin
+  dpsf = dpsf < sz[1]
 
-datadir='./psfmodel/'
-file_in='psfcube_med.fits'
+  ee = fltarr(dpsf, nwvlh)
+  fluxtot = fltarr(nwvlh)
 
-cube=readfits(datadir+file_in,/ext,/silent)
+  rap = findgen(dpsf) / 2.
 
+  if ~keyword_set(position) then position = [sz[0] / 2, sz[1] / 2]
+  print, position
 
-endelse
+  for i = 0l, nwvlh - 1 do begin
+    ; fluxtot[i]=total(cube[*,*,i])
+    if keyword_set(bckgd) then cube[*, *, i] -= bckgd
+    fluxtot[i] = charis_myaper(cube[*, *, i], position[0], position[1], dpsf / 2., /nan)
 
-;now calculate the encircled energe per passband
+    for j = 0l, dpsf - 1 do begin
+      fluxr = charis_myaper(cube[*, *, i], position[0], position[1], rap[j], /nan)
+      ee[j, i] = fluxr / fluxtot[i]
 
-sz=size(cube,/dim)
+      if i eq il then print, dpsf / 2, rap[j], fluxr, fluxtot[i]
+    endfor
+  endfor
 
-if n_elements(sz) eq 2 then nwvlh=1 else nwvlh = sz[2]
+  print, max(rap), dpsf / 2
+  print, fluxtot
+  ; now, to plot
 
-if ~keyword_set(dpsf) then dpsf=41
+  dum = cube[*, *, il]
+  if keyword_set(prad) then begin
+    profrad_tc, dum, 1, 1, 101, p2d = pr
 
-dpsf= dpsf < sz[1]
+    dum -= pr
+  endif
 
-ee=fltarr(dpsf,nwvlh)
-fluxtot=fltarr(nwvlh)
+  dist_circle, g, sz[1], position[0], position[1]
 
-rap=findgen(dpsf)/2.
+  good = where(g le dpsf / 4)
+  print, max(dum[good])
+  z = where(dum eq max(dum[good]))
+  profradxy, dum, position[0], position[1], 1, dpsf / 2, p1d = pr, rayon = rayon
+  pr /= max(dum[good])
 
-if ~keyword_set(position) then position=[sz[0]/2,sz[1]/2]
-print,position
+  plot, rap, ee[*, il], xrange = [0, max(rap) + 1]
+  oplot, rayon, pr, linestyle = 1
 
-
-for i=0L,nwvlh-1 do begin
-;fluxtot[i]=total(cube[*,*,i])
-if keyword_set(bckgd) then cube[*,*,i]-=bckgd
-fluxtot[i]= charis_myaper(cube[*,*,i],position[0],position[1],dpsf/2.,/nan)
-
-
- for j=0L,dpsf-1 do begin
-   fluxr=charis_myaper(cube[*,*,i],position[0],position[1],rap[j],/nan)
-   ee[j,i]=fluxr/fluxtot[i]
-
-   if i eq il then print,dpsf/2,rap[j],fluxr,fluxtot[i]
- endfor
-endfor
-
-print,max(rap),dpsf/2
-print,fluxtot
-;now, to plot
-
-dum=cube[*,*,il]
-if keyword_set(prad) then begin
-profrad_tc,dum,1,1,101,p2d=pr
-
-dum-=pr
-endif
-
-dist_circle,g,sz[1],position[0],position[1]
-
-good=where(g le dpsf/4)
-print,max(dum[good])
-z=where(dum eq max(dum[good]))
-profradxy,dum,position[0],position[1],1,dpsf/2,p1d=pr,rayon=rayon
-pr/=max(dum[good])
-
-  plot,rap,ee[*,il],xrange=[0,max(rap)+1]
-  oplot,rayon,pr,linestyle=1
-
-print,pr
-print,max(dum[good])
-
-
+  print, pr
+  print, max(dum[good])
 end

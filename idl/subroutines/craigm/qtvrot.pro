@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -109,104 +109,119 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-;; QVROT
-;;
-;; The FORWARD (default) transform: 
-;;
-;; * takes a vector vin (components given in inertial coordinates) and
-;;  returns the components of the rotated vector vout (components
-;;  given in inertial coordinates) -- ie, the AXES stay fixed and the
-;;  VECTOR rotates; OR, equivalently,
-;;
-;; * takes a fixed vector vin (components given in body coordinates)
-;;   and returns the components of the vector in inertial coordinates,
-;;   where the body system is described by quaternion q -- ie, the
-;;   VECTOR stays fixed and the AXES rotate.
-;;
-;;
-;; The INVERSE transform (gotten by setting /INVERT):
-;;
-;; * takes a vector vin (components given in inertial coordinates) and
-;;   returns the components of the anti-rotated vector vout
-;;   (components given in inertial coordinates) -- ie, the AXES stay
-;;   fixed and the VECTOR rotates.  Anti-rotated here means rotated in
-;;   the opposite direction of q; OR, equivalently,
-;;
-;; * takes a fixed vector vin (components given in inertial
-;;   coordinates) and returns the components of the vector in body
-;;   coordinates, where the body system is described by quaternion q
-;;   -- ie, the VECTOR stays fixed and the AXES rotate.
-;;
+; ; QVROT
+; ;
+; ; The FORWARD (default) transform:
+; ;
+; ; * takes a vector vin (components given in inertial coordinates) and
+; ;  returns the components of the rotated vector vout (components
+; ;  given in inertial coordinates) -- ie, the AXES stay fixed and the
+; ;  VECTOR rotates; OR, equivalently,
+; ;
+; ; * takes a fixed vector vin (components given in body coordinates)
+; ;   and returns the components of the vector in inertial coordinates,
+; ;   where the body system is described by quaternion q -- ie, the
+; ;   VECTOR stays fixed and the AXES rotate.
+; ;
+; ;
+; ; The INVERSE transform (gotten by setting /INVERT):
+; ;
+; ; * takes a vector vin (components given in inertial coordinates) and
+; ;   returns the components of the anti-rotated vector vout
+; ;   (components given in inertial coordinates) -- ie, the AXES stay
+; ;   fixed and the VECTOR rotates.  Anti-rotated here means rotated in
+; ;   the opposite direction of q; OR, equivalently,
+; ;
+; ; * takes a fixed vector vin (components given in inertial
+; ;   coordinates) and returns the components of the vector in body
+; ;   coordinates, where the body system is described by quaternion q
+; ;   -- ie, the VECTOR stays fixed and the AXES rotate.
+; ;
 
-function qtvrot, vin, q, invert=invert
+function qtvrot, vin, q, invert = invert
+  compile_opt idl2
 
-  if n_params() EQ 0 then begin
-      info = 1
-      USAGE:
-      message, 'USAGE:', /info
-      message, 'VNEW = QTVROT(V, Q)', info=info
-      return, 0
+  if n_params() eq 0 then begin
+    info = 1
+    usage:
+    message, 'USAGE:', /info
+    message, 'VNEW = QTVROT(V, Q)', info = info
+    return, 0
   endif
-  nq = n_elements(q)/4
-  nv = n_elements(vin)/3
-  if nq LT 1 OR nv LT 1 then goto, USAGE
+  nq = n_elements(q) / 4
+  nv = n_elements(vin) / 3
+  if nq lt 1 or nv lt 1 then goto, usage
 
-  if n_elements(q) GT 4 AND n_elements(vin) GT 3 then begin
-      if n_elements(q)/4 NE n_elements(vin)/3 then begin
-          message, 'ERROR: incompatible number of quaternions & vectors'
-          return, -1L
-      end
-      vout = vin*q(0)*0.
-      nq = n_elements(q)/4
-      nv = nq
-  endif else if n_elements(q) GT 4 then begin
-      nq = n_elements(q)/4
-      nv = 1L
-      vout = vin(*) # (fltarr(nq)+1) * q(0)*0.
+  if n_elements(q) gt 4 and n_elements(vin) gt 3 then begin
+    if n_elements(q) / 4 ne n_elements(vin) / 3 then begin
+      message, 'ERROR: incompatible number of quaternions & vectors'
+      return, -1l
+    end
+    vout = vin * q[0] * 0.
+    nq = n_elements(q) / 4
+    nv = nq
+  endif else if n_elements(q) gt 4 then begin
+    nq = n_elements(q) / 4
+    nv = 1l
+    vout = vin[*] # (fltarr(nq) + 1) * q[0] * 0.
   endif else begin
-      nq = 1L
-      nv = n_elements(vin)/3
-      vout = vin*q(0)*0.
+    nq = 1l
+    nv = n_elements(vin) / 3
+    vout = vin * q[0] * 0.
   endelse
-  vout = reform(vout, 3, max([nv,nq]), /overwrite)
-  q1 = q(0,*) & q2 = q(1,*) & q3 = q(2,*) & q4 = q(3,*)
-  if n_elements(q1) EQ 1 then begin
-      q1 = q1(0)  & q2 = q2(0)  & q3 = q3(0)  & q4 = q4(0)
+  vout = reform(vout, 3, max([nv, nq]), /overwrite)
+  q1 = q[0, *]
+  q2 = q[1, *]
+  q3 = q[2, *]
+  q4 = q[3, *]
+  if n_elements(q1) eq 1 then begin
+    q1 = q1[0]
+    q2 = q2[0]
+    q3 = q3[0]
+    q4 = q4[0]
   endif else begin
-      q1 = q1(*)  & q2 = q2(*)  & q3 = q3(*)  & q4 = q4(*)
+    q1 = q1[*]
+    q2 = q2[*]
+    q3 = q3[*]
+    q4 = q4[*]
   endelse
-  v0 = vin(0,*) & v1 = vin(1,*) & v2 = vin(2,*)
-  if n_elements(v0) EQ 1 then begin
-      v0 = v0(0)  & v1 = v1(0)  & v2 = v2(0)
+  v0 = vin[0, *]
+  v1 = vin[1, *]
+  v2 = vin[2, *]
+  if n_elements(v0) eq 1 then begin
+    v0 = v0[0]
+    v1 = v1[0]
+    v2 = v2[0]
   endif else begin
-      v0 = v0(*)  & v1 = v1(*)  & v2 = v2(*)
+    v0 = v0[*]
+    v1 = v1[*]
+    v2 = v2[*]
   endelse
 
-  if NOT keyword_set(INVERT) then begin
-
-      ;; FORWARD TRANSFORMATION
-      VOUT(0,*)=((Q1*Q1-Q2*Q2-Q3*Q3+Q4*Q4)*V0 $
-                 + 2.D0*(Q1*Q2-Q3*Q4)*V1 $
-                 + 2.D0*(Q1*Q3+Q2*Q4)*V2)
-      VOUT(1,*)=(2.D0*(Q1*Q2+Q3*Q4)*V0 $
-                 + (-Q1*Q1+Q2*Q2-Q3*Q3+Q4*Q4)*V1 $
-                 + 2.D0*(Q2*Q3-Q1*Q4)*V2)
-      VOUT(2,*)=(2.D0*(Q1*Q3-Q2*Q4)*V0 $
-                 + 2.D0*(Q2*Q3+Q1*Q4)*V1 $
-                 + (-Q1*Q1-Q2*Q2+Q3*Q3+Q4*Q4)*V2)
+  if not keyword_set(invert) then begin
+    ; ; FORWARD TRANSFORMATION
+    vout[0, *] = ((q1 * q1 - q2 * q2 - q3 * q3 + q4 * q4) * v0 $
+      + 2.d0 * (q1 * q2 - q3 * q4) * v1 $
+      + 2.d0 * (q1 * q3 + q2 * q4) * v2)
+    vout[1, *] = (2.d0 * (q1 * q2 + q3 * q4) * v0 $
+      + (-q1 * q1 + q2 * q2 - q3 * q3 + q4 * q4) * v1 $
+      + 2.d0 * (q2 * q3 - q1 * q4) * v2)
+    vout[2, *] = (2.d0 * (q1 * q3 - q2 * q4) * v0 $
+      + 2.d0 * (q2 * q3 + q1 * q4) * v1 $
+      + (-q1 * q1 - q2 * q2 + q3 * q3 + q4 * q4) * v2)
   endif else begin
-      ;; INVERSE TRANSFORMATION
-      VOUT(0,*)=((Q1*Q1-Q2*Q2-Q3*Q3+Q4*Q4)*V0 $
-                 + 2.D0*(Q1*Q2+Q3*Q4)*V1 $
-                 + 2.D0*(Q1*Q3-Q2*Q4)*V2)
-      VOUT(1,*)=(2.D0*(Q1*Q2-Q3*Q4)*V0 $
-               + (-Q1*Q1+Q2*Q2-Q3*Q3+Q4*Q4)*V1 $
-               + 2.D0*(Q2*Q3+Q1*Q4)*V2)
-      VOUT(2,*)=(2.D0*(Q1*Q3+Q2*Q4)*V0 $
-               + 2.D0*(Q2*Q3-Q1*Q4)*V1 $
-               + (-Q1*Q1-Q2*Q2+Q3*Q3+Q4*Q4)*V2)
+    ; ; INVERSE TRANSFORMATION
+    vout[0, *] = ((q1 * q1 - q2 * q2 - q3 * q3 + q4 * q4) * v0 $
+      + 2.d0 * (q1 * q2 + q3 * q4) * v1 $
+      + 2.d0 * (q1 * q3 - q2 * q4) * v2)
+    vout[1, *] = (2.d0 * (q1 * q2 - q3 * q4) * v0 $
+      + (-q1 * q1 + q2 * q2 - q3 * q3 + q4 * q4) * v1 $
+      + 2.d0 * (q2 * q3 + q1 * q4) * v2)
+    vout[2, *] = (2.d0 * (q1 * q3 + q2 * q4) * v0 $
+      + 2.d0 * (q2 * q3 - q1 * q4) * v1 $
+      + (-q1 * q1 - q2 * q2 + q3 * q3 + q4 * q4) * v2)
   endelse
   vout = vout
 

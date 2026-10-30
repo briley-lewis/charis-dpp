@@ -13,7 +13,7 @@
 ;   GTI = GTISEG(TIMES, COUNT=COUNT, INDICES=INDICES, $
 ;                MAXGAP=MAXGAP, MINGTI=MINGTI)
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   The function GTISEG accepts an array of times and converts
 ;   adjacent data into good time intervals (GTIs).
@@ -71,7 +71,7 @@
 ;   The array is 2xCOUNT where COUNT is the number of resulting
 ;   intervals.  GTI(*,i) represents the start and stop times of
 ;   interval number i.  The intervals are non-overlapping and
-;   time-ordered. 
+;   time-ordered.
 ;
 ;   If COUNT is zero then the returned array is a scalar value of
 ;   zero, indicating no good intervals were found.
@@ -95,45 +95,46 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
-function gtiseg, time, maxgap=maxgap, mingti=mingti, $
-                 indices=indices, count=count, query=query
+; -
+function gtiseg, time, maxgap = maxgap, mingti = mingti, $
+  indices = indices, count = count, query = query
+  compile_opt idl2
 
   if keyword_set(query) then return, 1
-  count = 0L
+  count = 0l
 
-  if n_params() EQ 0 then begin
-    message, 'GTI = GTISEG(TIME, [COUNT=,] [INDICES=,] [MAXGAP=,] [MINGTI=])',$
+  if n_params() eq 0 then begin
+    message, 'GTI = GTISEG(TIME, [COUNT=,] [INDICES=,] [MAXGAP=,] [MINGTI=])', $
       /info
     return, 0
   endif
 
-  if n_elements(maxgap) EQ 0 then maxgap = time(1) - time(0)
+  if n_elements(maxgap) eq 0 then maxgap = time[1] - time[0]
   nt = n_elements(time)
-  tdiff = time(1:*) - time
-  whdiff = [-1L, where(tdiff GT maxgap(0), ntseg), nt-1]
-  if ntseg EQ 0 then whdiff = [-1L, nt-1]
+  tdiff = time[1 : *] - time
+  whdiff = [-1l, where(tdiff gt maxgap[0], ntseg), nt - 1]
+  if ntseg eq 0 then whdiff = [-1l, nt - 1]
   ntseg = ntseg + 1
 
   mintdiff = min(tdiff) > 0
 
   indices = reform(lonarr(2, ntseg), 2, ntseg, /overwrite)
-  indices(0,*) = whdiff(0:ntseg-1)+1
-  indices(1,*) = whdiff(1:ntseg)
+  indices[0, *] = whdiff[0 : ntseg - 1] + 1
+  indices[1, *] = whdiff[1 : ntseg]
 
-  tgti = reform(make_array(2, ntseg, value=time(0)*0), 2, ntseg, /overwrite)
-  tgti(0,*) = time(indices(0,*))
-  tgti(1,*) = time(indices(1,*)) + mintdiff
+  tgti = reform(make_array(2, ntseg, value = time[0] * 0), 2, ntseg, /overwrite)
+  tgti[0, *] = time[indices[0, *]]
+  tgti[1, *] = time[indices[1, *]] + mintdiff
 
-  if n_elements(mingti) GT 0 then begin
-      wh = where(tgti(1,*)-tgti(0,*) GE mingti(0), ntseg)
-      if ntseg GT 0 then begin
-          tgti = reform(tgti(*,wh),2,ntseg)
-          indices = reform(indices(*,wh),2,ntseg)
-      endif else begin
-          tgti = -1L
-          indices = -1L
-      endelse
+  if n_elements(mingti) gt 0 then begin
+    wh = where(tgti[1, *] - tgti[0, *] ge mingti[0], ntseg)
+    if ntseg gt 0 then begin
+      tgti = reform(tgti[*, wh], 2, ntseg)
+      indices = reform(indices[*, wh], 2, ntseg)
+    endif else begin
+      tgti = -1l
+      indices = -1l
+    endelse
   endif
 
   count = ntseg

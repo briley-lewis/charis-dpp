@@ -11,8 +11,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   PROFREE, TREE
-;   
-; DESCRIPTION: 
+;
+; DESCRIPTION:
 ;
 ;   PROFREE frees the memory and pointers associated with an abstract
 ;   syntax tree, as returned by PRODIS.  Users should use this
@@ -24,7 +24,7 @@
 ;
 ;   TREE - the abstract syntax tree to be freed.  Upon return the
 ;          contents of TREE will be undefined.
-;  
+;
 ;
 ; SEE ALSO:
 ;
@@ -33,7 +33,7 @@
 ; MODIFICATION HISTORY:
 ;   Written, 2000-2002, CM
 ;   Documented, 19 Mar 2002, CM
-;   
+;
 ;
 ; $Id: profree.pro,v 1.3 2002/03/19 21:45:02 craigm Exp $
 ;
@@ -43,29 +43,30 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
 pro profree, tree
-  if n_params() EQ 0 then begin
-      message, 'USAGE:', /info
-      message, '  PROFREE, TREE', /info
-      return
+  compile_opt idl2
+  if n_params() eq 0 then begin
+    message, 'USAGE:', /info
+    message, '  PROFREE, TREE', /info
+    return
   endif
 
-  if n_elements(tree) EQ 0 then return
+  if n_elements(tree) eq 0 then return
 
   sz = size(tree)
-  if sz(sz(0)+1) NE 8 then return
+  if sz[sz[0] + 1] ne 8 then return
 
-  for i = 0, n_elements(tree)-1 do begin
-      if tag_names(tree(i), /structure_name) EQ 'PDS_NODE' then begin
-          for j = 0, 2 do begin
-              if ptr_valid(tree(i).operands(j)) then $
-                if n_elements(*tree(i).operands(j)) GT 0 then $
-                profree, *tree(i).operands(j)
-          endfor
-          ptr_free, tree(i).operands
-      endif
+  for i = 0, n_elements(tree) - 1 do begin
+    if tag_names(tree[i], /structure_name) eq 'PDS_NODE' then begin
+      for j = 0, 2 do begin
+        if ptr_valid(tree[i].operands(j)) then $
+          if n_elements(*tree[i].operands(j)) gt 0 then $
+            profree, *tree[i].operands(j)
+      endfor
+      ptr_free, tree[i].operands
+    endif
   endfor
   tree = 0
   dummy = temporary(tree)

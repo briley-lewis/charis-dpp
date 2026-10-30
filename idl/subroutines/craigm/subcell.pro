@@ -12,7 +12,7 @@
 ; CALLING SEQUENCE:
 ;   sub = subcell(panel, refposition)
 ;
-; DESCRIPTION: 
+; DESCRIPTION:
 ;
 ;   SUBCELL finds the position of a subwindow within another window.
 ;   This could be useful in cases where the position of one window is
@@ -38,7 +38,7 @@
 ;   POSITION - A four-element array giving the position of the
 ;              reference window on the screen.  Equivalent to the
 ;              graphics keyword of the same name.
-; 
+;
 ; OPTIONAL INPUTS:
 ;   NONE
 ;
@@ -75,32 +75,31 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 
-function subcell, subpos, position, margin=margin
+function subcell, subpos, position, margin = margin
+  compile_opt idl2
 
-  ;; Default value for subposition
-  if n_elements(subpos) EQ 0 then mysubpos = [-1.,-1,-1,-1] $
+  ; ; Default value for subposition
+  if n_elements(subpos) eq 0 then mysubpos = [-1., -1, -1, -1] $
   else mysubpos = subpos
 
-  ;; Default value for position - full screen
-  if n_elements(position) EQ 0 then position = [0.,0.,1.,1.]
+  ; ; Default value for position - full screen
+  if n_elements(position) eq 0 then position = [0., 0., 1., 1.]
 
-  ;; Get margins if necessary
-  if keyword_set(margin) EQ 1 OR n_elements(subpos) EQ 0 then $
+  ; ; Get margins if necessary
+  if keyword_set(margin) eq 1 or n_elements(subpos) eq 0 then $
     mysubpos = defsubcell(mysubpos)
 
-  ;; Compute new window position
-  x0 = position(0)
-  y0 = position(1)
-  dx = position(2)-position(0)
-  dy = position(3)-position(1)
+  ; ; Compute new window position
+  x0 = position[0]
+  y0 = position[1]
+  dx = position[2] - position[0]
+  dy = position[3] - position[1]
 
   newsubpos = reform(mysubpos * 0, 4)
-  newsubpos([0,2]) = x0 + dx * mysubpos([0,2])
-  newsubpos([1,3]) = y0 + dy * mysubpos([1,3])
+  newsubpos[[0, 2]] = x0 + dx * mysubpos[[0, 2]]
+  newsubpos[[1, 3]] = y0 + dy * mysubpos[[1, 3]]
 
   return, newsubpos
 end
-
-  

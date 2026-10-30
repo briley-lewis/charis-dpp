@@ -1,13 +1,29 @@
 pro charis_imprep,pfname,$
+pdi=pdi,$
 gz=gz,$
 fixpix=fixpix,$
-charismanual=charismanual,help=help
+charismanual=charismanual,help=help,verbose=verbose
+
 ;Establishes uniform fits header information for all science frames you want to reduce
 ;individual integration time, coadds (so int.*coadds = total int), altitude, azimuth, LST, PA, beam (if dither), latitude, longitude, HA, WCS
 
+;01/02/2026 -- corrects for post-NBS parity flip and rotation angle change
 ;08/11/2020 -- added ability to edit list of files [procedure copied from HCI]
 ;04/18/2019 -- streamlined for CHARIS.  removed commands for other instruments
 ;03/06/2018 -- copied from imprep.pro to package with CHARIS post-processing pipeline
+
+if (keyword_set(help)) then begin
+print,"charis_imprep,pfname,gz=gz,fixpix=fixpix,charismanual=charismanual"
+print,"usually, do not need to enter any keywords *except* for pfname"
+print,""
+print,"***Keywords***"
+print,"pfname - parameter file name"
+print,"pdi - are these PDI data?, if so then add /pdi at command line"
+print,"fixpix - do bad pixel repair in the cube"
+print,"*****"
+print,"Example: charis_imprep,'HR8799_low.info'"
+goto,breakout
+endif
 
 if ~keyword_set(pfname) then begin
 possiblenames=file_search('*.info')
@@ -27,17 +43,10 @@ endelse
 
 endif
 
-if (keyword_set(help)) then begin
-print,"charis_imprep,pfname,gz=gz,fixpix=fixpix,charismanual=charismanual"
-print,"usually, do not need to enter any keywords *except* for pfname"
-print,""
-print,"***Keywords***"
-print,"pfname - parameter file name"
-print,"fixpix - do bad pixel repair in the cube"
-print,"*****"
-print,"Example: charis_imprep,'HR8799_low.info'"
-goto,breakout
-endif
+;not in use? 1/2/2026
+;if keyword_set(verbose) then begin
+;openw,11,'precession_output'
+;endif
 
 if ~keyword_set(prefname) then prefname='n'
 datadir='./data/raw/'
@@ -76,8 +85,6 @@ times=dblarr(n_elements(files))
 for i=0L,n_elements(files)-1 do begin
 h1=headfits(files[i])
 
-;****THIS IS A HACK RIGHT NOW!!!!!
-
 ;times[i]=double(sxpar(h1,'mjd'))
 times[i]=ten(sxpar(h1,'lst'))
 ;times[i]=ten(sxpar(h1,'p_hststr'))
@@ -93,6 +100,36 @@ endif
 skipsort:
 ;*****
 
+;******
+;LOGGING
+;the command line call
+
+dpp_command=(recall_commands())[0]
+
+;setting up log file
+currenttime=systime()
+ct=strsplit(currenttime,/extract,' ')
+;format is month, day, hms, year
+currenttime_log=ct[1]+ct[2]+'_'+ct[4]+'_'+ct[3]
+trimmed_time_log=ct[1]+ct[2]+'_'+ct[4]
+logfilename=currenttime_log+'.log'
+logfilenametrimmed=trimmed_time_log
+
+;now, look to see if logfile exists
+checklog_list=file_search('./log/'+logfilenametrimmed+'*',count=count_checklog)
+checklog=checklog_list[n_elements(checklog_list)-1]
+
+if count_checklog eq 0 then begin
+logname='./log/'+logfilename
+openw,11,logname
+printf,11,ct[3],dpp_command,format='(a,x,a)'
+endif else begin
+logname='./'+checklog
+openw,11,logname,/append
+printf,11,ct[3],dpp_command,format='(a,x,a)'
+endelse
+;*****
+
 
 
 nfiles=n_elements(files)
@@ -106,8 +143,8 @@ print,'nfiles is',nfiles
 
 ;test the first image, see if it has the fits header info you need.
 
-bbtest=readfits(files[0],h1test,ext=1)
-htest=headfits(files[0])
+bbtest=readfits(files[0],h1test,ext=1,/silent)
+htest=headfits(files[0],/silent)
 
 ;if you want to manually set the exposure time and coadds then input them here...
 if keyword_set(charismanual) then begin
@@ -121,14 +158,11 @@ endif
 obslogname='obslog.txt'
 openw,1,obslogname
 
-;openw,1,'reduc.log'
-;printf,1,'File_no,','XC,','YC,','Rsat','HA','Par.Angle'
-;printf,1,'File_in','File_out','ExpTime','ParAngle','Health_Flag'
 printf,1,'File_in','','File_out','','ExpTime','','ParAngle','','Health_Flag'
 
 for i=0L,nfiles-1 do begin
-bb=readfits(files[i],h1,/exten)
-h0=headfits(files[i],ext=0)
+bb=readfits(files[i],h1,/exten,/silent)
+h0=headfits(files[i],ext=0,/silent)
 
 sz=size(bb)
 
@@ -154,7 +188,7 @@ sz=size(bb)
   if lst2count gt 0 then lst=lst2
 
  ;Hour Angle, probably is not entered in here.
-  ha=sxpar(h0,'HA',count=hacount)
+  ha=sxpar(h0,'HA',count=hacount,/silent)
 
   if hacount gt 0 then begin
   ha=ten(ha)
@@ -163,8 +197,8 @@ sz=size(bb)
   endif
 
  ;;get the date, then calculate the epoch 
-  dateobs=sxpar(h0,'UTC-DATE')
-  utcdate=ten(sxpar(h0,'UTC-TIME'))
+  dateobs=sxpar(h0,'UTC-DATE',/silent)
+  utcdate=ten(sxpar(h0,'UTC-TIME',/silent))
   hms0=sixty(utcdate)
 
 
@@ -172,7 +206,6 @@ sz=size(bb)
   jd0=double(julday(ymd0[1], ymd0[2], ymd0[0],hms0[0],hms0[1],hms0[2]))
 
   epoch0 = (jd0 - 2451545d0)/365.25d0 + 2000d0
-   ;print,jd0,epoch0
 
   ;***if the LST is not entered, then you need to compute it based on the MJD and longitude of Maunakea
   if lst1count eq 0 and lst2count eq 0 then begin
@@ -194,6 +227,8 @@ sz=size(bb)
   rap=ra
   decp=dec
   precess,rap,decp,2000d0,epoch0
+
+  if keyword_set(verbose) then printf,11,files[i],ra,dec,rap,decp,epoch0,format='(a,f,f,f,f,f)'
 
   ;compute the hour angle for current epoch, ra2000, and lst
   ha=lst-rap/15.
@@ -225,6 +260,7 @@ sxaddpar,h1,'CRPIX3',1,after='CRPIX2',format="i4"
 sxaddpar,h1,'CUNIT3','microns',after='CRPIX3',format="a8"
 ;sxaddpar,h1,'CRVAL3',crvalue3
 
+sxaddpar,h0,'HISTORY',currenttime_log+' '+dpp_command
 
 ;***Obs Log ***
 ;if keyword_set(obslog) then begin
@@ -240,11 +276,17 @@ filebasename=strsplit(filebasename,/extract,'/')
 fileinname=filebasename[n_elements(filebasename)-1]
 fileoutname=prefname+nbr2txt(i+1,4)+'e.fits'
 
+if ~keyword_set(pdi) then begin
 cubehealthflag=charis_check_health(bb)
+endif else begin
+cubehealthflag=charis_check_health(bb,/pdi)
+endelse
 
 printf,1,fileinname,fileoutname,filtname,exp1time*coadds,pa0,cubehealthflag,format='(a,1x,a,1x,a,1x,f6.2,1x,f7.2,1x,a)'
 
 sz=size(bb,/dim) 
+
+;clean hit/bad pixels: usually not needed & can cause unpredictable results
 if keyword_set(fixpix) then begin
 for j=0L,sz[2]-1 do begin
 
@@ -254,11 +296,34 @@ bb[*,*,j]=slice
 endfor
 endif
 
+;****post-NBS parity flip and north PA correction
+
+mjd_date=sxpar(h0,'MJD',count=mjdcount,/silent)
+
+if mjdcount eq 0 then begin
+print,'ERROR, missing MJD date: check your cubes'
+stop
+endif
+
+if mjd_date gt 60933 then begin
+
+;print,'POST-NBS Parity Flip and NorthPA correction'
+result=charis_nbs_corr(bb,h0,h1)
+
+bb=result.cube
+h0=result.h0
+h1=result.h1
+
+endif
+;****
+
+
 ;For now, just assume CHARIS will create the data cubes
 
 fileoutname=prefname+nbr2txt(i+1,4)+'e.fits'
 
 reducdir='./reduc/prep/'
+
 ;if for some reason you want to g-zip the data cubes
 if keyword_set(gz) then begin
 writefits,reducdir+fileoutname+'.gz',0,h0,/compress
@@ -270,6 +335,7 @@ endelse
 endfor
 
 close,1
+if keyword_set(verbose) then close,11
 
 charis_set_files,pfname,'FNUM_SAT','science',obslogname
 charis_set_files,pfname,'FNUM_SKY','sky',obslogname
@@ -278,7 +344,9 @@ charis_set_files,pfname,'FNUM_SKY','sky',obslogname
 
 
 
-
+close,11
 breakout:
+
+print,'Finished Prepping Cubes'
 
 end

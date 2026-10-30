@@ -12,8 +12,8 @@
 ; CALLING SEQUENCE:
 ;
 ;   CMSVWRITE, UNIT, DATA [ , NAME=NAME, COMPATIBILITY=COMPAT ]
-;   
-; DESCRIPTION: 
+;
+; DESCRIPTION:
 ;
 ;   CMSVWRITE writes a single IDL variable to an open IDL SAVE file.
 ;   The file should already have been opened for writing as a normal
@@ -47,7 +47,7 @@
 ;   NAME - the optional name of the variable to be written (must be a
 ;          valid variable name).
 ;          Default: CMSVWRITE automatically creates a valid name.
-;  
+;
 ;   COMPATIBILITY - a string, which describes the format to be used in
 ;          the output file.  Possible values are:
 ;
@@ -102,136 +102,137 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
-pro cmsvwrite, unit0, data, name=name0, compat=compat0, no_end=noend, $
-               quiet=quiet, status=status, errmsg=errmsg
+; -
+pro cmsvwrite, unit0, data, name = name0, compat = compat0, no_end = noend, $
+  quiet = quiet, status = status, errmsg = errmsg
+  compile_opt idl2
 
   status = 0
   catch, catcherr
-  if catcherr EQ 0 then lib = cmsvlib(/query) else lib = 0
+  if catcherr eq 0 then lib = cmsvlib(/query) else lib = 0
   catch, /cancel
-  if lib EQ 0 then begin
-      errmsg = 'ERROR: The CMSVLIB library must be in your IDL path.'
+  if lib eq 0 then begin
+    errmsg = 'ERROR: The CMSVLIB library must be in your IDL path.'
+    if keyword_set(quiet) then return else message, errmsg
+  endif
+
+  if n_elements(compat0) eq 0 then compat = 'IDL5' $
+  else compat = strtrim(compat0, 2)
+
+  if compat ne 'IDL4' and compat ne 'IDL5' and compat ne 'IDL6' and $
+    compat ne 'RIVAL1' then begin
+    errmsg = 'ERROR: unrecognized COMPAT value'
+  endif
+
+  ; ; Do type checking on the data
+  if n_elements(data) eq 0 then begin
+    errmsg = 'ERROR: DATA must be defined'
+    if keyword_set(quiet) then return else message, errmsg
+  endif
+
+  if double(!version.release) gt 4d then begin
+    has_objects = 0
+    cmsv_ptrsum, null, /null
+    cmsv_ptrsum, data, pheap, has_objects = has_objects
+
+    if n_elements(pheap) gt 1 then goto, ptr_error
+    if pheap[0] ne null or has_objects then begin
+      ptr_error:
+      errmsg = 'ERROR: CMSVWRITE cannot save pointers or objects'
       if keyword_set(quiet) then return else message, errmsg
+    endif
   endif
 
-  if n_elements(compat0) EQ 0 then compat = 'IDL5' $
-  else                             compat = strtrim(compat0,2)
-
-  if compat NE 'IDL4' AND compat NE 'IDL5' AND compat NE 'IDL6' AND $
-    compat NE 'RIVAL1' then begin
-      errmsg = 'ERROR: unrecognized COMPAT value'
+  if n_elements(unit0) eq 0 then begin
+    errmsg = 'ERROR: UNIT is not defined'
+    if keyword_set(quiet) then return else message, errmsg
   endif
-    
-  ;; Do type checking on the data
-  if n_elements(data) EQ 0 then begin
-      errmsg = 'ERROR: DATA must be defined'
-      if keyword_set(quiet) then return else message, errmsg
-  endif
-
-  if double(!version.release) GT 4D then begin
-      has_objects = 0
-      cmsv_ptrsum, null, /null
-      cmsv_ptrsum, data, pheap, has_objects=has_objects
-
-      if n_elements(pheap) GT 1 then goto, PTR_ERROR
-      if pheap(0) NE null OR has_objects then begin
-          PTR_ERROR:
-          errmsg =  'ERROR: CMSVWRITE cannot save pointers or objects'
-          if keyword_set(quiet) then return else message, errmsg
-      endif
-  endif
-
-  if n_elements(unit0) EQ 0 then begin
-      errmsg = 'ERROR: UNIT is not defined'
-      if keyword_set(quiet) then return else message, errmsg
-  endif
-  unit = floor(unit0(0))
+  unit = floor(unit0[0])
 
   stat = fstat(unit)
-  if stat.write EQ 0 OR stat.open EQ 0 then begin
-      errmsg = 'ERROR: UNIT is not open for writing'
-      if keyword_set(quiet) then return else message, errmsg
+  if stat.write eq 0 or stat.open eq 0 then begin
+    errmsg = 'ERROR: UNIT is not open for writing'
+    if keyword_set(quiet) then return else message, errmsg
   endif
 
-  ;; We are at the beginning of the file, make sure this is a proper
-  ;; IDL save file.
-  if stat.cur_ptr EQ 0 then begin
-      ;; Open the file
-      cmsv_open, unit, 'FILENAME', off0, access='W', /reopen, $
-        status=status, errmsg=errmsg
-      if status EQ 0 then begin
-          if keyword_set(quiet) then return else message, errmsg
-      endif
+  ; ; We are at the beginning of the file, make sure this is a proper
+  ; ; IDL save file.
+  if stat.cur_ptr eq 0 then begin
+    ; ; Open the file
+    cmsv_open, unit, 'FILENAME', off0, access = 'W', /reopen, $
+      status = status, errmsg = errmsg
+    if status eq 0 then begin
+      if keyword_set(quiet) then return else message, errmsg
+    endif
 
-      ;; Write the opening records which establish the version number
-      ;; and time stamp.
-      pp = 0L
-      cmsv_wrec, block, pp, block_name='TIMESTAMP', offset=off0, $
-        status=status, errmsg=errmsg
-      if (status NE 0) AND (compat NE 'IDL4') then $
-        cmsv_wrec, block, pp, block_name='VERSION', offset=off0, $
-        compat=compat, status=status, errmsg=errmsg
-      if status EQ 0 then begin
-          if keyword_set(quiet) then return else message, errmsg
-      endif
+    ; ; Write the opening records which establish the version number
+    ; ; and time stamp.
+    pp = 0l
+    cmsv_wrec, block, pp, block_name = 'TIMESTAMP', offset = off0, $
+      status = status, errmsg = errmsg
+    if (status ne 0) and (compat ne 'IDL4') then $
+      cmsv_wrec, block, pp, block_name = 'VERSION', offset = off0, $
+      compat = compat, status = status, errmsg = errmsg
+    if status eq 0 then begin
+      if keyword_set(quiet) then return else message, errmsg
+    endif
 
-
-      ;; Write the block
-      writeu, unit, block(0:pp-1)
+    ; ; Write the block
+    writeu, unit, block[0 : pp - 1]
   endif
   point_lun, -unit, off0
 
-  ;; Construct a name for this variable, if one wasn't provided
-  if n_elements(name0) EQ 0 then begin
-      DEFAULT_NAME:
-      name = string(off0, format='("CMSV_",Z8.8)')
+  ; ; Construct a name for this variable, if one wasn't provided
+  if n_elements(name0) eq 0 then begin
+    default_name:
+    name = string(off0, format = '("CMSV_",Z8.8)')
   endif else begin
-      name = strupcase(strtrim(name0(0),2))
-      if name EQ '' then goto, DEFAULT_NAME
+    name = strupcase(strtrim(name0[0], 2))
+    if name eq '' then goto, default_name
   endelse
 
-  pp = 0L
-  block = 0 & dummy = temporary(block)
+  pp = 0l
+  block = 0
+  dummy = temporary(block)
 
-  ;; Make a block and write out the variable type and data.  The
-  ;; following procedure is required.  First, we create a new block,
-  ;; which establishes the header and record type (VARIABLE).  Second
-  ;; we write out the variable type.  Finally we write the actual
-  ;; data, and call the "finblock" procedure which rewrites the header
-  ;; record to have the correct "next" pointer.
-  ;; 
-  ;; Note that all these procedures write to a block in memory first,
-  ;; and only at the end is the block written to disk.
+  ; ; Make a block and write out the variable type and data.  The
+  ; ; following procedure is required.  First, we create a new block,
+  ; ; which establishes the header and record type (VARIABLE).  Second
+  ; ; we write out the variable type.  Finally we write the actual
+  ; ; data, and call the "finblock" procedure which rewrites the header
+  ; ; record to have the correct "next" pointer.
+  ; ;
+  ; ; Note that all these procedures write to a block in memory first,
+  ; ; and only at the end is the block written to disk.
   sz = size(data)
   off1 = pp
-  cmsv_wrec, block, pp, data, name, block_name='VARIABLE', $
-    /init, offset=off0, $
-    status=status, errmsg=errmsg
-  if status EQ 0 then begin
-      if keyword_set(quiet) then return else message, errmsg
+  cmsv_wrec, block, pp, data, name, block_name = 'VARIABLE', $
+    /init, offset = off0, $
+    status = status, errmsg = errmsg
+  if status eq 0 then begin
+    if keyword_set(quiet) then return else message, errmsg
   endif
 
-  ;; Now write out an end marker block, which will serve to terminate
-  ;; the file in case the user closes it.  We will rewind to this
-  ;; point in case new writes occur, so they will overwrite the end
-  ;; block.
+  ; ; Now write out an end marker block, which will serve to terminate
+  ; ; the file in case the user closes it.  We will rewind to this
+  ; ; point in case new writes occur, so they will overwrite the end
+  ; ; block.
 
   eoff = off0 + pp
-  if NOT keyword_set(noend) then begin
-      cmsv_wrec, block, pp, block_name='END_MARKER', offset=off0, $
-        status=status, errmsg=errmsg
-      if status EQ 0 then begin
-          if keyword_set(quiet) then return else message, errmsg
-      endif
+  if not keyword_set(noend) then begin
+    cmsv_wrec, block, pp, block_name = 'END_MARKER', offset = off0, $
+      status = status, errmsg = errmsg
+    if status eq 0 then begin
+      if keyword_set(quiet) then return else message, errmsg
+    endif
   endif
 
-  writeu, unit, block(0:pp-1)
+  writeu, unit, block[0 : pp - 1]
   block = 0
-  
-  ;; Now rewind the file pointer so that it points at the end marker.
-  ;; Any new writes will overwrite the marker.
-  if NOT keyword_set(noend) then point_lun, unit, eoff
+
+  ; ; Now rewind the file pointer so that it points at the end marker.
+  ; ; Any new writes will overwrite the marker.
+  if not keyword_set(noend) then point_lun, unit, eoff
 
   status = 1
   return

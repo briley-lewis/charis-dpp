@@ -1,117 +1,132 @@
-pro charis_snratio,cube,coord=coord,expfilt=expfilt,rmax=rmax,exc=exc,filter=filter,fixpos=fixpos,zero=zero,$
-roimask=roimask,$
-colimage=colimage
-;computes a SNR map of a CHARIS wavelength-collapsed and each wavelength slice of a data cube
+pro charis_snratio, cube, coord = coord, expfilt = expfilt, rmax = rmax, exc = exc, filter = filter, fixpos = fixpos, zero = zero, $
+  roimask = roimask, $
+  colimage = colimage
+  compile_opt idl2
+  ; computes a SNR map of a CHARIS wavelength-collapsed and each wavelength slice of a data cube
 
-;Input:
-;cube - the name of the data cube for which you want to compute SNR
-;(collapsed image)
+  ; Input:
+  ; cube - the name of the data cube for which you want to compute SNR
+  ; (collapsed image)
 
-;Output: 
-;snrmap_col.fits - the SNR map of the wavelength-collapsed image
-;snrmap_cube.fits - the SNR map of the data cube
+  ; Output:
+  ; snrmap_col.fits - the SNR map of the wavelength-collapsed image
+  ; snrmap_cube.fits - the SNR map of the data cube
 
-;Free parameters/Switches
-;colimage - overrides the name of the wavelength-collapsed image
-;coord - perform a SNR estimate of a given position in the cube/image
-;fixpos - 'fix' this position: e.g. do not try to get a centroid estimate of the position
-;zero, filter - subtract the median count value in the image before computing sigma; spatially filter the image before computing sigma
-;expfilt - increase the box size for the spatial filter
+  ; Free parameters/Switches
+  ; colimage - overrides the name of the wavelength-collapsed image
+  ; coord - perform a SNR estimate of a given position in the cube/image
+  ; fixpos - 'fix' this position: e.g. do not try to get a centroid estimate of the position
+  ; zero, filter - subtract the median count value in the image before computing sigma; spatially filter the image before computing sigma
+  ; expfilt - increase the box size for the spatial filter
 
-;rmax = set the maximum outer radius for computation
-;exc = set the exclusion region masked in the SNR calculation for a given position
+  ; rmax = set the maximum outer radius for computation
+  ; exc = set the exclusion region masked in the SNR calculation for a given position
 
-;SNR is computed ...
-; -1. blindly
-; OR
-; -2. avoiding regions around a point source if "coord" switch is set
-;note that not using 'alt' produces potentially skewed results with any non-zero value of exc
+  ; SNR is computed ...
+  ; -1. blindly
+  ; OR
+  ; -2. avoiding regions around a point source if "coord" switch is set
+  ; note that not using 'alt' produces potentially skewed results with any non-zero value of exc
 
-;now, take cube name to do 
-cubename=cube
+  ; now, take cube name to do
+  cubename = cube
+  
+  ; Build output filenames from the input cube name
+  cube_dir  = file_dirname(cubename)            ; e.g. /path/to
+  cube_base = file_basename(cubename)           ; e.g. rdiklip01.fits
 
-if ~keyword_set(colimage) then begin
-collapsedname=(strsplit(cubename,'.',/extract))[0]+'_collapsed.fits'
-endif else begin
-collapsedname=colimage
-endelse
+  ; Strip the extension (more robust than strsplit if filename has extra dots)
+  dotpos = strpos(cube_base, '.', /reverse_search)
+  if dotpos ge 0 then cube_root = strmid(cube_base, 0, dotpos) else cube_root = cube_base
 
-;now, pull the fits header to get information about this cube
-h0=headfits(cubename)
-h1=headfits(cubename,ext=1)
+  snrmap_col_out  = cube_dir + '/' + cube_root + '_snrmap_col.fits'
+  snrmap_cube_out = cube_dir + '/' + cube_root + '_snrmap_cube.fits'
 
-;wavelength array
-get_charis_wvlh,h0,wvlh_charis
-lambda=1d-3*wvlh_charis
+  print, 'Collapsed SNR map will be saved to: ', snrmap_col_out
+  print, 'Cube SNR map will be saved to: ', snrmap_cube_out
 
-;pixel scale
-pixscale=charis_get_constant(name='pixscale')
+  if ~keyword_set(colimage) then begin
+    collapsedname = (strsplit(cubename, '.', /extract))[0] + '_collapsed.fits'
+  endif else begin
+    collapsedname = colimage
+  endelse
 
-;effective telescope pupil size
-Dtel=charis_get_constant(name='Dtel')
+  ; now, pull the fits header to get information about this cube
+  h0 = headfits(cubename)
+  h1 = headfits(cubename, ext = 1)
 
-;FWHM in each slice; FWHM in the collapsed cube
-fwhmarray=1.*(1.d-6*lambda/Dtel)*(180.*3600./!dpi)/pixscale
-fwhmcollapsed=median(fwhmarray,/even)
+  ; wavelength array
+  get_charis_wvlh, h0, wvlh_charis
+  lambda = 1d-3 * wvlh_charis
 
-if keyword_set(coord) then begin
-xc=coord[0]
-yc=coord[1]
-endif
+  ; pixel scale
+  pixscale = charis_get_constant(name = 'pixscale')
 
-if ~keyword_set(rmax) then rmax=70.
-if ~keyword_set(exc) then exc=1.5
+  ; effective telescope pupil size
+  Dtel = charis_get_constant(name = 'Dtel')
 
-;Data Cube; Collapsed Data Cube
-imcube=readfits(cubename,ext=1)
-imcol=readfits(collapsedname,ext=1)
+  ; FWHM in each slice; FWHM in the collapsed cube
+  fwhmarray = 1. * (1.d-6 * lambda / Dtel) * (180. * 3600. / !dpi) / pixscale
+  fwhmcollapsed = median(fwhmarray, /even)
 
-;expfilt=1
-;expfilt0=3
-;if keyword_set(expfilt) then expfilt=expfilt0
+  if keyword_set(coord) then begin
+    xc = coord[0]
+    yc = coord[1]
+  endif
 
-s=size(imcol)
-dimx=s[1] & dimy=s[2]
-xcen=dimx/2 & ycen=dimy/2
+  if ~keyword_set(rmax) then rmax = 70.
+  if ~keyword_set(exc) then exc = 1.5
 
-snrmap_collapsed=fltarr(dimx,dimy)
-snrmap_cube=fltarr(dimx,dimy,n_elements(fwhmarray))
+  ; Data Cube; Collapsed Data Cube
+  imcube = readfits(cubename, ext = 1)
+  imcol = readfits(collapsedname, ext = 1)
 
-;Now do SNR for collapsed cube
+  ; expfilt=1
+  ; expfilt0=3
+  ; if keyword_set(expfilt) then expfilt=expfilt0
 
-print,'Calculating SNR Map for Wavelength-Collapsed Image'
-;print,fwhmcollapsed
+  s = size(imcol)
+  dimx = s[1]
+  dimy = s[2]
+  xcen = dimx / 2
+  ycen = dimy / 2
 
-charis_snratio_sub,imcol,coord=coord,fwhm=fwhmcollapsed,rmax=rmax,snrval=snrvalcol,expfilt=expfilt,$
-  exc=exc,filter=filter,fixpos=fixpos,zero=zero,/finite,snrmap=snrmapo,noisemap=noisemap,roimask=roimask,/silent
+  snrmap_collapsed = fltarr(dimx, dimy)
+  snrmap_cube = fltarr(dimx, dimy, n_elements(fwhmarray))
 
-snrmap_collapsed=snrmapo
+  ; Now do SNR for collapsed cube
 
-if keyword_set(coord) then begin
-print,'SNR in Collapsed Image is ',snrvalcol
-endif
+  print, 'Calculating SNR Map for Wavelength-Collapsed Image'
+  ; print,fwhmcollapsed
 
-writefits,'snrmap_col.fits',snrmap_collapsed,h1
-;Now do SNR for cube
-for i=0L,n_elements(wvlh_charis)-1 do begin
-imslice=imcube[*,*,i]
-;if keyword_set(filter) then imslice-=filter_image(imslice,median=5*expfilt*fwhmarray[i])
+  charis_snratio_sub, imcol, coord = coord, fwhm = fwhmcollapsed, rmax = rmax, snrval = snrvalcol, expfilt = expfilt, $
+    exc = exc, filter = filter, fixpos = fixpos, zero = zero, /finite, snrmap = snrmapo, noisemap = noisemap, roimask = roimask, /silent
 
-;
-print,'Calculating SNR Map for Slice ',strtrim(string(i+1),2),'/',strtrim(string(n_elements(wvlh_charis)),2)
+  snrmap_collapsed = snrmapo
 
-charis_snratio_sub,imcube[*,*,i],coord=coord,fwhm=fwhmarray[i],rmax=rmax,snrval=snrval,expfilt=expfilt,$
-exc=exc,filter=filter,fixpos=fixpos,zero=zero,/finite,snrmap=snrmapo,noisemap=noisemap,roimask=roimask,/silent
+  if keyword_set(coord) then begin
+    print, 'SNR in Collapsed Image is ', snrvalcol
+  endif
 
-snrmap_cube[*,*,i]=snrmapo
-if keyword_set(coord) then begin
-print,'SNR in Slice ',strtrim(string(i+1),2),'/',strtrim(string(n_elements(wvlh_charis)),2),' is ',snrval
-endif
+  writefits, snrmap_col_out, snrmap_collapsed, h1
+  ; Now do SNR for cube
+  for i = 0l, n_elements(wvlh_charis) - 1 do begin
+    imslice = imcube[*, *, i]
+    ; if keyword_set(filter) then imslice-=filter_image(imslice,median=5*expfilt*fwhmarray[i])
 
-endfor
+    ;
+    print, 'Calculating SNR Map for Slice ', strtrim(string(i + 1), 2), '/', strtrim(string(n_elements(wvlh_charis)), 2)
 
-;now, write the output
+    charis_snratio_sub, imcube[*, *, i], coord = coord, fwhm = fwhmarray[i], rmax = rmax, snrval = snrval, expfilt = expfilt, $
+      exc = exc, filter = filter, fixpos = fixpos, zero = zero, /finite, snrmap = snrmapo, noisemap = noisemap, roimask = roimask, /silent
 
-writefits,'snrmap_cube.fits',snrmap_cube,h1
+    snrmap_cube[*, *, i] = snrmapo
+    if keyword_set(coord) then begin
+      print, 'SNR in Slice ', strtrim(string(i + 1), 2), '/', strtrim(string(n_elements(wvlh_charis)), 2), ' is ', snrval
+    endif
+  endfor
 
+  ; now, write the output
+
+  writefits, snrmap_cube_out, snrmap_cube, h1
 end

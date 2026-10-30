@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE: 
+;   UPDATED VERSIONs can be found on my WEB PAGE:
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -20,7 +20,7 @@
 ; DESCRIPTION:
 ;
 ;  The function QTAXIS accepts a unit quaternion Q and returns the
-;  rotation axis VAXIS as a unit vector.  
+;  rotation axis VAXIS as a unit vector.
 ;
 ;  Use QTAXIS and QTANG to extract the properties of an existing
 ;  quaternion.  Use QTCOMPOSE to combine a rotation axis and angle
@@ -83,23 +83,24 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-;-
+; -
 function qtaxis, q
+  compile_opt idl2
 
-  if n_params() EQ 0 then begin
-      info = 1
-      USAGE:
-      message, 'USAGE:', /info
-      message, 'AXIS = QTAXIS(Q)', info=info
-      return, 0
+  if n_params() eq 0 then begin
+    info = 1
+    usage:
+    message, 'USAGE:', /info
+    message, 'AXIS = QTAXIS(Q)', info = info
+    return, 0
   endif
 
-  nq = n_elements(q)/4
-  if nq LT 1 then goto, USAGE
+  nq = n_elements(q) / 4
+  if nq lt 1 then goto, usage
 
-  v = q(0:2,*)
-  sinth = sqrt(total(v^2,1))
-  wh = where(sinth NE 0, ct)
-  if ct GT 0 then v(*,wh) = v(*,wh) / rebin(reform(sinth(wh),1,ct),3,ct)
+  v = q[0 : 2, *]
+  sinth = sqrt(total(v ^ 2, 1))
+  wh = where(sinth ne 0, ct)
+  if ct gt 0 then v[*, wh] = v[*, wh] / rebin(reform(sinth[wh], 1, ct), 3, ct)
   return, v
 end
