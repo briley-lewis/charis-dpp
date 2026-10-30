@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=68", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "charis-dpp"
+version = "0.1.0"
+description = "CHARIS Data Processing Pipeline — Python port of the SCExAO/CHARIS IFS reduction pipeline"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+authors = [{ name = "Thayne Currie" }, { name = "Briley Lewis" }]
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "astropy>=6.0",
+    "photutils>=1.10",
+    "astroquery>=0.4.7",
+    "matplotlib>=3.8",
+    "tomli-w>=1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-cov", "ruff>=0.5"]
+xcorr = ["scikit-image>=0.22"]
+
+[project.scripts]
+charis = "charis_dpp.cli.main:main"
+
+[project.urls]
+Repository = "https://github.com/briley-lewis/charis-dpp"
+
+[tool.setuptools.packages.find]
+include = ["charis_dpp*"]
+
+[tool.setuptools.package-data]
+charis_dpp = ["data/**/*.toml", "data/**/*.txt", "data/**/*.csv", "data/**/*.dat"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "slow: end-to-end tests on synthetic data (minutes)",
+    "regression: comparisons against IDL outputs; needs CHARIS_DPP_TESTDATA",
+]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["charis_dpp", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "NPY"]
+ignore = ["E741"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011"]

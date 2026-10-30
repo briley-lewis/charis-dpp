@@ -1,0 +1,216 @@
+# SCExAO/CHARIS instrument constants, by epoch.
+#
+# Every physical or calibration fact that is "true of the instrument at a date"
+# lives here.  Values are resolved with `Instrument.for_mjd(mjd)`: all
+# `[[epoch]]` blocks whose `valid_from` is <= the observation date are merged in
+# order, so a later epoch only needs to state what changed.  A dataset's
+# `[instrument]` table overrides any key for that dataset only.
+#
+# Units are in the key names (_m, _arcsec, _deg, _px, _nm, _um, _s, _mas).
+# Pixel positions are 0-based and given RELATIVE TO THE FRAME CENTRE so that
+# they are valid for any frame size (the IDL code assumed 201x201 frames with
+# the star at pixel 100,100).
+#
+# Sources: idl/setup/charis_get_constant.pro, idl/cals/get_charis_sat_contrast.pro,
+# idl/prelims/charis_imprep.pro, idl/prelims/charis_nbs_corr.pro,
+# idl/pdi/**, idl/specphotcal/charis_get_phot_zeropoint.pro,
+# idl/tools/filters/charis_get_phot_bandwidth.pro.
+
+schema_version = 1
+
+[site]
+name = "Subaru / Maunakea"
+# The IDL tree used three latitudes (19.825504, 19.825, 19.823806) and two
+# longitudes (-155.47602, -155.4802); this is the one imprep wrote to headers.
+latitude_deg = 19.825504
+longitude_deg = -155.47602
+elevation_m = 4139.0
+
+[detector]
+# Single-read integration time; total exposure = read_time_s * (LASTRD - FIRSTRD + 1).
+read_time_s = 1.475
+# CHARIS extracted cubes are already in counts/s, so no exposure-time ratio is
+# applied between science and calibration cubes.
+counts_per_second = true
+
+[bands.lowres]
+aliases = ["Broadband", "broadband", "low", "lowres"]
+wavelengths_file = "cals/lowres_wvlh.txt"       # nm, one per channel
+reference_channel = "auto"                       # nearest geometric-mean wavelength (-> 10)
+telluric_um = [[1.35, 1.45], [1.80, 1.95]]       # water bands; channels inside are masked
+sub_bands_um = { J = [1.15, 1.345], H = [1.49, 1.78], K = [2.03, 2.38] }
+
+[bands.J]
+aliases = ["J", "j"]
+wavelengths_file = "cals/highres_jwvlh.txt"
+reference_channel = "auto"
+telluric_um = []
+sub_bands_um = { J = [1.15, 1.345] }
+
+[bands.H]
+aliases = ["H", "h"]
+wavelengths_file = "cals/highres_hwvlh.txt"
+reference_channel = "auto"
+telluric_um = []
+sub_bands_um = { H = [1.49, 1.78] }
+
+[bands.K]
+aliases = ["K", "k", "Ks"]
+wavelengths_file = "cals/highres_kwvlh.txt"
+reference_channel = "auto"
+telluric_um = []
+sub_bands_um = { K = [2.03, 2.38] }
+
+# Photometric zero points (Vega system) and effective bandwidths.  Single
+# table replacing charis_get_phot_zeropoint.pro, charis_get_phot_bandwidth.pro
+# and the slightly different numbers hard-coded in charis_est_bbphot.pro.
+[photometry.zeropoints]
+Y    = { f0_jy = 2026.0, lam_um = 1.03, dlam_um = 0.0996, system = "MKO" }
+J    = { f0_jy = 1560.0, lam_um = 1.25, dlam_um = 0.163,  system = "MKO" }
+H    = { f0_jy = 1050.0, lam_um = 1.65, dlam_um = 0.296,  system = "MKO" }
+K    = { f0_jy = 667.0,  lam_um = 2.15, dlam_um = 0.311,  system = "MKO" }
+Ks   = { f0_jy = 666.7,  lam_um = 2.16, dlam_um = 0.311,  system = "2MASS" }
+J2M  = { f0_jy = 1594.0, lam_um = 1.26, dlam_um = 0.162,  system = "2MASS" }
+H2M  = { f0_jy = 1024.0, lam_um = 1.66, dlam_um = 0.251,  system = "2MASS" }
+H2O  = { f0_jy = 356.0,  lam_um = 3.05, dlam_um = 0.1549, system = "NIRC2" }
+PAH  = { f0_jy = 313.0,  lam_um = 3.29, dlam_um = 0.0555, system = "NIRC2" }
+Lp   = { f0_jy = 248.0,  lam_um = 3.78, dlam_um = 0.70,   system = "MKO" }
+BrA  = { f0_jy = 207.0,  lam_um = 4.05, dlam_um = 0.068,  system = "NIRC2" }
+Ms   = { f0_jy = 163.0,  lam_um = 4.68, dlam_um = 0.241,  system = "MKO" }
+M    = { f0_jy = 154.0,  lam_um = 4.78, dlam_um = 0.241,  system = "MKO" }
+
+# Filter response curves shipped in data/filter_response/.  Each entry records
+# the file's own units so the reader can normalise them.
+[photometry.filters]
+J   = { file = "filter_response/Jband.dat",  wavelength_unit = "nm", transmission = "fraction", header_lines = 0 }
+H   = { file = "filter_response/Hband.dat",  wavelength_unit = "nm", transmission = "fraction", header_lines = 0 }
+Ks  = { file = "filter_response/Ksband.dat", wavelength_unit = "nm", transmission = "fraction", header_lines = 0 }
+Lp  = { file = "filter_response/Lpband.dat", wavelength_unit = "nm", transmission = "fraction", header_lines = 0 }
+Ms  = { file = "filter_response/Msband.dat", wavelength_unit = "um", transmission = "fraction", header_lines = 1 }
+Y   = { file = "filter_response/Ybandest.dat", wavelength_unit = "nm", transmission = "fraction", header_lines = "#" }
+CH4s = { file = "filter_response/CH4s.dat", wavelength_unit = "nm", transmission = "percent", header_lines = 3 }
+CH4l = { file = "filter_response/CH4l.dat", wavelength_unit = "nm", transmission = "percent", header_lines = 3 }
+H2O  = { file = "filter_response/h20_ice_309.dat", wavelength_unit = "nm", transmission = "percent", header_lines = 3 }
+BrA  = { file = "filter_response/bralpha_405.dat", wavelength_unit = "cm-1", transmission = "percent", header_lines = "#" }
+J2M  = { file = "filter_response/j2m.dat", wavelength_unit = "um", transmission = "fraction", header_lines = 0 }
+H2M  = { file = "filter_response/h2m.dat", wavelength_unit = "um", transmission = "fraction", header_lines = 0 }
+
+# ---------------------------------------------------------------------------
+# Epochs.  Dates are ISO; they are converted to MJD at load time.
+# ---------------------------------------------------------------------------
+
+[[epoch]]
+valid_from = "2016-01-01"
+label = "commissioning"
+source = "idl/setup/charis_get_constant.pro (pre-Oct-2024 values), get_charis_sat_contrast.pro"
+dtel_m = 7.9
+pixscale_arcsec = 0.0162
+north_offset_deg = 2.2            # angle to rotate for north-up ("angoffset")
+parity = 1                        # +1: east-right as delivered; -1: x already flipped (post-NBS)
+
+[epoch.sat_spots]
+reference_wavelength_um = 1.55
+default_modulation_nm = 25
+nominal_astrogrid_lambda_d = 15.9
+# contrast (mag, star/spot) at the reference wavelength, by modulation
+# amplitude.  Other amplitudes scale as (mod/25)^2 in flux; wavelength scales
+# as (ref/lambda)^2.
+contrast_mag = { "25" = 7.5037, "50" = 5.991 }
+contrast_err_mag = { "25" = 0.06, "50" = 0.06 }
+manual_err_mag = 0.05
+# Default spot guesses, (x, y) offsets from the frame centre in pixels, for
+# the nominal 15.9 lambda/D grid (scaled by astrogrid/15.9 at run time).
+# Converted from the 201x201 absolute positions in charis_get_constant.pro.
+guess_xy.lowres = [[-40.8, 13.5], [12.5, 41.0], [41.75, -13.5], [-13.0, -41.0]]
+guess_xy.J      = [[-32.1, 10.7], [10.0, 32.2], [32.0, -10.7], [-10.1, -32.3]]
+guess_xy.H      = [[-40.8, 13.5], [12.9, 41.1], [41.8, -13.5], [-13.04, -41.13]]
+guess_xy.K      = [[-55.5, 18.5], [17.5, 56.0], [57.06, -18.5], [-17.5, -56.0]]
+
+[epoch.health]
+# charis_check_health: science vs sky classification, radii in px
+bad_radius_px = 60
+inner_radius_px = 20
+outer_radius_px = 60
+science_ratio = 3.0
+max_bad_pixels = 5
+
+[epoch.pdi]
+astrogrid_lambda_d = 11.2
+polcent_offset_px = [31.758, 16.542]     # Wollaston beam offset from centre (x, y)
+fov_mask = { half_size_px = 125, angle_deg = -26.9166 }
+hwp_angles_deg = [0.0, 22.5, 45.0, 67.5]
+hwp_position_order = [0, 1, 2, 3]       # index of each angle above in a cycle
+beam_centre_offsets_px = [[-30, -16], [30, 16]]   # left, right (check_health)
+split_line = { slope = -1.887, intercept_px = 286.8 }  # y < slope*x + b  (201x201 frame)
+
+[epoch.pdi.mueller]
+source = "McIntosh et al. 2026 (SPIE); Hart et al. 2021"
+wavelength_fits_csv = "pdi/mcintosh_2026_spie_wavelength_fits.csv"
+dtheta_hwp_deg = -0.04
+dtheta_der_deg = -0.02
+parity_applied_upstream = false   # true only when `parity = -1` (post-NBS x flip)
+
+[epoch.pdi.mueller.hwp]
+w_sio2_mm = 1.653
+w_mgf2_mm = 1.291                 # McIntosh+2026
+epsilon = 0.0                     # ideal diattenuation (Hart+2021)
+# Sellmeier coefficients: n^2 = A + B*L2/(L2-C) + D*L2/(L2-E), L2 = lambda_um^2
+sio2_o = [1.28604141, 1.07044083, 1.00585997e-2, 1.10202242, 100.0]   # Ghosh 1999
+sio2_e = [1.28851804, 1.09509924, 1.02101864e-2, 1.15662475, 100.0]
+# MgF2 (Dodge 1984, refractiveindex.info form): n^2 = 1 + sum B_i L2/(L2 - C_i^2)
+mgf2_o = [[0.48755108, 0.04338408], [0.39875031, 0.09461442], [2.3120353, 23.793604]]
+mgf2_e = [[0.41344023, 0.03684262], [0.50497499, 0.09076162], [2.4904862, 23.771995]]
+
+[epoch.pdi.mueller.m3]
+# Complex-permittivity power-law fit: eps_r1 = -(10^b1) lambda^m1, eps_r2 = (10^b2) lambda^m2 (lambda in m)
+source = "Hart et al. 2021 fit (pre-recoat); idl/pdi/mueller_matrix/component_models/m3_model.pro before commit c6c5929"
+m1 = 2.104
+b1 = 14.20
+m2 = 2.100
+b2 = 13.20
+n_air = 1.0
+incidence_deg = 45.0
+
+[epoch.pdi.mueller.derotator]
+epsilon = 0.0                     # retardances per wavelength come from the CSV
+
+[[epoch]]
+valid_from = "2017-08-30"         # MJD 57995
+label = "satspot-recal-2017"
+source = "idl/cals/get_charis_sat_contrast.pro"
+[epoch.sat_spots]
+contrast_mag = { "25" = 6.412, "50" = 4.92 }
+contrast_err_mag = { "25" = 0.05, "50" = 0.05 }
+
+[[epoch]]
+valid_from = "2024-10-18"
+label = "Chen2023"
+source = "Chen et al. 2023 astrometric calibration; fork commit c964cfe"
+dtel_m = 7.92
+pixscale_arcsec = 0.01615
+north_offset_deg = 2.03
+
+[[epoch]]
+valid_from = "2025-09-05"         # MJD 60923; IDL tests mjd > 60933.0 (~2025-09-15)
+label = "post-NBS"
+source = "idl/prelims/charis_nbs_corr.pro"
+valid_from_mjd = 60933.0          # exact threshold used by the IDL code (overrides the date above)
+parity = -1
+[epoch.nbs]
+rotzp_deg = 34.7                  # alternatives tried: 32.3, 33.5
+north_rule = "totrot = -(PARANG + (113 - rotzp))"
+flip_axis = "x"
+[epoch.pdi.mueller]
+parity_applied_upstream = true
+
+[[epoch]]
+valid_from = "2026-06-01"
+label = "M3-recoat-2026"
+source = "placeholder — confirm with T. McIntosh (fork commit c6c5929, 2026-08-06, 'recent m3 post recoat')"
+placeholder_date = true
+[epoch.pdi.mueller.m3]
+source = "new unpolarised-standard fit post 2026 M3 silver recoat (McIntosh+2026)"
+m1 = 1.768
+b1 = 12.77
+m2 = 2.455
+b2 = 15.67
