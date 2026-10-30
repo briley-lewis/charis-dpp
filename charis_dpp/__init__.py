@@ -6,7 +6,11 @@ Sub-packages mirror the IDL layout: ``prelims``, ``skysub``, ``reg``,
 ``geometry``, ``image`` and ``astro``.
 """
 
+import warnings
 from importlib.metadata import PackageNotFoundError, version
+
+warnings.filterwarnings("ignore", message="All-NaN slice encountered")
+warnings.filterwarnings("ignore", message="Mean of empty slice")
 
 try:
     __version__ = version("charis-dpp")
