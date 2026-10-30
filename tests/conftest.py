@@ -37,6 +37,44 @@ def synthetic_dataset(tmp_path_factory) -> Path:
     return out
 
 
+@pytest.fixture(scope="session")
+def reduced_dataset(synthetic_dataset: Path, tmp_path_factory):
+    """Synthetic dataset reduced through registration, calibration, filtering and A-LOCI."""
+    import json
+    import shutil
+
+    from charis_dpp.filt import imrsub
+    from charis_dpp.prelims.imprep import imprep
+    from charis_dpp.psfsub import adialoci
+    from charis_dpp.reg import register_cube
+    from charis_dpp.skysub import subtract_sky
+    from charis_dpp.specphotcal import make_empirical_psf, specphot_cal
+
+    d = tmp_path_factory.mktemp("reduced")
+    shutil.copytree(synthetic_dataset, d, dirs_exist_ok=True)
+    cfg = next(d.glob("*.toml"))
+    imprep(cfg)
+    subtract_sky(cfg)
+    register_cube(cfg)
+    specphot_cal(cfg, calmethod=1, starlib="pickles")
+    make_empirical_psf(cfg)
+    imrsub(cfg, prad=True)
+    adialoci(
+        cfg,
+        rsubval=1,
+        nfwhm=0.75,
+        drsub=5,
+        na=100,
+        svd=1e-6,
+        nref=0,
+        rmin=6,
+        rmax=40,
+        outfile="aloci.fits",
+    )
+    truth = json.loads((d / "truth.json").read_text())
+    return d, cfg, truth
+
+
 def pytest_collection_modifyitems(config, items):
     if not os.environ.get("CHARIS_DPP_TESTDATA"):
         skip = pytest.mark.skip(reason="set CHARIS_DPP_TESTDATA to run regression tests")

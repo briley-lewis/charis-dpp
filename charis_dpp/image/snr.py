@@ -92,7 +92,8 @@ def snr_map(
         if zero:
             a = a - radial_profile_2d(a * immask, 1.0, 0.0, rmax, (xc, yc))
         n = radial_profile_2d(np.abs(a * immask) / 0.6745, 1.0, 0.0, rmax, (xc, yc))
-        return n * corr
+        n = n * corr
+        return np.where(n > 0, n, np.nan)  # no azimuthal scatter → no SNR, not an infinite one
 
     noise = noise_of(im1)
     with np.errstate(divide="ignore", invalid="ignore"):

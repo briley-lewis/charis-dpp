@@ -2,37 +2,21 @@
 
 from __future__ import annotations
 
-import json
-import shutil
 from pathlib import Path
 
 import numpy as np
 import pytest
-from charis_dpp.filt import imrsub
 from charis_dpp.geometry.apertures import aper_idl
 from charis_dpp.image.snr import snr_map
 from charis_dpp.io.fits import read_cube
-from charis_dpp.prelims.imprep import imprep
 from charis_dpp.psfsub import adialoci, adiklip
-from charis_dpp.reg import register_cube
-from charis_dpp.skysub import subtract_sky
-from charis_dpp.specphotcal import specphot_cal
 
 pytestmark = pytest.mark.slow
 
 
 @pytest.fixture(scope="module")
-def reduced(synthetic_dataset: Path, tmp_path_factory):
-    d = tmp_path_factory.mktemp("psfsub")
-    shutil.copytree(synthetic_dataset, d, dirs_exist_ok=True)
-    cfg = next(d.glob("*.toml"))
-    imprep(cfg)
-    subtract_sky(cfg)
-    register_cube(cfg)
-    specphot_cal(cfg, calmethod=1, starlib="pickles")
-    imrsub(cfg, prad=True)
-    truth = json.loads((d / "truth.json").read_text())
-    return d, cfg, truth
+def reduced(reduced_dataset):
+    return reduced_dataset
 
 
 def _planet_snr(path: Path, truth: dict, fwhm: float) -> tuple[float, tuple[float, float]]:

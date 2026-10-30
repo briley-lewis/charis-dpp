@@ -141,6 +141,10 @@ def _header_common(
     h["AZIMUTH"] = 180.0 + parang
     h["X_GRDAMP"] = (cfg.modulation_nm * 1e-3 if cfg.sat_spots else 0.0, "sat spot modulation [um]")
     h["Y_GRDAMP"] = h["X_GRDAMP"]
+    h["X_GRDSEP"] = (
+        cfg.astrogrid_lambda_d if cfg.sat_spots else 0.0,
+        "sat spot separation [lambda/D]",
+    )
     s = inst.pixscale_arcsec / 3600.0
     a = np.deg2rad(npa)
     h["XPIXSCAL"] = s
