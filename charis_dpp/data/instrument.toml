@@ -37,8 +37,12 @@ counts_per_second = true
 aliases = ["Broadband", "broadband", "low", "lowres"]
 wavelengths_file = "cals/lowres_wvlh.txt"       # nm, one per channel
 reference_channel = "auto"                       # nearest geometric-mean wavelength (-> 10)
-telluric_um = [[1.35, 1.45], [1.80, 1.95]]       # water bands; channels inside are masked
-sub_bands_um = { J = [1.15, 1.345], H = [1.49, 1.78], K = [2.03, 2.38] }
+# water bands; channels inside are masked.  On the 22-channel grid this gives
+# channels [5, 6, 14, 15], the set used by atmosfit/empcomp in the IDL tree.
+telluric_um = [[1.36, 1.44], [1.85, 1.95]]
+# sub-band channel sets: on the 22-channel grid J=[0:4], H=[7:13], K=[16:20]
+# (the IDL contrast code's ranges; the last channel is excluded from K).
+sub_bands_um = { J = [1.15, 1.345], H = [1.45, 1.82], K = [1.98, 2.30] }
 
 [bands.J]
 aliases = ["J", "j"]
@@ -204,10 +208,9 @@ flip_axis = "x"
 parity_applied_upstream = true
 
 [[epoch]]
-valid_from = "2026-06-01"
+valid_from = "2026-04-16"         # IR M3 silver recoat (B. Lewis, pers. comm.)
 label = "M3-recoat-2026"
-source = "placeholder — confirm with T. McIntosh (fork commit c6c5929, 2026-08-06, 'recent m3 post recoat')"
-placeholder_date = true
+source = "IR M3 recoated 2026-04-16; fit values from fork commit c6c5929 (McIntosh+2026)"
 [epoch.pdi.mueller.m3]
 source = "new unpolarised-standard fit post 2026 M3 silver recoat (McIntosh+2026)"
 m1 = 1.768
