@@ -13,12 +13,14 @@ Layouts (see ``idl/models``):
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 from astropy.io import fits
 from astropy.table import Table
+from astropy.units import UnitsWarning
 
 __all__ = [
     "Spectrum",
@@ -89,7 +91,7 @@ def read_spectrum(path: str | Path, *, wavelength_unit: str = "um") -> Spectrum:
         with fits.open(path) as hdul:
             data = hdul[0].data
             if data is None:
-                return _from_table(Table.read(hdul[1]), str(path))
+                return _from_table(_read_table(hdul[1]), str(path))
             data = np.asarray(data, dtype=float)
         if data.ndim != 2:
             raise ValueError(f"{path}: unexpected spectrum shape {data.shape}")
@@ -120,6 +122,12 @@ def _to_um(wav: np.ndarray, unit: str) -> np.ndarray:
     raise ValueError(f"unknown wavelength unit {unit!r}")
 
 
+def _read_table(path, hdu=1) -> Table:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UnitsWarning)
+        return Table.read(path, hdu=hdu)
+
+
 def _from_table(t: Table, source: str) -> Spectrum:
     cols = {c.upper(): c for c in t.colnames}
     wav = np.asarray(t[cols["WAVELENGTH"]], dtype=float) * 1e-4  # Å → µm
@@ -129,12 +137,12 @@ def _from_table(t: Table, source: str) -> Spectrum:
 
 def read_vega(path: str | Path) -> Spectrum:
     """Vega STIS spectrum: wavelength Å → µm, flux erg/s/cm²/Å."""
-    return _from_table(Table.read(path, hdu=1), str(path))
+    return _from_table(_read_table(path), str(path))
 
 
 def read_kurucz(path: str | Path, logg: float) -> Spectrum:
     """Castelli–Kurucz ``ckp00_<Teff>.fits``: column ``gNN`` nearest to ``logg`` (NN = 10·logg)."""
-    t = Table.read(path, hdu=1)
+    t = _read_table(path)
     gcols = [c for c in t.colnames if c.lower().startswith("g") and c[1:].isdigit()]
     if not gcols:
         raise ValueError(f"{path}: no gNN columns")
@@ -147,4 +155,4 @@ def read_kurucz(path: str | Path, logg: float) -> Spectrum:
 
 
 def read_pickles_fits(path: str | Path) -> Spectrum:
-    return _from_table(Table.read(path, hdu=1), str(path))
+    return _from_table(_read_table(path), str(path))

@@ -29,6 +29,8 @@ elevation_m = 4139.0
 [detector]
 # Single-read integration time; total exposure = read_time_s * (LASTRD - FIRSTRD + 1).
 read_time_s = 1.475
+# Native extracted-cube size (px); pixel geometry below is defined for it.
+cube_size_px = 201
 # CHARIS extracted cubes are already in counts/s, so no exposure-time ratio is
 # applied between science and calibration cubes.
 counts_per_second = true
@@ -86,12 +88,12 @@ M    = { f0_jy = 154.0,  lam_um = 4.78, dlam_um = 0.241,  system = "MKO" }
 # Filter response curves shipped in data/filter_response/.  Each entry records
 # the file's own units so the reader can normalise them.
 [photometry.filters]
-J   = { file = "filter_response/Jband.dat",  wavelength_unit = "nm", transmission = "fraction", header_lines = 0 }
-H   = { file = "filter_response/Hband.dat",  wavelength_unit = "nm", transmission = "fraction", header_lines = 0 }
-Ks  = { file = "filter_response/Ksband.dat", wavelength_unit = "nm", transmission = "fraction", header_lines = 0 }
-Lp  = { file = "filter_response/Lpband.dat", wavelength_unit = "nm", transmission = "fraction", header_lines = 0 }
+J   = { file = "filter_response/Jband.dat",  wavelength_unit = "nm", transmission = "percent", header_lines = 0 }
+H   = { file = "filter_response/Hband.dat",  wavelength_unit = "nm", transmission = "percent", header_lines = 0 }
+Ks  = { file = "filter_response/Ksband.dat", wavelength_unit = "nm", transmission = "percent", header_lines = 0 }
+Lp  = { file = "filter_response/Lpband.dat", wavelength_unit = "nm", transmission = "percent", header_lines = 0 }
 Ms  = { file = "filter_response/Msband.dat", wavelength_unit = "um", transmission = "fraction", header_lines = 1 }
-Y   = { file = "filter_response/Ybandest.dat", wavelength_unit = "nm", transmission = "fraction", header_lines = "#" }
+Y   = { file = "filter_response/Ybandest.dat", wavelength_unit = "nm", transmission = "percent", header_lines = "#" }
 CH4s = { file = "filter_response/CH4s.dat", wavelength_unit = "nm", transmission = "percent", header_lines = 3 }
 CH4l = { file = "filter_response/CH4l.dat", wavelength_unit = "nm", transmission = "percent", header_lines = 3 }
 H2O  = { file = "filter_response/h20_ice_309.dat", wavelength_unit = "nm", transmission = "percent", header_lines = 3 }
@@ -131,10 +133,11 @@ guess_xy.H      = [[-40.8, 13.5], [12.9, 41.1], [41.8, -13.5], [-13.04, -41.13]]
 guess_xy.K      = [[-55.5, 18.5], [17.5, 56.0], [57.06, -18.5], [-17.5, -56.0]]
 
 [epoch.health]
-# charis_check_health: science vs sky classification, radii in px
-bad_radius_px = 60
-inner_radius_px = 20
-outer_radius_px = 60
+# charis_check_health: science vs sky classification.  Radii are fractions of
+# the frame width (IDL used 60/20/60 px on 201-px frames).
+bad_radius_frac = 0.30
+inner_radius_frac = 0.10
+outer_radius_frac = 0.30
 science_ratio = 3.0
 max_bad_pixels = 5
 

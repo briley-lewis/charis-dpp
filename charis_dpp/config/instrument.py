@@ -216,7 +216,7 @@ class Instrument:
             ("DTEL", self.dtel_m, "telescope diameter [m]"),
             ("PIXSCALE", self.pixscale_arcsec, "pixel scale [arcsec/px]"),
             ("NORTHOFF", self.north_offset_deg, "north offset applied for north-up [deg]"),
-            ("PARITY", self.parity, "+1 as delivered, -1 x-flipped (post-NBS)"),
+            ("INSTPAR", self.parity, "instrument parity: +1 as delivered, -1 x-flipped (post-NBS)"),
         ]
 
 

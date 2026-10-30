@@ -68,7 +68,7 @@ class SyntheticConfig:
     halo_amp: float = 0.02
     halo_index: float = -2.0
     n_speckles: int = 30
-    speckle_contrast: float = 2e-3
+    speckle_contrast: float = 5e-4
     speckle_r_range: tuple[float, float] = (6.0, 38.0)
     sat_spots: bool = True
     astrogrid_lambda_d: float = 15.9
@@ -188,9 +188,10 @@ def make_dataset(
     sp_t = rng.uniform(0, 2 * np.pi, cfg.n_speckles)
     sp_a = rng.uniform(0.3, 1.0, cfg.n_speckles) * cfg.speckle_contrast
 
-    # satellite spots: instrument-fixed angles from the default guesses
+    # satellite spots: instrument-fixed, point-symmetric about the star (real spots are
+    # diffraction copies); the first angle follows the default guess so the guesses work
     g = inst.spot_guesses_px(cfg.band)
-    spot_ang = np.arctan2(g[:, 1], g[:, 0])
+    spot_ang = np.arctan2(g[0, 1], g[0, 0]) + np.deg2rad([0.0, -90.0, 180.0, 90.0])
 
     truth: dict = {
         "config": asdict(cfg),

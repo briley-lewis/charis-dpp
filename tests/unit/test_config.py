@@ -32,7 +32,11 @@ def test_overrides_and_header_cards():
     inst = load_instrument().for_mjd(58000, {"pixscale_arcsec": 0.0164})
     assert inst.pixscale_arcsec == 0.0164
     cards = dict((k, v) for k, v, _ in inst.to_header_cards())
-    assert cards["PIXSCALE"] == 0.0164 and cards["INSTEPOC"] == "satspot-recal-2017"
+    assert (
+        cards["PIXSCALE"] == 0.0164
+        and cards["INSTEPOC"] == "satspot-recal-2017"
+        and cards["INSTPAR"] == 1
+    )
 
 
 def test_before_first_epoch_raises():

@@ -30,7 +30,9 @@ def synthetic_dataset(tmp_path_factory) -> Path:
     from charis_dpp.synthetic import SyntheticConfig, make_dataset
 
     out = tmp_path_factory.mktemp("synth")
-    cfg = SyntheticConfig(nframes=8, shape=(101, 101), n_speckles=12, nsky=2, seed=3)
+    cfg = SyntheticConfig(
+        nframes=8, shape=(101, 101), n_speckles=12, nsky=2, seed=3, astrogrid_lambda_d=11.2
+    )
     make_dataset(out, cfg)
     return out
 
