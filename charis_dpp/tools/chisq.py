@@ -30,6 +30,20 @@ class ChiSq:
         return self.chisq / max(self.ndof, 1)
 
 
+def _minimise_log(f, a0: float, bounds) -> tuple[float, float]:
+    """1-D bounded minimisation of ``f(alpha)`` in log(alpha): the scale factor can be ~1e-20
+    (model surface flux vs. observed mJy), far below the absolute tolerance of a linear search."""
+    a0 = abs(a0) if a0 != 0 and np.isfinite(a0) else 1.0
+    if bounds is None:
+        lo, hi = np.log10(a0) - 4.0, np.log10(a0) + 4.0
+    else:
+        lo, hi = np.log10(min(bounds)), np.log10(max(bounds))
+    r = minimize_scalar(
+        lambda la: f(10.0**la), bounds=(lo, hi), method="bounded", options={"xatol": 1e-7}
+    )
+    return float(10.0**r.x), float(r.fun)
+
+
 def _prep(obs, eobs, model, exclude):
     obs = np.asarray(obs, dtype=float)
     eobs = np.asarray(eobs, dtype=float)
@@ -50,7 +64,7 @@ def chisq(
     phot=None,
     ephot=None,
     modelphot=None,
-    alpha_bounds=(1e-6, 1e6),
+    alpha_bounds=None,
 ) -> ChiSq:
     """Diagonal χ² with the best scale factor α applied to the model."""
     obs, eobs, model, good = _prep(obs, eobs, model, exclude)
@@ -74,8 +88,8 @@ def chisq(
                 c += np.sum(((pm - a * pmod) / pe) ** 2)
             return c
 
-        r = minimize_scalar(f, bounds=alpha_bounds, method="bounded")
-        alpha, chi = float(r.x), float(r.fun)
+        a0 = float(np.sum(o * m / e**2) / np.sum(m * m / e**2))  # analytic start
+        alpha, chi = _minimise_log(f, a0, alpha_bounds)
     return ChiSq(chi, int(o.size + pm.size - 1), alpha)
 
 
@@ -115,8 +129,8 @@ def chisq_covar(
         return c
 
     a0 = float(np.sum(o * m / e**2) / np.sum(m * m / e**2))
-    r = minimize_scalar(f, bounds=(a0 * 1e-3, a0 * 1e3), method="bounded")
-    return ChiSq(float(r.fun), int(o.size + pm.size - 1), float(r.x))
+    alpha, chi = _minimise_log(f, a0, None)
+    return ChiSq(chi, int(o.size + pm.size - 1), alpha)
 
 
 def binned_chisq(chisq_map: np.ndarray, fwhm: float) -> tuple[float, int, np.ndarray]:
