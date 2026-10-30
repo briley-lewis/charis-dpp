@@ -75,6 +75,7 @@ class RegistrationOptions:
     prefix: str = "n"
     suffix: str | None = None
     out_suffix: str = "reg"
+    reduclog_path: Path | None = None  # default reduc.log (reduc_ladder.log for ladder frames)
     center: tuple[float, float] | None = None  # target centre; default frame centre
     extra: dict = field(default_factory=dict)
 
@@ -390,16 +391,17 @@ def register_cube(cfg: DatasetConfig | str | Path, **kwargs) -> ReducLog:
         + np.array([xc0, yc0])
         + np.array(opts.guessoffsets)
     )
-    reduclog = (
-        ReducLog(path=dirs.reduclog)
-        if not opts.ladder
-        else ReducLog(path=dirs.root / "reduc_ladder.log")
+    log_path = (
+        Path(opts.reduclog_path)
+        if opts.reduclog_path is not None
+        else (dirs.reduclog if not opts.ladder else dirs.root / "reduc_ladder.log")
     )
-    if not opts.ladder and dirs.reduclog.exists():
+    reduclog = ReducLog(path=log_path)
+    if not opts.ladder and log_path.exists():
         try:
-            reduclog = ReducLog.load(dirs.reduclog)
+            reduclog = ReducLog.load(log_path)
         except Exception:
-            reduclog = ReducLog(path=dirs.reduclog)
+            reduclog = ReducLog(path=log_path)
 
     ref_state: dict = {}
     if opts.method == "calsat":

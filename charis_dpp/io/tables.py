@@ -156,3 +156,25 @@ def read_kurucz(path: str | Path, logg: float) -> Spectrum:
 
 def read_pickles_fits(path: str | Path) -> Spectrum:
     return _from_table(_read_table(path), str(path))
+
+
+def read_csv_columns(path: str | Path) -> dict[str, list]:
+    """A header-row CSV as ``{column: values}`` (numbers converted where possible)."""
+    import csv
+
+    with open(path, newline="") as f:
+        rows = list(csv.reader(f))
+    if not rows:
+        return {}
+    head = [h.strip() for h in rows[0]]
+    out: dict[str, list] = {h: [] for h in head}
+    for r in rows[1:]:
+        if not any(x.strip() for x in r):
+            continue
+        for h, v in zip(head, r, strict=False):
+            v = v.strip()
+            try:
+                out[h].append(float(v))
+            except ValueError:
+                out[h].append(v)
+    return out

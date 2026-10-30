@@ -22,9 +22,10 @@ from astropy.time import Time
 from charis_dpp.cals.sat_contrast import sat_contrast
 from charis_dpp.config.dataset import DatasetConfig
 from charis_dpp.config.instrument import instrument_for, to_mjd
-from charis_dpp.geometry.grids import image_center
+from charis_dpp.geometry.grids import image_center, radial_grid
 from charis_dpp.io.catalogs import StarInfo
 from charis_dpp.io.wavelengths import wavelengths_um
+from charis_dpp.pdi.stokes import polarisation_angle_grid
 
 __all__ = ["SyntheticConfig", "make_dataset", "psf_image", "DEFAULT_STAR"]
 
@@ -80,6 +81,13 @@ class SyntheticConfig:
     nsky: int = 3
     seed: int = 0
     object_name: str = "SYNTH 1"
+    # polarimetry: two Wollaston beams at ±polcent offset, an HWP cycling 0/22.5/45/67.5 deg
+    # per frame, a tangentially polarised ring and a VAMPIRES-style HWP log
+    pdi: bool = False
+    pol_ring_r_px: float = 18.0
+    pol_ring_width_px: float = 2.5
+    pol_ring_contrast: float = 2e-3  # ring peak / star peak
+    pol_fraction: float = 0.5
 
 
 def psf_image(
@@ -123,10 +131,12 @@ def _header_common(
     h["ORIGNAME"] = (f"{seq:08d}", "raw sequence number")
     h["FILTNAME"] = "Broadband" if cfg.band == "lowres" else cfg.band
     h["CAL_BAND"] = cfg.band
+    exptime = cfg.reads * inst.read_time_s
+    t_end = Time(mjd + exptime / 86400.0, format="mjd")
     h["UTC-DATE"] = t.iso[:10]
-    h["UTC-TIME"] = t.iso[11:23]
+    h["UTC-TIME"] = (t_end.iso[11:23], "end of the exposure (as in CHARIS cubes)")
     h["MJD"] = mjd
-    h["EXPTIME"] = cfg.reads * inst.read_time_s
+    h["EXPTIME"] = exptime
     h["FIRSTRD"] = 1
     h["LASTRD"] = cfg.reads
     h["RA"] = Angle(star.ra_deg * u.deg).to_string(unit=u.hour, sep=":", precision=2, pad=True)
@@ -227,6 +237,20 @@ def make_dataset(
             "peak": planet_flux.tolist(),
         }
 
+    hwp_angles = [float(a) for a in inst.pdi.hwp_angles_deg]
+    polcent = np.array(inst.pdi.polcent_offset_px, dtype=float) * (
+        nx / float(inst.detector.cube_size_px)
+    )
+    hwp_log_rows: list[tuple[float, float, float]] = []
+    if cfg.pdi:
+        truth["pdi"] = {
+            "polcent_offset_px": polcent.tolist(),
+            "ring_r_px": cfg.pol_ring_r_px,
+            "ring_width_px": cfg.pol_ring_width_px,
+            "ring_contrast": cfg.pol_ring_contrast,
+            "pol_fraction": cfg.pol_fraction,
+            "hwp_angles_deg": hwp_angles,
+        }
     seq = 1
     science_nums, sky_nums = [], []
     for n in range(cfg.nframes):
@@ -241,7 +265,12 @@ def make_dataset(
         xc, yc = xc0 + dx, yc0 + dy
         cube = np.zeros((nlam, ny, nx))
         spots_xy = np.zeros((nlam, 4, 2))
+        spots_left = np.zeros((nlam, 4, 2))
         planet_xy = None
+        hwp_angle = None
+        if cfg.pdi:
+            hwp_angle = float(hwp_angles[n % len(hwp_angles)])
+            hwp_log_rows.append((hwp_angle, mjd - 5.0 / 86400.0, mjd - 4.0 / 86400.0))
         if planet is not None:
             t = np.deg2rad(rot_n)
             ct, st = np.cos(t), np.sin(t)
@@ -251,25 +280,61 @@ def make_dataset(
             pdy = st * ux + ct * uy
             planet_xy = (xc + pdx, yc + pdy)
         for l in range(nlam):
-            im = psf_image(cfg.shape, xc, yc, fwhm[l], star_spec[l], cfg.halo_amp, cfg.halo_index)
-            scale = wav[l] / wav[ref]
-            for k in range(cfg.n_speckles):
-                sx = xc + sp_r[k] * scale * np.cos(sp_t[k])
-                sy = yc + sp_r[k] * scale * np.sin(sp_t[k])
-                im += psf_image(cfg.shape, sx, sy, fwhm[l], sp_a[k] * star_spec[l])
-            if cfg.sat_spots:
-                rs = cfg.astrogrid_lambda_d * lod[l]
-                for j in range(4):
-                    sxj = xc + rs * np.cos(spot_ang[j])
-                    syj = yc + rs * np.sin(spot_ang[j])
-                    spots_xy[l, j] = (sxj, syj)
-                    im += psf_image(cfg.shape, sxj, syj, fwhm[l], atten[l] * star_spec[l])
-            if planet_xy is not None:
-                im += psf_image(cfg.shape, planet_xy[0], planet_xy[1], fwhm[l], planet_flux[l])
+
+            def unpolarised(xb, yb, l=l, spots=None, planet_xy=planet_xy, xc=xc, yc=yc):
+                im = psf_image(
+                    cfg.shape, xb, yb, fwhm[l], star_spec[l], cfg.halo_amp, cfg.halo_index
+                )
+                scale = wav[l] / wav[ref]
+                for k in range(cfg.n_speckles):
+                    sx = xb + sp_r[k] * scale * np.cos(sp_t[k])
+                    sy = yb + sp_r[k] * scale * np.sin(sp_t[k])
+                    im += psf_image(cfg.shape, sx, sy, fwhm[l], sp_a[k] * star_spec[l])
+                if cfg.sat_spots:
+                    rs = cfg.astrogrid_lambda_d * lod[l]
+                    for j in range(4):
+                        sxj = xb + rs * np.cos(spot_ang[j])
+                        syj = yb + rs * np.sin(spot_ang[j])
+                        if spots is not None:
+                            spots[l, j] = (sxj, syj)
+                        im += psf_image(cfg.shape, sxj, syj, fwhm[l], atten[l] * star_spec[l])
+                if planet_xy is not None:
+                    im += psf_image(
+                        cfg.shape,
+                        xb + planet_xy[0] - xc,
+                        yb + planet_xy[1] - yc,
+                        fwhm[l],
+                        planet_flux[l],
+                    )
+                return im
+
+            if not cfg.pdi:
+                im = unpolarised(xc, yc, spots=spots_xy)
+            else:
+                # tangentially polarised ring about each beam centre (rotation invariant)
+                def ring(xb, yb, l=l):
+                    r = radial_grid(cfg.shape, (xb, yb))
+                    phi = polarisation_angle_grid(cfg.shape, (xb, yb))
+                    i_ring = (
+                        cfg.pol_ring_contrast
+                        * star_spec[l]
+                        * np.exp(-0.5 * ((r - cfg.pol_ring_r_px) / cfg.pol_ring_width_px) ** 2)
+                    )
+                    q = -cfg.pol_fraction * i_ring * np.cos(2 * phi)
+                    u = -cfg.pol_fraction * i_ring * np.sin(2 * phi)
+                    return i_ring, q, u
+
+                th = np.deg2rad(hwp_angle)
+                im = np.zeros(cfg.shape)
+                for sign, spots in ((-1.0, spots_left), (1.0, spots_xy)):
+                    xb, yb = xc + sign * polcent[0], yc + sign * polcent[1]
+                    i_ring, q, u = ring(xb, yb)
+                    q_meas = q * np.cos(4 * th) + u * np.sin(4 * th)  # ideal HWP + Wollaston
+                    im += 0.5 * (unpolarised(xb, yb, spots=spots) + i_ring + sign * q_meas)
             im += cfg.sky_level + rng.normal(0, cfg.noise, im.shape)
             cube[l] = im
         h0 = _header_common(cfg, inst, seq, mjd, parang, ha_h, npa, star)
-        _write_raw(raw / f"CRSA{seq:08d}_cube.fits", cube, h0, cfg.noise)
+        _write_raw(raw / f"CRSA{seq:08d}_cube.fits", cube, h0, cfg.noise, hwp_angle)
         truth["frames"].append(
             {
                 "seq": seq,
@@ -280,7 +345,9 @@ def make_dataset(
                 "rot_northup_deg": rot_n,
                 "center": [float(xc), float(yc)],
                 "spots": spots_xy.tolist(),
+                "spots_left": spots_left.tolist() if cfg.pdi else None,
                 "planet": None if planet_xy is None else [float(planet_xy[0]), float(planet_xy[1])],
+                "hwp_angle": hwp_angle,
             }
         )
         science_nums.append(seq)
@@ -295,6 +362,14 @@ def make_dataset(
         sky_nums.append(seq)
         seq += 1
 
+    if cfg.pdi:
+        lines = ["angle,ut_start,ut_end,target"]
+        for a, t0, t1 in hwp_log_rows:
+            lines.append(
+                f"{a},{Time(t0, format='mjd').iso[11:19]},{Time(t1, format='mjd').iso[11:19]},"
+                f"{cfg.object_name}"
+            )
+        (outdir / f"vampHWPLog_{cfg.date.replace('-', '')}.csv").write_text("\n".join(lines) + "\n")
     ds = DatasetConfig.new(
         target=star.to_config(),
         observation={
@@ -320,13 +395,17 @@ def _rng(nums: list[int]) -> str:
     return format_range(nums)
 
 
-def _write_raw(path: Path, cube: np.ndarray, h0: fits.Header, noise: float) -> None:
+def _write_raw(
+    path: Path, cube: np.ndarray, h0: fits.Header, noise: float, hwp_angle: float | None = None
+) -> None:
     primary = fits.PrimaryHDU(header=h0)
     h1 = h0.copy()
     data = fits.ImageHDU(data=cube.astype(np.float32), header=h1, name="DATA")
     ivar = fits.ImageHDU(data=np.full(cube.shape, 1.0 / noise**2, dtype=np.float32), name="IVAR")
     h3 = fits.Header()
     h3["D_IMRANG"] = (0.0, "derotator angle [deg]")
+    if hwp_angle is not None:
+        h3["RET-ANG1"] = (hwp_angle, "HWP angle [deg]")
     h3["MJD-STR"] = h0["MJD"]
     h3["MJD-END"] = h0["MJD"] + h0["EXPTIME"] / 86400.0
     h3["PARANG"] = h0["PARANG"]

@@ -156,6 +156,8 @@ wavelength_fits_csv = "pdi/mcintosh_2026_spie_wavelength_fits.csv"
 dtheta_hwp_deg = -0.04
 dtheta_der_deg = -0.02
 parity_applied_upstream = false   # true only when `parity = -1` (post-NBS x flip)
+flip_matrix = false               # insert diag(1,1,-1,-1) after the telescope term (McIntosh+2026 eq.);
+                                  # the fork omits it for flipped (post-NBS) data; see BUGS.md #308
 
 [epoch.pdi.mueller.hwp]
 w_sio2_mm = 1.653

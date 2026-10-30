@@ -92,7 +92,7 @@ REDUCTION_DEFAULTS: dict[str, Any] = {
 PDI_DEFAULTS: dict[str, Any] = {
     "hwp_log": "",
     "hwp_source": "log",  # "log" (VAMPIRES csv) or "header" (RET-ANG1)
-    "hwp_time_ref": "start",
+    "hwp_time_ref": "mid",  # exposure reference time for the HWP log: start, mid (fork behaviour) or end
     "polcent_offset_px": "instrument",
     "astrogrid_lambda_d": "instrument",
     "rlims": {"ip": [10, 25], "bg": [55, 60], "unres": [0, 6]},

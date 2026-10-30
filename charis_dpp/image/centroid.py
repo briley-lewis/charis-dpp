@@ -268,3 +268,40 @@ def xcorr_shift(
     for k in (1, 2, 3):
         sx0, sy0 = search(sx0, sy0, 21, 10.0**-k)
     return xc - sx0, yc - sy0
+
+
+def fft_xcorr_shift(
+    ref: np.ndarray, im: np.ndarray, roi: np.ndarray | None = None, *, upsample: int = 50
+) -> tuple[float, float]:
+    """Sub-pixel shift ``(dx, dy)`` that moves ``im`` onto ``ref`` by phase cross-correlation
+    (the ``skimage.registration.phase_cross_correlation`` approach of
+    ``python/nonstandard_pdi_reg.py``): integer peak of the FFT cross-power
+    spectrum, refined on a local ``1/upsample``-pixel grid by a matrix DFT.
+    NaN pixels and pixels outside ``roi`` contribute zero.
+    """
+    a = np.where(np.isfinite(ref), ref, 0.0).astype(float)
+    b = np.where(np.isfinite(im), im, 0.0).astype(float)
+    if roi is not None:
+        a = np.where(roi, a, 0.0)
+        b = np.where(roi, b, 0.0)
+    a = a - a.mean()
+    b = b - b.mean()
+    fa, fb = np.fft.fft2(a), np.fft.fft2(b)
+    cross = fa * np.conj(fb)
+    cc = np.fft.ifft2(cross).real
+    iy, ix = np.unravel_index(np.argmax(cc), cc.shape)
+    ny, nx = cc.shape
+    dy = iy - ny if iy > ny // 2 else iy
+    dx = ix - nx if ix > nx // 2 else ix
+    if upsample <= 1:
+        return float(dx), float(dy)
+    # upsampled DFT in a 1.5-px window around the integer peak
+    half = 1.5
+    offs = np.arange(-half, half + 1e-9, 1.0 / upsample)
+    ky = np.fft.fftfreq(ny)
+    kx = np.fft.fftfreq(nx)
+    ey = np.exp(2j * np.pi * np.outer(dy + offs, ky))  # (noffs, ny)
+    ex = np.exp(2j * np.pi * np.outer(kx, dx + offs))  # (nx, noffs)
+    up = (ey @ cross @ ex).real
+    jy, jx = np.unravel_index(np.argmax(up), up.shape)
+    return float(dx + offs[jx]), float(dy + offs[jy])
