@@ -26,72 +26,26 @@ function get_charis_sat_contrast, modulation_size, wavelengths, mjd, errors = er
 
   atten_fac = fltarr(n_elements(wavelengths))
   central_wvlh = 1.550
-
+  conv_fac = (central_wvlh / wavelengths) ^ 2.
   if ~keyword_set(manual0) then begin
-    ; set to 'long' value.
-    modulation_size = long(round(modulation_size))
-
-    modname = -99
-    if modulation_size eq 50 then modname = 0
-    if modulation_size eq 25 then modname = 1
-
-    if mjd lt 57995.0 then begin
-      case modulation_size of
-        50: begin
-          ; use measured attenuation of 5.991 +/-0.060 mags.
-          atten_fac0 = 10 ^ (-0.4 * 5.991)
-          conv_fac = (central_wvlh / wavelengths) ^ 2.
-          atten_fac = atten_fac0 * conv_fac
-          errors = 0.06 / 1.0857 * atten_fac
-        end
-        25: begin
-          ; use measured attenuation of 7.504 +/- 0.060 mags
-          atten_fac0 = 10 ^ (-0.4 * 7.5037)
-          conv_fac = (central_wvlh / wavelengths) ^ 2.
-          atten_fac = atten_fac0 * conv_fac
-          errors = 0.06 / 1.0857 * atten_fac
-        end
-        else: begin
-          ; rough use scaling.
-          atten_fac0 = (modulation_size / 25.) ^ 2. * 10 ^ (-0.4 * 7.5037)
-          conv_fac = (central_wvlh / wavelengths) ^ 2.
-          atten_fac = atten_fac0 * conv_fac
-          errors = 0.06 / 1.0857 * atten_fac
-        end
-      endcase
-    endif else begin
-      case modulation_size of
-        50: begin
-          ; use measured attenuation of 4.92 +/-0.050 mags.
-          atten_fac0 = 10 ^ (-0.4 * 4.92)
-          conv_fac = (central_wvlh / wavelengths) ^ 2.
-          atten_fac = atten_fac0 * conv_fac
-          errors = 0.05 / 1.0857 * atten_fac
-        end
-        25: begin
-          ; use measured attenuation of 6.412 +/- 0.050 mags
-          atten_fac0 = 10 ^ (-0.4 * 6.412)
-          conv_fac = (central_wvlh / wavelengths) ^ 2.
-          atten_fac = atten_fac0 * conv_fac
-          errors = 0.05 / 1.0857 * atten_fac
-        end
-        else: begin
-          ; rough use scaling.
-          atten_fac0 = (modulation_size / 25.) ^ 2. * 10 ^ (-0.4 * 6.412)
-          conv_fac = (central_wvlh / wavelengths) ^ 2.
-          atten_fac = atten_fac0 * conv_fac
-          errors = 0.05 / 1.0857 * atten_fac
-        end
-      endcase
-    endelse
+    ; [BUGS.md #68, #122] the contrast table lives in charis_get_constant (epochs
+    ; keyed on MJD); the caller's modulation_size is no longer modified
+    modsize = long(round(modulation_size[0]))
+    mag25 = charis_get_constant(name = 'satcon25', mjd = mjd)
+    mag50 = charis_get_constant(name = 'satcon50', mjd = mjd)
+    magerr = charis_get_constant(name = 'satconerr', mjd = mjd)
+    case modsize of
+      50: atten_fac0 = 10 ^ (-0.4 * mag50)
+      25: atten_fac0 = 10 ^ (-0.4 * mag25)
+      else: atten_fac0 = (modsize / 25.) ^ 2. * 10 ^ (-0.4 * mag25)
+    endcase
+    atten_fac = atten_fac0 * conv_fac
+    errors = magerr / 1.0857 * atten_fac
   endif else begin
-    atten_fac0 = manual0[0]
-    conv_fac = (central_wvlh / wavelengths) ^ 2.
-    atten_fac[*] = atten_fac0 * conv_fac[*]
+    ; manual attenuation: a scalar (scaled with wavelength) or one value per channel
+    if n_elements(manual0) eq n_elements(wavelengths) then atten_fac = manual0 else atten_fac = manual0[0] * conv_fac
     errors = 0.05 / 1.0857 * atten_fac
   endelse
-
-  print, 'attenfac is', -2.5 * alog10(atten_fac0)
   return, atten_fac
 
   skiptotheend:

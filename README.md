@@ -1,3 +1,47 @@
+CHARIS Data Processing Pipeline
+===============================
+
+Reduction and analysis of SCExAO/CHARIS IFS data cubes. Two implementations live here:
+
+* `charis_dpp/` — the **Python package** (no IDL licence needed). See `docs/WORKFLOW.md`
+  and the tutorial `docs/tutorial.ipynb`.
+* `idl/` — the original IDL pipeline, with the fixes listed in `BUGS.md`.
+
+Python quick start
+------------------
+
+```bash
+pip install -e ".[dev]"
+charis doctor
+```
+
+In a directory with extracted cubes (`CRSA*_cube.fits`):
+
+```bash
+charis newobs 20230730 "HD 1160" lowres     # writes HD1160_lowres.toml
+charis imprep HD1160_lowres.toml
+charis subtract-sky HD1160_lowres.toml
+charis register HD1160_lowres.toml          # --method xcorr if there are no satellite spots
+charis specphot-cal HD1160_lowres.toml
+charis make-emp-psf HD1160_lowres.toml
+charis imrsub HD1160_lowres.toml --prad
+charis adialoci HD1160_lowres.toml
+charis detect HD1160_lowres.toml
+charis fwdmod-planet HD1160_lowres.toml --targfile reduc/proc/final_det.targ
+charis extract-spectrum HD1160_lowres.toml --coords X Y --throughput synth_throughput0.txt
+```
+
+`charis autoreduce` runs the chain; `charis <step> --help` lists the options. Parameters come
+from the dataset `.toml` (edit it) and, for instrument constants, from the dated table in
+`charis_dpp/data/instrument.toml`.
+
+Tests: `pytest -m "not slow"` (fast), `pytest -m slow` (synthetic end-to-end chains).
+
+---
+
+IDL pipeline (original README)
+==============================
+
 CHARIS Data Processing Pipeline [documentation under construction!]
 ===============================================================
 

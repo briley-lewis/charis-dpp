@@ -606,6 +606,7 @@ pro charis_aloci_fakeplanet, pfname, reducname = reducname, sdi_reducnamesdi = s
       ; aper,imslice,xp,yp,flux,eflux,sky,skyerr,1,0.5*fwhm[ilambda],[2,6]*fwhm[ilambda],setskyval=0,/flux,/exact,/nan,/silent
 
       if keyword_set(subsky) then begin
+        if n_elements(rmax) eq 0 then rmax = (size(imslice, /dim))[0] / 2 ; [BUGS.md #161]
         profrad_tc, imslice, 1, 1, rmax, p2d = pr
         imslice -= pr
       endif

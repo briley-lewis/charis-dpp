@@ -73,7 +73,8 @@ pro charis_pdi_flatfield, pfname, prefname = prefname, suffname = suffname, dark
     for i = 0, sz[2] - 1 do begin
       flatslice = flatcube[*, *, i]
       flatslice = flatslice / (median(flatslice[fov_mask], /even))
-      flatslice[where(flatslice eq 0)] = 1
+      zeroflat = where(flatslice eq 0, nzeroflat) ; [BUGS.md #215]
+      if nzeroflat gt 0 then flatslice[zeroflat] = 1
       flatcube[*, *, i] = flatslice
     endfor
     writefits, 'master_pdiflat.fits', 0, h0

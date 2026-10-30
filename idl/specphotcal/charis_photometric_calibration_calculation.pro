@@ -63,7 +63,7 @@ function charis_photometric_calibration_calculation, pri_header, ext_header, lam
         ref_model_spectrum = modelspecdir + picklesdir + pickles_fnames[i] + '.fits'
         print, 'refmodelname!', ref_model_spectrum
         ; stop
-        if file_test(ref_model_spectrum) eq 0 then return, error('CANNOT FIND SPECTRUM FILE in Pickles Library')
+        if file_test(ref_model_spectrum) eq 0 then message, 'CANNOT FIND SPECTRUM FILE in Pickles Library' ; [BUGS.md #80]
 
         ; load the spectrum
         print, 'refmodelspec', ref_model_spectrum
@@ -94,7 +94,7 @@ function charis_photometric_calibration_calculation, pri_header, ext_header, lam
         ; ref_model_spectrum=modelspecdir+kurucz_fnames[i]+'.fits'
         print, 'refmodelname!', ref_model_spectrum
         ; stop
-        if file_test(ref_model_spectrum) eq 0 then return, error('CANNOT FIND SPECTRUM FILE in Kurucz Library')
+        if file_test(ref_model_spectrum) eq 0 then message, 'CANNOT FIND SPECTRUM FILE in Kurucz Library' ; [BUGS.md #80]
 
         ; load the spectrum
         print, 'refmodelspec', ref_model_spectrum

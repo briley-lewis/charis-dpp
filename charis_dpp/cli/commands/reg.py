@@ -12,7 +12,16 @@ from charis_dpp.cli.registry import register
 )
 def _add(parser):
     parser.add_argument("config", type=Path)
-    parser.add_argument("--method", default=None, help="sats (default) | psf | calsat")
+    parser.add_argument(
+        "--method",
+        default=None,
+        help="sats (default: satellite spots) | psf (unsaturated star) | calsat (ladder reference) | xcorr (cross-correlation, no spots needed)",
+    )
+    parser.add_argument(
+        "--xcorr-center",
+        choices=["symmetry", "centroid", "given"],
+        help="method=xcorr: how the reference frame's star centre is found (default symmetry)",
+    )
     parser.add_argument(
         "--guessoffsets",
         nargs=2,
@@ -88,6 +97,8 @@ def _add(parser):
         ):
             if getattr(args, k):
                 kw[k] = True
+        if args.xcorr_center:
+            kw["xcorr_center"] = args.xcorr_center
         if args.guessoffsets:
             kw["guessoffsets"] = tuple(args.guessoffsets)
         if args.astrogrid is not None:

@@ -98,7 +98,7 @@ function fixpix_rs, im, maskarr, iter = iternum, quiet = quiet
   xs = (size(im))[1]
   ys = (size(im))[2]
   ; sigma = fltarr((xs-1)/5*(ys-1)/5)
-  sigma = fltarr(xs / 5 * ys / 5) ; Corrected by SSKIM
+  sigma = fltarr((xs / 5) * (ys / 5)) ; [BUGS.md #267] ; Corrected by SSKIM
 
   n = 0l
   for i = 2, xs - 3, 5 do begin

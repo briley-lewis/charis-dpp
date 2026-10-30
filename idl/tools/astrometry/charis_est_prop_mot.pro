@@ -8,9 +8,9 @@ pro charis_est_prop_mot, object = object, startdate = startdate, nyears = nyears
 
   if ~keyword_set(startdate) then startdate = '10-18-2018'
 
-  hci_querysimbadf, object, ra, dec, id, found = found
+  charis_querysimbadf, object, ra, dec, id, found = found
 
-  ship = hci_queryvizierf('I/239/hip_main', [ra, dec], 20. / 60., /allcolumns, found = found)
+  ship = charis_queryvizierf('I/239/hip_main', [ra, dec], 20. / 60., /allcolumns, found = found)
   ; ra and dec in degrees
 
   ; parallax and proper motion pull
@@ -19,7 +19,7 @@ pro charis_est_prop_mot, object = object, startdate = startdate, nyears = nyears
   pmraset = where(strmatch(tag_names(ship), 'pmra', /fold_case) eq 1)
   pmdecset = where(strmatch(tag_names(ship), 'pmde', /fold_case) eq 1)
 
-  if (plxset gt 0) then plx = ship.plx else begin
+  if (plxset ge 0) then plx = ship.plx ; [BUGS.md #241, #244] else begin
     plx = 0
     print, 'Parallax not found. Setting parallax=0.'
   endelse

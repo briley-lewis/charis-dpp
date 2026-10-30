@@ -114,7 +114,7 @@ pro charis_ssdi, pfname, rsub = rsub, weight = weight, filt = filt, suffname = s
     writefits, reducdir + filesout[i], 0, h0
     writefits, reducdir + filesout[i], imcube, h1, /append
   endfor
-  imcombine = medfitsme(filesout, dir = reducdir, /cube)
+  imcombine = charis_combinefits(filesout, dir = reducdir, /cube) ; [BUGS.md #154]
 
   if keyword_set(northup) then begin
     imcomb0 = imcombine

@@ -22,7 +22,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-cov", "ruff>=0.5"]
-xcorr = ["scikit-image>=0.22"]
 
 [project.scripts]
 charis = "charis_dpp.cli.main:main"

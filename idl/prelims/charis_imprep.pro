@@ -29,7 +29,7 @@ if ~keyword_set(pfname) then begin
 possiblenames=file_search('*.info')
 print,'possible ',possiblenames
 
-if strlen(possiblenames) gt 4 then begin
+if n_elements(possiblenames) eq 1 && strlen(possiblenames[0]) gt 4 then begin ; [BUGS.md #10]
 pfname=possiblenames
 print,'Only one info file found ',pfname
 print,'...using this one'
@@ -68,7 +68,7 @@ file_mkdir,reducdir
 print,'reducdir is',reducdir
 
 ;First, if you just have the CHARIS data cubes in your current directory, move them to datadir
-a=file_test('CRSA*fits')
+a=file_search('CRSA*fits', count=ncrsa) & a=ncrsa gt 0 ; [BUGS.md #16]
 if a eq 1 then begin
 com='mv '+'CRSA*fits ' +datadir
 SPAWN,com
@@ -138,8 +138,8 @@ print,'nfiles is',nfiles
 
 ;Instrument Class: SCExAO/CHARIS
 ;we are at Maunakea
-  lat=19.825504d0
-  lng=-155.47602d0
+  lat=charis_get_constant(name='lat') ; [BUGS.md #306]
+  lng=charis_get_constant(name='lng')
 
 ;test the first image, see if it has the fits header info you need.
 
@@ -305,7 +305,7 @@ print,'ERROR, missing MJD date: check your cubes'
 stop
 endif
 
-if mjd_date gt 60933 then begin
+if charis_get_constant(name='parity', mjd=mjd_date) eq -1 then begin ; [BUGS.md #316] epoch table
 
 ;print,'POST-NBS Parity Flip and NorthPA correction'
 result=charis_nbs_corr(bb,h0,h1)

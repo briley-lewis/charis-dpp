@@ -2,7 +2,7 @@ pro charis_recalc_disk_fwdmod_chisq, reducname = reducname, prefname = prefname,
   roirange = roirange, lrmin = lrmin, lrmax = lrmax, snoise = snoise, help = help
   compile_opt idl2
 
-  if (n_params() eq 0 or keyword_set(help)) then begin
+  if keyword_set(help) then begin ; [BUGS.md #191] keyword-only procedure
     print, 'charis_recalc_disk_fwdmod_chisq,reducname=reducname,prefname=prefname,pickmodels=pickmodels'
     print, 'roirange=roirange,lrmin=lrmin,lrmax=lrmax,snoise=snoise'
     print, 'recalculates the chi-square of a forward-modeled disk image using a different region of interest'
@@ -80,7 +80,7 @@ pro charis_recalc_disk_fwdmod_chisq, reducname = reducname, prefname = prefname,
   ; ***SNR Map for Real Data***
   ; -self-consistently calculate the SNR map of the collapsed image
   ; - save SNR map, the aperture-summed image, and the uncertainty map
-  snratio_sub, refcol, fwhm = medfwhm, rmax = lrmax, /zero, /finite, snrmap = snrmap, noisemap = sigdata, imcol = refcol_con
+  charis_snratio_sub, refcol, fwhm = medfwhm, rmax = lrmax, /zero, /finite, snrmap = snrmap, noisemap = sigdata, imcol = refcol_con
 
   if ~keyword_set(snoise) then snoise = 1.
   sigdata = sigdata / snoise

@@ -4,7 +4,7 @@ pro charis_aloci_fwdmod_planet, pfname, reducname = reducname, sdi_reducname = s
   planetmethod = planetmethod, planetmodel = planetmodel, targfile = targfile, $
   pickpsf = pickpsf, $
   reductype = reductype, $
-  adi = adi, sdi = sdi, asdi = asdi, rdi = rdi, refpath = refpath, help = help
+  adi = adi, sdi = sdi, asdi = asdi, rdi = rdi, refpath = refpath, adipsdi = adipsdi, sdipadi = sdipadi, help = help ; [BUGS.md #162]
   compile_opt idl2
 
   ; ****Version 2.2 - added SDI+p-ADI

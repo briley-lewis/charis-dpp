@@ -1,78 +1,35 @@
 function charis_path, pathname = pathname
   compile_opt idl2
-
-  ; Basic structure is...
-  ; directory_name = [path to CHARIS DPP]/[subdirectory]
-
-  ; e.g. my path to CHARIS DPP is '~/idl_tools/ADI_dl/charis_dpp_new/'
-  ; so for modeldirectory it is modeldirectory=[path to CHARIS DPP]/models/'
-  ; ... or ... modeldirectory='~/idl_tools/ADI_dl/charis_dpp_new/models/'
-
-  ; *****MODIFY THESE****
-
-  ; 1.
-  charispath = '/home/thomasmc/charis-dpp/idl/'
-
-  ; these models have are from the online substellar atmosphere model server:
-  ; http://svo2.cab.inta-csic.es/theory/newov2/
-  ; format lte[temp]-[logg]-[metallicity].BT-Sett.7.dat.txt
-  ; e.g lte020-4.0-0.0.BT-Settl.7.dat.txt  = 2000K, log(g)=4, solar metallicity
-
-  ; 2.
-  btsettldirectory = '/Volumes/HAL/models/'
-
-  ; ********
-
-  ; ****do NOT modify anything below this line
-
+  ; [BUGS.md #123, #319] paths come from the environment:
+  ;   CHARIS_DPP_PATH    the idl/ directory of this repository
+  ;   CHARIS_DPP_BTSETTL the BT-Settl model grid (lte*.dat.txt files)
+  charispath = getenv('CHARIS_DPP_PATH')
+  if charispath eq '' then begin
+    ; fall back to the directory holding this file (idl/setup/ -> idl/)
+    charispath = file_dirname(file_dirname(routine_filepath('charis_path', /is_function))) + '/'
+  endif
+  if strmid(charispath, strlen(charispath) - 1) ne '/' then charispath += '/'
+  btsettldirectory = getenv('CHARIS_DPP_BTSETTL')
+  if btsettldirectory eq '' then btsettldirectory = charispath + 'models/btsettl/'
+  if strmid(btsettldirectory, strlen(btsettldirectory) - 1) ne '/' then btsettldirectory += '/'
   modeldirectory = charispath + 'models/'
   wavecaldirectory = charispath + 'cals/'
   filterresponsedirectory = charispath + 'tools/filters/filter_response/'
-
   planetdirectory = charispath + 'models/planetmodels/'
   modelspectrumdirectory = charispath + 'models/starmodels/'
-
   bonnefoydirectory = charispath + 'models/planetmodels/bonn_speclib/'
   montrealdirectory = charispath + 'models/planetmodels/Montreal/'
-
-  ; *not implemented yet, obsolete due to Cruz gravity standards?
-  ; spexdirectory='~/Research/Planets/DI/spex/'
-
   case pathname of
-    'modeldir': begin
-      pathdirectory = modeldirectory
-    end
-
-    'wavecalpath': begin
-      pathdirectory = wavecaldirectory
-    end
-
-    'planetdir': begin
-      pathdirectory = planetdirectory
-    end
-
-    'filtresponsedir': begin
-      pathdirectory = filterresponsedirectory
-    end
-
-    'modelspecdir': begin
-      pathdirectory = modelspectrumdirectory
-    end
-
-    'montrealdir': begin
-      pathdirectory = montrealdirectory
-    end
-    'bonnefoydir': begin
-      pathdirectory = bonnefoydirectory
-    end
-    'btsettldir': begin
-      pathdirectory = btsettldirectory
-    end
-
-    ; 'spexdir': begin
-    ; pathdirectory=spexdirectory
-    ; end
+    'charispath': pathdirectory = charispath
+    'modeldir': pathdirectory = modeldirectory
+    'wavecalpath': pathdirectory = wavecaldirectory
+    'planetdir': pathdirectory = planetdirectory
+    'filtresponsedir': pathdirectory = filterresponsedirectory
+    'modelspecdir': pathdirectory = modelspectrumdirectory
+    'montrealdir': pathdirectory = montrealdirectory
+    'bonnefoydir': pathdirectory = bonnefoydirectory
+    'btsettldir': pathdirectory = btsettldirectory
+    else: message, 'charis_path: unknown pathname ' + string(pathname)
   endcase
-
   return, pathdirectory
 end

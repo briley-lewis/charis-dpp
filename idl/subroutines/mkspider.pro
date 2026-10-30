@@ -74,8 +74,7 @@ function mkspider, dim, st, angles, justind = justind, cen = cen
         endif else begin
           for y = y1, y2 do begin
             frac = ((y + 0.5) < (yc + st / 2.d)) - ((y - 0.5) > (yc - st / 2.d))
-            spider[x1 : x2, y] += frac
-            spider[x1 : x2, y] += frac
+            spider[x1 : x2, y] += frac ; [BUGS.md #266] (was added twice)
           endfor
         endelse
       endelse

@@ -89,7 +89,7 @@ pro profrad_tc, imt, res, r1, r2, med4q = med4q, p2d = p2d, p1d = p1d, rayon = r
     if ~keyword_set(nan) then begin
       q1[sind[nmin : nmax - 1]] = spline(rayont, p1dt, distarr[sind[nmin : nmax - 1]])
     endif else begin
-      q1[sind[nmin : nmax - 1]] = interpol(rayont, p1dt, distarr[sind[nmin : nmax - 1]], /spline, /nan)
+      q1[sind[nmin : nmax - 1]] = interpol(p1dt, rayont, distarr[sind[nmin : nmax - 1]], /spline, /nan) ; [BUGS.md #264]
     endelse
 
     if (dimx mod 2 eq 0) then i1x = 1 else i1x = 0

@@ -342,7 +342,7 @@ pro charis_aloci_negspec_disk, pfname, reducname = reducname, sdi_reducname = sd
       charis_adialoci, pfname, prefname = prefname, rsubval = zrsub, $
         ; charis_adialocif,pfname,prefname=prefname,rsubval=zrsub,zonetype=zadiztype,$
         nfwhm = znfwhm, drsub = zdrsub, na = zna, geom = zgeom, rmin = zrmin, rmax = zrmax, svd = zsvd, nref = znref, pixmask = zpixmask, zero = zzero, meanadd = zmeanadd, $
-        /np, outfile = 'ressub' + string(itc, format = '(i1)') + '_np_' + '.fits'
+        /fc, outfile = 'ressub' + string(itc, format = '(i1)') + '_np_' + '.fits'
     end
 
     1: begin ; just SDI

@@ -31,13 +31,12 @@ pro charis_resamplepsf, inputpsf, outputpsf, scalefac = scalefac, help = help
 
   outputpsf = fltarr((size(inputpsf, /dim))[0], (size(inputpsf, /dim))[1])
 
-  tmp = make_array((size(inputpsf, /dim))[0 : 1], type = typ) + !values.f_nan
+  tmp = make_array((size(inputpsf, /dim))[0 : 1], type = size(inputpsf, /type)) + !values.f_nan ; [BUGS.md #261]
 
   tmp[goodmap] = interpolate(inputpsf, coordsj[0, *], coordsj[1, *], cubic = -0.5, missing = !values.f_nan)
 
   outputpsf[goodmap] = tmp
 
-  writefits, 'tmp.fits', tmp
   outputpsf = subarr(outputpsf, sz)
 
   skiptotheend:

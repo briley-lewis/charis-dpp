@@ -179,7 +179,7 @@ function SXPAR_CHARIS, hdr, name, abort, count = matches, comment = comments, ju
 
   if vector then begin
     nfound = where(strpos(keyword, nam) ge 0, matches)
-    if keyword_set(justfirst) then begin
+    if keyword_set(justfirst) && matches gt 0 then begin ; [BUGS.md #28]
       nfound = nfound[0]
       matches = 1
     endif

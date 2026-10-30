@@ -191,7 +191,7 @@ function Charis_queryvizierf, catalog, target, dis, verbose = verbose, cfa = CFA
   if n_elements(constraint) eq 0 then constraint = ''
   if strlen(constraint) gt 0 then begin
     urlconstrain = strtrim(constraint, 2)
-    urlconstrain = strcompress2(constraint, ['<', '>', '='])
+    urlconstrain = strcompress(constraint, /remove_all) ; [BUGS.md #292]
     ; Note that one cannot uses the URLENCODE method of IDLnetURL
     ; because of the "=" needed when encoding "<" and ">" characters.
     ; I am not sure why this is so.  ---WL

@@ -266,7 +266,7 @@ pro charis_klip_negspec_planet, pfname, reducname = reducname, prefname = prefna
     for il = 0l, nlambda - 1 do begin
       ; approximate the PSF by a gaussian; should be okay for high Strehl and simple PSF structure (e.g. Subaru or VLT, not Keck)
       a = psf_gaussian(npixel = dpsf, fwhm = fwhm[il], /double, /normalize)
-      a /= myaper(a, dpsf / 2, dpsf / 2, 0.5 * fwhm[il])
+      a /= charis_myaper(a, dpsf / 2, dpsf / 2, 0.5 * fwhm[il]) ; [BUGS.md #175]
 
       intr_psf[*, *, il] = a
     endfor

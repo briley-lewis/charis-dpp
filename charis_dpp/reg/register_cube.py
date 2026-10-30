@@ -35,7 +35,14 @@ from charis_dpp.astro.time_coords import ten
 from charis_dpp.config.dataset import DatasetConfig, Resolved
 from charis_dpp.geometry.apertures import sumaper_im
 from charis_dpp.geometry.grids import image_center, radial_grid
-from charis_dpp.image.centroid import center_of_symmetry, cntrd, fit_gaussian2d, gcntrd, xcorr_shift
+from charis_dpp.image.centroid import (
+    center_of_symmetry,
+    cntrd,
+    fft_xcorr_shift,
+    fit_gaussian2d,
+    gcntrd,
+    xcorr_shift,
+)
 from charis_dpp.image.filters import idl_filter_image, idl_smooth, radial_profile_2d
 from charis_dpp.image.interp import shift_sub
 from charis_dpp.image.stats import robust_poly_fit
@@ -76,6 +83,10 @@ class RegistrationOptions:
     suffix: str | None = None
     out_suffix: str = "reg"
     reduclog_path: Path | None = None  # default reduc.log (reduc_ladder.log for ladder frames)
+    # method='xcorr': how the reference frame's absolute star centre is found:
+    # 'symmetry' (180-deg symmetry of the halo), 'centroid' (unsaturated star core),
+    # 'given' (use `center` as is)
+    xcorr_center: str = "symmetry"
     center: tuple[float, float] | None = None  # target centre; default frame centre
     extra: dict = field(default_factory=dict)
 
@@ -340,17 +351,18 @@ def register_cube(cfg: DatasetConfig | str | Path, **kwargs) -> ReducLog:
         rin_corr_arcsec=float(kwargs.pop("rin_corr", rc.get("rin_corr_arcsec", 0.2))),
         rout_corr_arcsec=float(kwargs.pop("rout_corr", rc.get("rout_corr_arcsec", 0.5))),
         astrogrid_lambda_d=kwargs.pop("astrogrid", cfg.observation.get("astrogrid_lambda_d")),
+        xcorr_center=str(kwargs.pop("xcorr_center", rc.get("xcorr_center", "symmetry"))),
     )
     for k, v in kwargs.items():
         if hasattr(opts, k):
             setattr(opts, k, v)
         else:
             raise TypeError(f"register_cube: unknown option {k!r}")
-    opts.method = {"0": "sats", "1": "psf", "2": "calsat", "calsats": "calsat"}.get(
+    opts.method = {"0": "sats", "1": "psf", "2": "calsat", "calsats": "calsat", "3": "xcorr"}.get(
         str(opts.method), opts.method
     )
-    if opts.method not in ("sats", "psf", "calsat"):
-        raise ValueError(f"method must be sats/psf/calsat, got {opts.method!r}")
+    if opts.method not in ("sats", "psf", "calsat", "xcorr"):
+        raise ValueError(f"method must be sats/psf/calsat/xcorr, got {opts.method!r}")
 
     res = cfg.resolve()
     inst = res.instrument
@@ -406,6 +418,8 @@ def register_cube(cfg: DatasetConfig | str | Path, **kwargs) -> ReducLog:
     ref_state: dict = {}
     if opts.method == "calsat":
         ref_state = _calsat_reference(cfg, res, dirs, opts, guesses, refslice, target)
+    elif opts.method == "xcorr":
+        ref_state = _xcorr_reference(cfg, res, dirs, opts, nums, refslice, target)
 
     prev: np.ndarray | None = None
     for n in nums:
@@ -424,6 +438,9 @@ def register_cube(cfg: DatasetConfig | str | Path, **kwargs) -> ReducLog:
                     opts,
                     prev,
                 )
+                cens = None
+            elif opts.method == "xcorr":
+                psfcens = _xcorr_measure(c.data, ref_state)
                 cens = None
             else:
                 psfcens = _calsat_measure(c.data, ref_state, res, opts, refslice)
@@ -490,4 +507,75 @@ def _calsat_measure(cube, ref_state, res, opts, refslice) -> np.ndarray:
     for il in range(nlam):
         tgt = np.nan_to_num(cube[il])
         out[il] = xcorr_shift(np.nan_to_num(ref[il]), tgt, roi & np.isfinite(cube[il]), 0.0, 0.0)
+    return out
+
+
+# ----------------------------------------------------------------------------------------
+# xcorr (method 3): no satellite spots needed
+# ----------------------------------------------------------------------------------------
+def _xcorr_reference(cfg, res, dirs, opts, nums, refslice, target) -> dict:
+    """Reference cube for cross-correlation registration: the first science frame (or
+    ``opts.refcube``-th), centred per channel on the star.
+
+    The star centre of the reference is found from the 180° symmetry of the
+    PSF halo inside ``[rin_corr, rout_corr]`` arcsec (``charis_getcenter``),
+    starting from ``opts.center`` (or the frame centre).  Every other frame is
+    then aligned to this reference by FFT phase cross-correlation, so the
+    method works for data without satellite spots (``[reduction.register]``
+    ``method = "xcorr"``); the absolute centre is only as good as the reference's.
+    """
+    ref_num = nums[int(opts.refcube)] if 0 <= int(opts.refcube) < len(nums) else nums[0]
+    ref = read_cube(dirs.prep / frame_filename(ref_num, opts.suffix, opts.prefix))
+    ny, nx = ref.shape
+    pixscale = res.instrument.pixscale_arcsec
+    x0, y0 = target if opts.center is not None else image_center((ny, nx))
+    cx0, cy0 = opts.center if opts.center is not None else (x0, y0)
+    centres = np.full((ref.nlam, 2), np.nan)
+    data = np.empty_like(ref.data)
+    if opts.xcorr_center not in ("symmetry", "centroid", "given"):
+        raise ValueError("xcorr_center must be 'symmetry', 'centroid' or 'given'")
+    for il in range(ref.nlam):
+        im = np.where(np.isfinite(ref.data[il]), ref.data[il], 0.0)
+        if opts.xcorr_center == "given":
+            cx, cy = cx0, cy0
+        elif opts.xcorr_center == "centroid":
+            cx, cy = centroid_spot(im, cx0, cy0, max(opts.fwhmlim, 2 * res.fwhm_px[il]))
+        else:
+            r = radial_grid((ny, nx), (cx0, cy0))
+            roi = (r > opts.rin_corr_arcsec / pixscale) & (r <= opts.rout_corr_arcsec / pixscale)
+            cx, cy = center_of_symmetry(im, cx0, cy0, roi, smallsteps=opts.smallsteps)
+        if not (np.isfinite(cx) and np.isfinite(cy)):
+            cx, cy = cx0, cy0
+        if np.hypot(cx - cx0, cy - cy0) > 5 * res.fwhm_px[il]:
+            log.warning(
+                "xcorr reference channel %d: centre (%.1f, %.1f) is far from the guess (%.1f, %.1f); "
+                "check reduction.register.xcorr_center / center",
+                il,
+                cx,
+                cy,
+                cx0,
+                cy0,
+            )
+        centres[il] = (cx, cy)
+    fitted = fit_centers_vs_channel(centres, refslice, opts.fittrim)
+    if fitted is None:
+        raise RuntimeError("xcorr: could not centre the reference cube")
+    for il in range(ref.nlam):
+        data[il] = shift_sub(ref.data[il], target[0] - fitted[il, 0], target[1] - fitted[il, 1])
+    write_cube(dirs.reg / "refimage.fits", data, ref.h0, ref.h1)
+    # correlate everything inside 3*rout_corr: masking the core would plant a fixed
+    # zeroed disk in both images and bias the cross-correlation towards zero shift
+    r = radial_grid((ny, nx), target)
+    roi = r <= 3.0 * opts.rout_corr_arcsec / pixscale
+    return {"ref": data, "roi": roi, "center": target}
+
+
+def _xcorr_measure(cube: np.ndarray, ref_state: dict) -> np.ndarray:
+    """Per-channel star position in ``cube`` from the shift that aligns it to the reference."""
+    ref, roi, (xc, yc) = ref_state["ref"], ref_state["roi"], ref_state["center"]
+    nlam = cube.shape[0]
+    out = np.full((nlam, 2), np.nan)
+    for il in range(nlam):
+        dx, dy = fft_xcorr_shift(ref[il], cube[il], roi & np.isfinite(cube[il]))
+        out[il] = (xc - dx, yc - dy)
     return out

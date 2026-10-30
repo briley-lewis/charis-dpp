@@ -24,7 +24,10 @@ pro charis_set_files, pfname, parvariable, keyword, obslog, inputarray = inputar
     nframes = n_elements(fnumber)
   endelse
 
+  fnumber = fnumber[uniq(fnumber, sort(fnumber))] ; [BUGS.md #24] sorted, unique
+  nframes = n_elements(fnumber)
   framestring = strtrim(long(fnumber[0]), 2)
+  if nframes eq 1 then goto, singleframe ; [BUGS.md #23]
 
   for i = 1l, nframes - 2 do begin
     if long(fnumber[i]) eq long(fnumber[i - 1]) + 1 then begin
@@ -44,7 +47,10 @@ pro charis_set_files, pfname, parvariable, keyword, obslog, inputarray = inputar
     framestring += ',' + strtrim(long(fnumber[nframes - 1]), 2)
   endelse
 
+  singleframe:
   param, parvariable, framestring, parcom, /set, pfname = pfname
+  return
 
   endoffile:
+  param, parvariable, '', parcom, /set, pfname = pfname ; [BUGS.md #25] nothing matched: write an empty list
 end

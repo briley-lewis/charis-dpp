@@ -109,9 +109,11 @@ def read_hwp_log(path: str | Path) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
 
 def _unwrap_hours(t: np.ndarray, ref: float) -> np.ndarray:
-    """Hours of the same night as ``ref``: values more than 12 h earlier are moved past midnight."""
+    """Hours on the same night as ``ref``: a UT midnight roll-over in either direction
+    (log before midnight, exposures after it, or the reverse) is unwrapped (#223)."""
     t = np.asarray(t, dtype=float).copy()
     t[t < ref - 12.0] += 24.0
+    t[t > ref + 12.0] -= 24.0
     return t
 
 
@@ -175,7 +177,9 @@ def hwp_match(
     pd = cfg.pdi
     source = source or pd.get("hwp_source", "log")
     hwp_log = hwp_log or (pd.get("hwp_log") or None)
-    time_ref = time_ref or pd.get("hwp_time_ref", "start")
+    time_ref = time_ref or pd.get("hwp_time_ref", "mid")
+    if time_ref not in ("start", "mid", "end"):
+        raise ValueError("time_ref must be 'start', 'mid' or 'end'")
     angles = [float(a) for a in res.instrument.pdi.hwp_angles_deg]
     nums = cfg.frames("science")
     if suffix is None:
@@ -206,6 +210,8 @@ def hwp_match(
             source = "angles"
 
     utc = np.zeros(len(nums))
+    t_start = np.zeros(len(nums))
+    t_end = np.zeros(len(nums))
     hwp_ang = np.full(len(nums), np.nan)
     orig = []
     for i, nm in enumerate(names):
@@ -220,6 +226,8 @@ def hwp_match(
             else exptime
         )
         # UTC-TIME is the end of the read-out in CHARIS cubes: 'start' = t − dit, 'mid' = t − dit/2
+        t_end[i] = t
+        t_start[i] = t - dit / 3600.0
         if time_ref == "start":
             t -= dit / 3600.0
         elif time_ref == "mid":
@@ -229,20 +237,41 @@ def hwp_match(
         if source == "header":
             v = header_get(h, "RET-ANG1", None)
             hwp_ang[i] = np.nan if v is None or float(v) < 0 else float(v)
-    utc = _unwrap_hours(utc, utc[0])
+    ref_t = utc[0]
+    utc = _unwrap_hours(utc, ref_t)
+    t_start = _unwrap_hours(t_start, ref_t)
+    t_end = _unwrap_hours(t_end, ref_t)
     if source == "log":
         angs, t0, _ = read_hwp_log(hwp_log)
-        t0 = _unwrap_hours(t0, utc[0])
+        t0 = _unwrap_hours(t0, ref_t)
         order = np.argsort(t0)
         angs, t0 = angs[order], t0[order]
+        span = max(t0.max(), t_end.max()) - min(t0.min(), t_start.min())
+        if span > 16.0:
+            log.warning(
+                "HWP log and exposures span %.1f h: check that the log is from the same night", span
+            )
         for i in range(len(nums)):
             k = (
                 int(np.searchsorted(t0, utc[i], side="right")) - 1
             )  # last move at or before the exposure
             if k < 0:
-                log.warning("%s: exposure before the first HWP log entry; no angle", names[i])
+                log.warning(
+                    "%s: exposure (UT %.4f h) before the first HWP log entry (UT %.4f h); no angle",
+                    names[i],
+                    utc[i],
+                    t0[0],
+                )
                 continue
             hwp_ang[i] = angs[k]
+            inside = (t0 > t_start[i]) & (t0 < t_end[i])
+            if inside.any():  # a move inside the exposure: the frame mixes two HWP angles
+                log.warning(
+                    "%s: HWP moved during the exposure (log entries %s); angle %.1f assumed",
+                    names[i],
+                    np.flatnonzero(inside).tolist(),
+                    hwp_ang[i],
+                )
     elif source == "angles":
         cols = read_csv_columns(hwp_log)
         lc = {k.lower(): v for k, v in cols.items()}
@@ -264,6 +293,20 @@ def hwp_match(
     cyc = assign_cycles(np.where(hwp_pos >= 0, hwp_pos, len(angles)), utc, len(angles))
     table = HwpTable(names, list(nums), hwp_pos, hwp_ang, cyc, angles)
     out = table.save(dirs.root / outfile)
+    for i, nm in enumerate(names):
+        log.info(
+            "  %s  UT %8.4f h  angle %6s  pos %2d  cycle %2d",
+            nm,
+            utc[i],
+            "-" if not np.isfinite(hwp_ang[i]) else f"{hwp_ang[i]:.1f}",
+            hwp_pos[i],
+            cyc[i],
+        )
+    nbad = int((hwp_pos < 0).sum())
+    if nbad:
+        log.warning(
+            "%d frame(s) have no HWP angle (not one of %s); excluded from cycles", nbad, angles
+        )
     log.info(
         "hwp_match (%s): %d frames, %d complete cycles -> %s",
         source,

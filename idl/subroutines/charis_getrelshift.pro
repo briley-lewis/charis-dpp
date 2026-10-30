@@ -7,7 +7,7 @@ function charis_getrelshift, im1, im2, roi, sxg, syg, subpix = subpix, res = res
   ; shift initial
   if n_params() lt 4 then sx0 = 0. else sx0 = sxg
   if n_params() lt 5 then sy0 = 0. else sy0 = syg
-  if ~keyword_set(subpix) then sx0 = round(sxg)
+  if ~keyword_set(subpix) and n_elements(sxg) gt 0 then sx0 = round(sxg) ; [BUGS.md #276]
   if ~keyword_set(subpix) then sy0 = round(syg)
   s = size(im1)
   d0 = s[1]

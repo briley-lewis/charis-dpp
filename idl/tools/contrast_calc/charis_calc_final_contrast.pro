@@ -110,7 +110,7 @@ pro charis_calc_final_contrast, pick = pick, datacube = datacube, databb = datab
       resistant_mean, redcube, 3.0, redcube_collapsed, dimension = 3
       resistant_mean, redcube[*, *, 0 : 4], 3.0, redcube_j, dimension = 3
       resistant_mean, redcube[*, *, 7 : 13], 3.0, redcube_h, dimension = 3
-      resistant_mean, redcube[*, *, 16 : numchannnels - 2], 3.0, redcube_k, dimension = 3
+      resistant_mean, redcube[*, *, 16 : numchannels - 2], 3.0, redcube_k ; [BUGS.md #228], dimension = 3
     endelse
 
     ; endelse
@@ -158,7 +158,7 @@ pro charis_calc_final_contrast, pick = pick, datacube = datacube, databb = datab
 
   ; if you want to mask a bright source ...
   nmask = 0
-  if keyword_set(maskcoord) then begin
+  if keyword_set(maskcoord) then begin ; [BUGS.md #230]
     dist_circle, mask, dimcube[0], maskcoord[0], maskcoord[1]
     maskobj = where(mask le 1.5 * max(fwhm), nmask)
   endif
@@ -166,7 +166,7 @@ pro charis_calc_final_contrast, pick = pick, datacube = datacube, databb = datab
   ; per wavelength channel
   for il = 0l, dimcube[2] - 1 do begin
     slice = redcube[*, *, il]
-    if keyword_set(maskcoords) then begin
+    if keyword_set(maskcoord) then begin
       if nmask gt 0 then slice[maskobj] = !values.f_nan
     endif
     ; print,fwhm[il]
@@ -180,7 +180,7 @@ pro charis_calc_final_contrast, pick = pick, datacube = datacube, databb = datab
   jimage = redcube_j
   himage = redcube_h
   kimage = redcube_k
-  if (keyword_set(maskcoords) and nmask gt 0) then begin
+  if (keyword_set(maskcoord) and nmask gt 0) then begin
     jimage[maskobj] = !values.f_nan
     himage[maskobj] = !values.f_nan
     kimage[maskobj] = !values.f_nan
@@ -203,7 +203,7 @@ pro charis_calc_final_contrast, pick = pick, datacube = datacube, databb = datab
     endif else begin
       resistant_mean, attenmap_slice[*, *, 0 : 4], 3.0, attenmap_j, dimension = 3
       resistant_mean, attenmap_slice[*, *, 7 : 13], 3.0, attenmap_h, dimension = 3
-      resistant_mean, attenmap_slice[*, *, 16 : numchannnels - 2], 3.0, attenmap_k, dimension = 3
+      resistant_mean, attenmap_slice[*, *, 16 : numchannels - 2], 3.0, attenmap_k, dimension = 3
     endelse
 
     noisemap_j /= attenmap_j
@@ -218,7 +218,7 @@ pro charis_calc_final_contrast, pick = pick, datacube = datacube, databb = datab
   ; ***Broadband Image***
   combimage = redcube_collapsed
 
-  if (keyword_set(maskcoords) and nmask gt 0) then combimage[maskobj] = !values.f_nan
+  if (keyword_set(maskcoord) and nmask gt 0) then combimage[maskobj] = !values.f_nan
   charis_snratio_sub, combimage, fwhm = bbfwhm, /finite, noisemap = noisemap_collapsed, /silent, /zero, /filt
   ; writefits,'bah.fits',5*noisemap_collapsed/bbstarflux
 

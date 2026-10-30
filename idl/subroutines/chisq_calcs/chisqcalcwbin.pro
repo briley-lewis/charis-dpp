@@ -26,7 +26,7 @@ pro chisqcalcwbin, obs = obs, eobs = eobs, widthobs = widthobs, model_in = model
   for i = 0l, nsfac - 1 do begin
     diff = obs - sfac[i] * model_in
     if ~keyword_set(err_model_in) then begin
-      gval = total(widthobs[diff / eobs] ^ 2.)
+      gval = total(widthobs * (diff / eobs) ^ 2.) ; [BUGS.md #293]
 
       if keyword_set(phot) then begin
         diffphot = phot - sfac[i] * modelphot

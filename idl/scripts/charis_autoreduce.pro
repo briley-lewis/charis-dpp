@@ -110,7 +110,7 @@ step3:
 close,/all
 
 ;Now, check to see if there are any sky frames
-readcol,'obs*txt',n1,n2,n3,n4,n5,n6,format='(a,a,a,a,a,a)'
+readcol,'obslog.txt',n1,n2,n3,n4,n5,n6,format='(a,a,a,a,a,a)'
 skyframe=where(n6 eq 'sky',numbersky) 
 
 if keyword_set(setup) then begin

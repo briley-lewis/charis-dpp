@@ -77,7 +77,7 @@ pro charis_calc_ee, pick = pick, position = position, il = il, prad = prad, dpsf
   good = where(g le dpsf / 4)
   print, max(dum[good])
   z = where(dum eq max(dum[good]))
-  profradxy, dum, position[0], position[1], 1, dpsf / 2, p1d = pr, rayon = rayon
+  profrad_tc, dum, 1, 1, dpsf / 2, p1d = pr, rayon = rayon ; [BUGS.md #259] profradxy was never shipped
   pr /= max(dum[good])
 
   plot, rap, ee[*, il], xrange = [0, max(rap) + 1]

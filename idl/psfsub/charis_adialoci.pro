@@ -286,8 +286,8 @@ pro charis_adialoci, pfname, prefname = prefname, nfwhm = nfwhm, drsub = drsub0,
   lng = double(sxpar(h0, 'lng', count = lngmatch))
 
   ; If you don't have an entry, assume you're at Maunakea
-  if latmatch eq 0 then lat = 19.825d0
-  if lngmatch eq 0 then lng = -155.4802d0
+  if latmatch eq 0 then lat = charis_get_constant(name = 'lat') ; [BUGS.md #306]
+  if lngmatch eq 0 then lng = charis_get_constant(name = 'lng')
 
   ; **Exposure Time.  In imprep.pro, set all indiv. times to 'exp1time' and coadds to 'coadds'
   exptime = sxpar(h0, 'exp1time')
@@ -303,6 +303,7 @@ pro charis_adialoci, pfname, prefname = prefname, nfwhm = nfwhm, drsub = drsub0,
   loci_geom = geom
   loci_rmin = rmin
   loci_rmax = rmax
+  if nref le 0 then nref = 1000 ; [BUGS.md #133] 0 (missing ALOCINRE) would give [0:-1]
   loci_nref = nref
   ; print,drsub,na,geom,rmin,rmax
 
@@ -321,7 +322,7 @@ pro charis_adialoci, pfname, prefname = prefname, nfwhm = nfwhm, drsub = drsub0,
   dtmean = mean[(abs(allpa - shift(allpa, -1)))[0 : nfiles - 2]] * !dtor
 
   ; determine radii
-  if n_elements(drsub0 eq 1) then begin
+  if n_elements(drsub0) eq 1 then begin ; [BUGS.md #127]
     nrsub = ceil((rmax - rmin) / drsub0)
     rsub = findgen(nrsub) * drsub0 + rmin
     drsub = replicate(drsub0, nrsub)
@@ -985,7 +986,7 @@ pro charis_adialoci, pfname, prefname = prefname, nfwhm = nfwhm, drsub = drsub0,
     writefits, reducdir + filesout[nf], imt, h1, /append
   endfor
 
-  if ~keyword_set(mean) then begin
+  if ~keyword_set(meanadd) then begin ; [BUGS.md #128]
     im = charis_combinefits(filesout, dir = reducdir, /cube)
   endif else begin
     im = charis_combinefits(filesout, /mean, dir = reducdir, /cube)

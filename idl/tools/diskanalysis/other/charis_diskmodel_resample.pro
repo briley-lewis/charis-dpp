@@ -39,7 +39,7 @@ function charis_diskmodel_resample, model, inputpixscale = inputpixscale, help =
 
   outputdiskmodel = fltarr((size(inputdiskmodel, /dim))[0], (size(inputdiskmodel, /dim))[1])
 
-  tmp = make_array((size(inputdiskmodel, /dim))[0 : 1], type = typ) + !values.f_nan
+  tmp = make_array((size(inputdiskmodel, /dim))[0 : 1], type = size(inputdiskmodel, /type)) + !values.f_nan ; [BUGS.md #262]
   tmp[goodmap] = interpolate(inputdiskmodel, coordsj[0, *], coordsj[1, *], cubic = -0.5, missing = !values.f_nan)
 
   outputdiskmodel[goodmap] = tmp

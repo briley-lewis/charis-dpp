@@ -167,3 +167,29 @@ def test_psf_models(workdir, cfg_path, truth):
     assert abs(f["fwhm_x"] - truth["fwhm_px"][10] * truth["config"]["fwhm_factor"]) < 0.3
     q = make_synthetic_psf(cfg_path, kind="gaussian")
     assert read_cube(q).data.shape == (truth["nlam"], 21, 21)
+
+
+def test_xcorr_registration_without_spots(synthetic_dataset, tmp_path):
+    """method='xcorr' aligns frames to the first one without using satellite spots."""
+    import json
+    import shutil
+
+    from charis_dpp.prelims.imprep import imprep
+    from charis_dpp.reg import register_cube
+    from charis_dpp.skysub import subtract_sky
+
+    d = tmp_path / "xc"
+    shutil.copytree(synthetic_dataset, d)
+    cfg = next(d.glob("*.toml"))
+    imprep(cfg)
+    subtract_sky(cfg)
+    rl = register_cube(cfg, method="xcorr", xcorr_center="centroid")
+    truth = json.loads((d / "truth.json").read_text())
+    c = np.array([f["center"] for f in truth["frames"]])
+    nums = [f["filenum"] for f in truth["frames"]]
+    meas = rl.centers(nums)
+    # relative alignment to the first frame is what cross-correlation delivers
+    assert np.allclose(meas[1:] - meas[0], c[1:] - c[0], atol=0.25)
+    # the absolute centre of the reference comes from the halo symmetry
+    assert np.allclose(meas[0], c[0], atol=0.5)
+    assert (d / "reduc" / "reg" / "n0001reg.fits").exists()

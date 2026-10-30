@@ -269,8 +269,8 @@ lat=double(sxpar(h0,'lat',count=latmatch))
 lng=double(sxpar(h0,'lng',count=lngmatch)) 
 
 ;If you don't have an entry, assume you're at Maunakea
-if latmatch eq 0 then lat = 19.825d0
-if lngmatch eq 0 then lng = -155.4802d0
+if latmatch eq 0 then lat = charis_get_constant(name = 'lat') ; [BUGS.md #306]
+if lngmatch eq 0 then lng = charis_get_constant(name = 'lng')
 
 ;**Exposure Time.  In imprep.pro, set all indiv. times to 'exp1time' and coadds to 'coadds'
 exptime=sxpar(h0,'exp1time')
@@ -301,7 +301,7 @@ endif
 dtmean=mean((abs(allpa-shift(allpa,-1)))[0:nfiles-2])*!dtor
 
 ;determine radii
-if n_elements(drsub0 eq 1) then begin
+if n_elements(drsub0) eq 1 then begin ; [BUGS.md #127]
     nrsub=ceil((rmax-rmin)/drsub0)
     rsub=findgen(nrsub)*drsub0+rmin
     drsub=replicate(drsub0,nrsub)
@@ -959,7 +959,7 @@ for nf=0,nfiles-1 do begin
 endfor
 
 
-if ~keyword_set(mean) then begin
+if ~keyword_set(meanadd) then begin ; [BUGS.md #128]
 im=charis_combinefits(filesout,dir=reducdir,/cube)
 endif else begin
 

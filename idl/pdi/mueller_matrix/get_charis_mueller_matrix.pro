@@ -21,7 +21,7 @@ function get_charis_mueller_matrix, $
     deg2rad = !dpi / 180.d
     rad2deg = 180.d / !dpi
 
-    a_tel = 19.823806d * deg2rad ; Subaru's latitude in radians
+    a_tel = charis_get_constant(name = 'lat') * deg2rad ; [BUGS.md #306] Subaru's latitude in radians
     azimuth = sxpar(h1, 'azimuth')
 
     az_rad = (azimuth - 180.d) * deg2rad

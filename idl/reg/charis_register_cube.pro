@@ -119,7 +119,7 @@ endif
 
 ;if method eq 'sats' then method = 0
 ;if method eq 'psf' then method = 1
-;if method eq 'calsats' then method =2
+if size(method, /type) eq 7 then if (method eq 'calsats' or method eq 'calsat') then method = 2 ; [BUGS.md #35]
 
 
 if string(method) eq 'sats' then begin 
@@ -214,7 +214,7 @@ param,'fnum_lad',flist,/get,pfname=pfname
 endelse
 param,'rsat',rsat,/get,pfname=pfname
 param,'DEC',decdeg,/get,pfname=pfname
-lat = 19.825d0 ;mauna kea
+lat = charis_get_constant(name='lat') ; [BUGS.md #306] mauna kea
 
 if ~keyword_set(fwhmlim) then fwhmlim=7
 
@@ -460,7 +460,7 @@ if ~keyword_set(nosmooth) then a_test=smooth(a_test,smoothval)
 
 ;****if you have a very bright pt source that is skewing the sat spot determination, apply an NAN mask here.
 if keyword_set(smask) then begin
-for sm=0L,n_elements(x)-1 do begin
+for sm=0L,n_elements(xsource)-1 do begin ; [BUGS.md #38]
 gcntrd,a_test,xsource[sm],ysource[sm],xsourceout,ysourceout
 dist_circle,sloc,[sz[1],sz[2]],xsourceout,ysourceout
 maskme=where(sloc le 2)
@@ -1123,7 +1123,7 @@ print,'Registering File Number ',i+1,' ',files[i]
 
    for s=0L,sz[3]-1 do begin
     
-    fidcenter=charis_getrelshift(refimage[*,*,s],a_in[*,*,s],roi,xc0-PSFcensref[0,s],yc0-PSFcensref[0,s])
+    fidcenter=charis_getrelshift(refimage[*,*,s],a_in[*,*,s],roi,xc0-PSFcensref[0,s],yc0-PSFcensref[1,s]) ; [BUGS.md #41]
 
     PSFcens[0,s]=fidcenter[0]
     PSFcens[1,s]=fidcenter[1]

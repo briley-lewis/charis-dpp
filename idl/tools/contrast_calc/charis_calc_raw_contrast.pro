@@ -246,7 +246,7 @@ pro charis_calc_raw_contrast, pfname, pick = pick, modsize = modsize, sub = sub,
         esatflux[ical, il] = tmp2
       endif else begin
         phpadu = 1.0
-        sat_skyrad = [2.6] * aperradf
+        sat_skyrad = [2, 6] * aperradf ; [BUGS.md #312]
 
         if keyword_set(verbose) then print, cens[0, 0, il], cens[1, 0, il], imslice[cens[0, 0, il], cens[1, 0, il]]
         ; stop
@@ -272,10 +272,10 @@ pro charis_calc_raw_contrast, pfname, pick = pick, modsize = modsize, sub = sub,
       imslicemask = imslice
 
       ; SNR calculation per slice to get the background rms within an aperture, perform this on images with the sat spots masked out.
-      dist_circle, mask1, dimcal[0], [cens[0, 0, il], cens[1, 0, il]]
-      dist_circle, mask2, dimcal[0], [cens[0, 1, il], cens[1, 1, il]]
-      dist_circle, mask3, dimcal[0], [cens[0, 2, il], cens[1, 2, il]]
-      dist_circle, mask4, dimcal[0], [cens[0, 3, il], cens[1, 3, il]]
+      dist_circle, mask1, dimcal[0], cens[0, 0, il], cens[1, 0, il] ; [BUGS.md #90]
+      dist_circle, mask2, dimcal[0], cens[0, 1, il], cens[1, 1, il] ; [BUGS.md #90]
+      dist_circle, mask3, dimcal[0], cens[0, 2, il], cens[1, 2, il] ; [BUGS.md #90]
+      dist_circle, mask4, dimcal[0], cens[0, 3, il], cens[1, 3, il] ; [BUGS.md #90]
       masksat = where(mask1 le aperrad or mask2 le aperrad or mask3 le aperrad or mask4 le aperrad, nmasksat)
       imslicemask[masksat] = !values.f_nan
 
@@ -293,7 +293,7 @@ pro charis_calc_raw_contrast, pfname, pick = pick, modsize = modsize, sub = sub,
       noisemap_slicef[*, il, ical] = dum
 
       sat1noise[il] = noisemap_slice[cens[0, 0, il], cens[1, 0, il]]
-      sat2noise[il] = noisemap_slice[cens[0, 1, il], cens[1, 2, il]]
+      sat2noise[il] = noisemap_slice[cens[0, 1, il], cens[1, 1, il]] ; [BUGS.md #234]
       sat3noise[il] = noisemap_slice[cens[0, 2, il], cens[1, 2, il]]
       sat4noise[il] = noisemap_slice[cens[0, 3, il], cens[1, 3, il]]
 
@@ -455,7 +455,7 @@ pro charis_calc_raw_contrast, pfname, pick = pick, modsize = modsize, sub = sub,
   if keyword_set(outputfile) then begin
     prefplotname = outputfile
   endif else begin
-    profplotname = 'combined_'
+    prefplotname = 'combined_' ; [BUGS.md #235]
   endelse
   device, filename = './' + outputdir + '/' + prefplotname + '_contrastcurve.eps', /encapsulated, /color, bits = 8
   ; device,filename='./raw_contrasts/'+prefplotname+'_contrastcurve.eps',/encapsulated,/color,bits=8

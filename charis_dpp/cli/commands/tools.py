@@ -330,3 +330,22 @@ def _rdm(parser):
         return 0
 
     return run
+
+
+@register(
+    "compare-fits", help="Compare two FITS products (relative RMS, correlation, finite agreement)"
+)
+def _cmp(parser):
+    parser.add_argument("a", type=Path)
+    parser.add_argument("b", type=Path)
+    parser.add_argument("--border", type=int, default=2)
+    parser.add_argument("--ext", type=int)
+
+    def run(args) -> int:
+        from charis_dpp.testing.compare import compare_fits
+
+        r = compare_fits(args.a, args.b, border=args.border, ext=args.ext)
+        print(r)
+        return 0 if r.ok() else 1
+
+    return run

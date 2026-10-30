@@ -87,7 +87,7 @@ pro charis_newobs, date = date, object = object, filter = filter, help = help, o
 
   if found eq 0 then begin
     print, 'Cannot Find Star, Check the name'
-    stop
+    message, 'charis_newobs: target not found in SIMBAD' ; [BUGS.md #5]
   endif
 
   print, ra, dec
@@ -129,11 +129,11 @@ pro charis_newobs, date = date, object = object, filter = filter, help = help, o
     epmdecset = where(strmatch(tag_names(ship), 'e_pmde', /fold_case) eq 1)
     sptypeset = where(strmatch(tag_names(ship), 'sptype', /fold_case) eq 1)
 
-    if (plxset gt 0) then plx = ship.plx else begin
+    if (plxset ge 0) then plx = ship.plx ; [BUGS.md #1] else begin
       plx = 0
       print, 'Parallax not found. Setting parallax=0.'
     endelse
-    if (eplxset gt 0) then eplx = ship.e_plx else begin
+    if (eplxset ge 0) then eplx = ship.e_plx ; [BUGS.md #1] else begin
       eplx = 0
       print, 'Error on parallax not found. Setting error on parallax=0.'
     endelse
@@ -144,18 +144,18 @@ pro charis_newobs, date = date, object = object, filter = filter, help = help, o
 
     if plx gt 0 then distance = 1.d3 / plx else distance = -999
 
-    if (pmraset gt 0) then begin
+    if (pmraset ge 0) then begin ; [BUGS.md #1]
       pmra = ship.pmra
-      epmra = ship.e_pmra
+      if (epmraset ge 0) then epmra = ship.e_pmra else epmra = 0 ; [BUGS.md #2]
     endif else begin
       ; if (pmraset gt 0) then (pmra=ship.pmra) and (epmra=ship.epmra) else begin
       pmra = 0
       epmra = 0
       print, 'PM RA not found. Setting (error on) PMRA=0.'
     endelse
-    if (pmdecset gt 0) then begin
+    if (pmdecset ge 0) then begin ; [BUGS.md #1]
       pmde = ship.pmde
-      epmde = ship.e_pmde
+      if (epmdecset ge 0) then epmde = ship.e_pmde else epmde = 0 ; [BUGS.md #2]
     endif else begin
       pmde = 0
       epmde = 0
@@ -187,6 +187,7 @@ pro charis_newobs, date = date, object = object, filter = filter, help = help, o
   ; Presumably, your source is in the 2MASS point source catalog!
   ; print,'radec',ra,dec
   s = Charis_queryvizierf('II/246/out', [ra, dec], 20. / 60., /allcolumns)
+  if size(s, /type) ne 8 then message, 'charis_newobs: no 2MASS source within the search radius' ; [BUGS.md #4]
   ind = sort(s._r)
   s = s[ind[0]]
 
@@ -207,7 +208,7 @@ pro charis_newobs, date = date, object = object, filter = filter, help = help, o
   ; default, canned values for other parameters
   ; other algorithm parameters
   ; unclear whether the below is needed
-  param, 'procdir', './proc/', 'Subdirectory to put processed files', /set, pfname = pfname
+  param, 'procdir', './reduc/proc/', ; [BUGS.md #7] 'Subdirectory to put processed files', /set, pfname = pfname
   param, 'rsat', -1., 'PSF saturation radius', /set, pfname = pfname
   param, 'fwhm', 2.63, 'Broadband PSF FWHM in pixels', /set, pfname = pfname
 

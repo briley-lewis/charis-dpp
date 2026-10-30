@@ -28,7 +28,7 @@ function rotat_cube, cube, deg, x0, y0, hdr = hdr, missing = missing
 
   ; coordonnees initiales des bons pixels
   xi = igood mod dimx
-  yi = igood / dimx
+  yi = (igood / dimx) mod dimy ; [BUGS.md #270]
 
   ; vecteur des coordonnees finales correspondant aux bons pixels
   xf = round((x0 - ct * x0 - st * y0) + ct * xi + st * yi)

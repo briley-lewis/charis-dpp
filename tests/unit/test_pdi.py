@@ -102,3 +102,12 @@ def test_hwp_log_and_cycles(tmp_path):
     p = t.save(tmp_path / "hwp_info.txt")
     t2 = HwpTable.load(p)
     assert t2.ncycles == 2 and list(t2.hwp_cycle) == list(cyc) and t2.filenums == list(range(9))
+
+
+def test_unwrap_hours_both_directions():
+    from charis_dpp.pdi.hwp_match import _unwrap_hours
+
+    # exposures after midnight, log entries before it
+    assert np.allclose(_unwrap_hours(np.array([23.5, 23.9, 0.2]), 0.5), [-0.5, -0.1, 0.2])
+    # exposures before midnight, log entries after it
+    assert np.allclose(_unwrap_hours(np.array([23.5, 0.1]), 23.0), [23.5, 24.1])

@@ -19,7 +19,7 @@ function nbr2txt, n, ndigit
 
   for i = 0, nn - 1 do begin
     tmp = textnumber[i]
-    strput, tmp, strtrim(n[i], 2), ndigit - 1 - fix(alog10(n[i]))
+    strput, tmp, strtrim(long(n[i]), 2), ndigit - strlen(strtrim(long(n[i]), 2)) ; [BUGS.md #285]
     textnumber[i] = tmp
   endfor
 

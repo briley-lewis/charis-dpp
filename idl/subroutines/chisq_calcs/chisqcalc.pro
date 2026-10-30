@@ -6,7 +6,8 @@ pro chisqcalc, obs = obs, eobs = eobs, model_in = model_in, err_model_in = err_m
 
   ; number of flux measurements
   n_measure = n_elements(obs)
-  ndof = n_measure
+  ndof = n_measure - 1 ; [BUGS.md #296] one fitted parameter (alpha)
+  if keyword_set(phot) then ndof += n_elements(phot)
 
   ncovar = fltarr(n_measure, n_measure)
 

@@ -41,8 +41,8 @@ function nbrlist, tlist, rns = rns
     if (dash gt comma) then dash = -1
     ; if there is a dash in this part of the string
     if (dash ne -1) then begin
-      ni = fix(strmid(txtlist, 0, dash))
-      nf = fix(strmid(txtlist, dash + 1, comma - dash - 1))
+      ni = long(strmid(txtlist, 0, dash)) ; [BUGS.md #285]
+      nf = long(strmid(txtlist, dash + 1, comma - dash - 1))
 
       if (keyword_set(rns)) then begin
         for n = ni, nf do begin
@@ -55,7 +55,7 @@ function nbrlist, tlist, rns = rns
       endelse
       ; if no dash in this part of the string
     endif else begin
-      n = fix(strmid(txtlist, 0, comma))
+      n = long(strmid(txtlist, 0, comma))
       if (n_elements(list) eq 0) then list = n else list = [list, n]
     endelse
 

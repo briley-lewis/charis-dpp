@@ -2,7 +2,7 @@ pro charis_klip_fakeplanet, pfname, reducname = reducname, $
   nonorthup = nonorthup, $
   prefname = prefname, gauspsf = gauspsf, method = method, $
   planetmethod = planetmethod, planetmodel = planetmodel, pickpsf = pickpsf, $
-  rdi = rdi, refpath = refpath, subsky = subsky
+  rdi = rdi, refpath = refpath, subsky = subsky, help = help ; [BUGS.md #160]
   compile_opt idl2
 
   ; ***inserts a planet into a cube, processes the data.
@@ -488,6 +488,7 @@ pro charis_klip_fakeplanet, pfname, reducname = reducname, $
       ; aper,imslice,xp,yp,flux,eflux,sky,skyerr,1,0.5*fwhm[ilambda],[2,6]*fwhm[ilambda],setskyval=0,/flux,/exact,/nan,/silent
 
       if keyword_set(subsky) then begin
+        if n_elements(rmax) eq 0 then rmax = (size(imslice, /dim))[0] / 2 ; [BUGS.md #161]
         profrad_tc, imslice, 1, 1, rmax, p2d = pr
         imslice -= pr
       endif
@@ -525,4 +526,5 @@ pro charis_klip_fakeplanet, pfname, reducname = reducname, $
   ; writefits,'new.fits',imcol
   ; ;stop
   ; help,im2,im
+  skiptotheend: ; [BUGS.md #160]
 end

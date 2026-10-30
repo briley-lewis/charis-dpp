@@ -1,0 +1,19 @@
+# Tolerances for the regression comparison against archived IDL outputs.
+# A dataset directory under $CHARIS_DPP_TESTDATA holds:
+#   raw/CRSA*_cube.fits        the raw extracted cubes
+#   <target>_<band>.toml       dataset config (or a legacy .info file)
+#   idl/reduc.log              IDL registration log
+#   idl/reduc/reg/n####reg_cal.fits, idl/reduc/proc/*.fits   IDL products to compare
+[reduclog]
+max_dx = 0.05      # px
+max_dy = 0.05
+max_dpa = 0.01     # deg
+
+[images]
+border = 2         # pixels ignored at the frame edge (cubic edge behaviour differs)
+rel_rms = 1e-3
+pearson = 0.995
+finite_agree = 0.98
+
+[final]            # the PSF-subtracted collapsed image: speckle noise dominates, only correlation
+pearson = 0.99

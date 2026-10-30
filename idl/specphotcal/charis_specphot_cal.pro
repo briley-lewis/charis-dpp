@@ -219,7 +219,7 @@ pro charis_specphot_cal, pfname, calmethod = calmethod, pick = pick, datacube = 
     endif else begin
       modsize1 = sxpar(h0test, 'X_GRDAMP', count = modcount1)
       modsize2 = sxpar(h1test, 'X_GRDAMP', count = modcount2)
-      if ((modcount1 eq 0 and modcount2 eq 0) or (modsize1 eq 'unavailable' and modsize2 eq 'unavailable')) then begin
+      if ((modcount1 eq 0 and modcount2 eq 0) or (size(modsize1, /type) eq 7 and size(modsize2, /type) eq 7)) then begin
         read, 'Manually Enter the ASTROGRID modulation amplitude in nanometers ', modsize
       endif else begin
         ; go find the modulation size in the fits header
@@ -431,7 +431,7 @@ pro charis_specphot_cal, pfname, calmethod = calmethod, pick = pick, datacube = 
 
     if ncal gt 1 then begin
       conv_fact0 = median(conv_fact_tot, /even, dimension = 1)
-      cerr = median(cerro0, /even, dimension = 1)
+      cerr = median(cerr0, /even, dimension = 1) ; [BUGS.md #66]
       speccal = median(fstar0, /even, dimension = 1)
       snratio_sats = 1. / cerr
     endif else begin
@@ -654,7 +654,7 @@ pro charis_specphot_cal, pfname, calmethod = calmethod, pick = pick, datacube = 
       charis_snratio_sub, imslicemask, fwhm = aperradf * 2, /finite, noisemap = noisemap_slice, /silent
 
       sat1noise[il] = noisemap_slice[cens[0, 0, il], cens[1, 0, il]]
-      sat2noise[il] = noisemap_slice[cens[0, 1, il], cens[1, 2, il]]
+      sat2noise[il] = noisemap_slice[cens[0, 1, il], cens[1, 1, il]] ; [BUGS.md #67]
       sat3noise[il] = noisemap_slice[cens[0, 2, il], cens[1, 2, il]]
       sat4noise[il] = noisemap_slice[cens[0, 3, il], cens[1, 3, il]]
 
@@ -730,7 +730,7 @@ pro charis_specphot_cal, pfname, calmethod = calmethod, pick = pick, datacube = 
     print, 'For Cube ', ical, ' Flux and EFlux for Channel 1', satflux[ical, 0], esatflux[ical, 0]
   endfor
 
-  if keyword_set(verbose) then print, satflux[*, 19] / esatflux[*, 19]
+  if keyword_set(verbose) then print, satflux[*, n_elements(wvlh_test) - 3] / esatflux[*, n_elements(wvlh_test) - 3] ; [BUGS.md #76]
 
   ; if n_elements(ncal) gt 1 then begin
   if ncal gt 1 then begin

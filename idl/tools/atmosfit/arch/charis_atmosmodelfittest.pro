@@ -153,7 +153,7 @@ case grid of
   'btsettl': begin
 
 ;these models have are from the online substellar atmosphere model server: 
-http://svo2.cab.inta-csic.es/theory/newov2/
+; http://svo2.cab.inta-csic.es/theory/newov2/ ; [BUGS.md #248]
 ;format lte[temp]-[logg]-[metallicity].BT-Sett.7.dat.txt
 ;e.g lte020-4.0-0.0.BT-Settl.7.dat.txt  = 2000K, log(g)=4, solar metallicity
 
