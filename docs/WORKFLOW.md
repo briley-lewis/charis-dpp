@@ -52,6 +52,30 @@ moves during an exposure, and logs from another night (`--time-ref start|mid|end
 chooses the exposure reference time; default `mid`). Products:
 `reduc/proc/<out>_{q,u,pi,aolp,qphi,uphi}[_collapsed].fits`.
 
+## Comparing two reduction trees
+
+`charis compare-trees A B --mode identical|port [--allow-list FILE] [--out DIR]` compares two
+reductions of the same dataset file by file, whichever pipeline made them (old IDL, patched IDL,
+Python). `A` and `B` are the dataset working directories (or their `reduc/`); files are paired by
+relative path: `prep/*.fits`, `reg/*.fits`, `proc/*.fits`, `reduc*.log` and `hwp_info.txt`
+(Python `name hwp_pos hwp_ang hwp_cycle` or IDL `FILE HWP_POS HWP_ANG CYCLE` layout). FITS
+products get whole-cube and per-channel statistics (relative RMS, Pearson r, finite-pixel
+agreement, max |diff|; a 2-pixel border is ignored), `reduc.log` the centre/HA/PA differences of
+the common frames, `hwp_info.txt` a row-by-row check of position, angle and cycle. A file on one
+side only is listed as `missing`, which is not a failure.
+
+* `--mode identical`: the two trees ran the same code and should agree to rounding
+  (rel RMS ≤ 1e-6, every pixel finite on both sides or neither). Relative paths matching a
+  pattern in `--allow-list FILE` (fnmatch patterns, one per line, `#` comments) are judged
+  with the `port` thresholds instead, for products that legitimately differ.
+* `--mode port`: one tree is the Python port; thresholds come from
+  `tests/regression/tolerances.toml` (`[images]`, `[reduclog]`, and `[final]` for
+  `proc/*_collapsed.fits`, where only the correlation is checked).
+
+One table is printed and `compare.csv` (one row per file plus one per channel) and `compare.md`
+are written to `--out` (default: the current directory). The exit code is 1 when any file fails.
+From Python: `charis_dpp.testing.compare_trees.compare_trees(a, b, mode, tolerances, allow_list)`.
+
 ## Differences from IDL worth knowing
 
 * arrays are `(channel, y, x)`; header cards keep the IDL `x y` order.

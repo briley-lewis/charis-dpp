@@ -349,3 +349,51 @@ def _cmp(parser):
         return 0 if r.ok() else 1
 
     return run
+
+
+@register(
+    "compare-trees",
+    help="Compare two reduction trees (old IDL, new IDL or Python) file by file",
+)
+def _cmpt(parser):
+    parser.add_argument("a", type=Path, help="first tree (working directory or its reduc/)")
+    parser.add_argument("b", type=Path, help="second tree")
+    parser.add_argument(
+        "--mode",
+        choices=["identical", "port"],
+        default="identical",
+        help="identical: same code, bit-level agreement expected; "
+        "port: tests/regression/tolerances.toml thresholds",
+    )
+    parser.add_argument(
+        "--allow-list",
+        type=Path,
+        help="file of fnmatch patterns (one per line) judged with the port thresholds "
+        "in identical mode",
+    )
+    parser.add_argument(
+        "--tolerances", type=Path, help="tolerances.toml (default: the repository copy)"
+    )
+    parser.add_argument(
+        "--out", type=Path, default=Path("."), help="directory for compare.csv and compare.md"
+    )
+
+    def run(args) -> int:
+        from charis_dpp.testing.compare_trees import (
+            compare_trees,
+            table_lines,
+            write_csv,
+            write_markdown,
+        )
+
+        res = compare_trees(
+            args.a, args.b, args.mode, tolerances=args.tolerances, allow_list=args.allow_list
+        )
+        print("\n".join(table_lines(res)))
+        args.out.mkdir(parents=True, exist_ok=True)
+        csv_path = write_csv(res, args.out / "compare.csv")
+        md_path = write_markdown(res, args.out / "compare.md")
+        print(f"wrote {csv_path} and {md_path}")
+        return 0 if res.ok else 1
+
+    return run
