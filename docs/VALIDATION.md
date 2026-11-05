@@ -35,7 +35,7 @@ Tool: `charis compare-trees A B --mode identical|port [--allow-list f] [--out d]
   old-idl/      git worktree at tag old-idl-2025-04   (IDL 8.9, ~/idl/idl89)
   new-idl/      git worktree at branch integrate-port
   datasets/
-    frames-2023-07-30.md          frame lists worked up from the observing log + headers
+    frames-2023-07-30.md          frame lists worked up from the observing log + headers (copy in docs/validation/)
     HD236894_bb/                  polarized standard, 16 s broadband PDI
       data/raw/CRSA*_cube.fits    symlinks to /home/shared/exoserver/Subaru-Europa/2023-07-30/HD236894-broadband-pol/
       pdi_flats/                  extracted PDI flat cubes
@@ -86,8 +86,10 @@ Controlled variables (identical in every run, recorded here when fixed):
 
 | variable | value | why |
 |---|---|---|
-| `fnum_sat`, `fnum_sky` | from `frames-2023-07-30.md` | the DPP mis-tags PDI frames as sky; set by hand |
-| registration method, `polcent_offset` | TBD after header check (astrogrid state) | |
+| `fnum_sat`, `fnum_sky` | HD 236894: sat 123560–123583 (6 clean cycles), no sky; Europa: sat 123628–123847 (55 cycles), sky 123848–123855 | from `docs/validation/frames-2023-07-30.md`; the DPP mis-tags PDI frames as sky, so set by hand |
+| flats, darks | bright PDI lamp flat 123412–123416 (5 × 5.9 s, no lamp-off frames); darks 123417–123420 (200.6 s); twilight sky flats 123926–933 as the alternative | the only PDI flats taken that night |
+| HWP angle source | raw-frame `RET-ANG1` (cubes carry none); the angle at the start of the ramp | the waveplate moves during the last read(s) of each ramp, so `hwp_time_ref=start` semantics; a per-read check is an open question |
+| registration method, `polcent_offset` | non-spot: `X_GRDST=OFF` on every frame of the night (`docs/validation/frames-2023-07-30.md`); IDL `charis_pdi_register_cube` with the PSF-centroid method for the star, `method=xcorr` (Python) / cross-correlation for Europa; `polcent_offset` left at the instrument default | no satellite spots anywhere, so `astrogrid=` is not used |
 | `hwp_time_ref` | `mid` (Python default; IDL per code) | HWP log vs exposure timing |
 | `pdi.mueller.flip_matrix` | `false` | fork behaviour on both sides; BUGS.md #308 revisited afterwards |
 | `angoffset` | 2.2 (epoch `satspot-recal-2017`) | 2023 epoch; changing it means rerunning `charis_pdi` |
