@@ -1,7 +1,7 @@
 pro charis_pdi, pfname,$
  prefname=prefname, Lsuffname=Lsuffname, Rsuffname=Rsuffname, hwpinfo_name=hwpinfo_name, outfile=outfile,$
  meanadd=meanadd, collapse_type=collapse_type,$
- angoffset=angoffset, single_sum_zeros=single_sum_zeros,$
+ angoffset=angoffset, save_single_sums=save_single_sums, single_sum_zeros=single_sum_zeros,$
  maskspots=maskspots,$
  no_mm_ip_corr=no_mm_ip_corr, no_mm_crosstalk_corr=no_mm_crosstalk_corr,$
  first_order_ip_corr=first_order_ip_corr, foip_rlims=foip_rlims,$
@@ -16,7 +16,7 @@ if (N_PARAMS() eq 0 or keyword_set(help)) then begin
     print,'Written by K. Lawson (2022)'
     print,''
     print,'**Calling Sequence**'
-    print,'charis_pdi, pfname, prefname=prefname, Lsuffname=Lsuffname, Rsuffname=Rsuffname, hwpinfo_name=hwpinfo_name, outfile=outfile, meanadd=meanadd, collapse_type=collapse_type, angoffset=angoffset, single_sum_zeros=single_sum_zeros, no_mm_ip_corr=no_mm_ip_corr, no_mm_crosstalk_corr=no_mm_crosstalk_corr, first_order_ip_corr=first_order_ip_corr, foip_rlims=foip_rlims, bg_sub=bg_sub, bg_rlims = bg_rlims, unres_pol_sub=unres_pol_sub, unres_pol_rlims=unres_pol_rlims, avg_unres_pol_coeffs=avg_unres_pol_coeffs, collapse_cycles=collapse_cycles, save_full_seq=save_full_seq, save_derot_seq=save_derot_seq, save_uncorrected_derot=save_uncorrected_derot, no_adisync=no_adisync, hwp_inds = hwp_inds, extra_pol_angle_corr=extra_pol_angle_corr, help=help'
+    print,'charis_pdi, pfname, prefname=prefname, Lsuffname=Lsuffname, Rsuffname=Rsuffname, hwpinfo_name=hwpinfo_name, outfile=outfile, meanadd=meanadd, collapse_type=collapse_type, angoffset=angoffset, save_single_sums=save_single_sums, single_sum_zeros=single_sum_zeros, no_mm_ip_corr=no_mm_ip_corr, no_mm_crosstalk_corr=no_mm_crosstalk_corr, first_order_ip_corr=first_order_ip_corr, foip_rlims=foip_rlims, bg_sub=bg_sub, bg_rlims = bg_rlims, unres_pol_sub=unres_pol_sub, unres_pol_rlims=unres_pol_rlims, avg_unres_pol_coeffs=avg_unres_pol_coeffs, collapse_cycles=collapse_cycles, save_full_seq=save_full_seq, save_derot_seq=save_derot_seq, save_uncorrected_derot=save_uncorrected_derot, no_adisync=no_adisync, hwp_inds = hwp_inds, extra_pol_angle_corr=extra_pol_angle_corr, help=help'
     print,''
     print,'Example:'
     print,"charis_pdi, 'ab_aur_low.info', /meanadd, /unres_pol_sub, /avg_unres_pol_coeffs"
@@ -31,6 +31,7 @@ if (N_PARAMS() eq 0 or keyword_set(help)) then begin
     print,"/meanadd - Use an outlier resistant mean rather than the median to combine exposures to final image cubes."
     print,"collapse_type=STRING{'median'|'mean'|'rmean'} - The method to use for calculating wavelength-collapsed products. 'median', 'mean', 'rmean' use the median, mean, or outlier resistant mean, respectively. If /mean_add is set, defaults to 'mean', else 'median'."
     print,"angoffset=FLOAT - Angle offset in degrees of the nominal image PA from true north. Defaults to the value for 'angoffset' from charis_get_constant."
+    print,"/save_single_sums - Save single sum (left+right) image cubes to ./reduc/reg with the standard total-intensity file names, for use with the PSF-subtraction routines. Output: ./reduc/reg/n????{suffname}.fits"
     print,"/single_sum_zeros - Apply zeros instead of nans to pixels beyond the FOV for the output single sum image cubes."
     print,"/no_mm_ip_corr - Disables Mueller-matrix-based instrumental polarization corrections."
     print,"/no_mm_crosstalk_corr - Disables Mueller-matrix-based crosstalk and efficiency corrections."
@@ -214,6 +215,21 @@ endif
 
 if ~keyword_set(hwp_inds) then begin
     hwp_inds = [0,1,2,3]
+endif
+
+;;;;;;;;;;;;;;;    Main PDI loop    ;;;;;;;;;;;;;;;
+if keyword_set(save_single_sums) then begin
+    ; Separately computing all single sums and writing to ./reduc/reg with standard total intensity filenames:
+    for Ti=0,nfiles_polpair-1 do begin
+        h0L = headfits(files_polleft[Ti], ext=0, /silent)
+        leftcube= readfits(files_polleft[Ti],h1L,/exten,/silent)
+        rightcube= readfits(files_polright[Ti],h1R,/exten,/silent)
+        imcube = leftcube + rightcube
+        if keyword_set(single_sum_zeros) then imcube[(where(~finite(imcube)))] = 0.
+        file_singlesum = files_polleft[Ti].replace(Lsuffname, (Lsuffname.replace('left', '')))
+        writefits,file_singlesum,0,h0L
+        writefits,file_singlesum,imcube,h1L,/append
+    endfor
 endif
 
 ;;;;;;;;;;;;;;;    Main PDI loop    ;;;;;;;;;;;;;;;

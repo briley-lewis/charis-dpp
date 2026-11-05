@@ -19,6 +19,7 @@ smallsteps=smallsteps,$
 smask=smask,$
 nomask=nomask,$
 fittrim=fittrim,$
+fitgauss=fitgauss,$
 checkquality=checkquality,$
 wait=wait,$
 verbose=verbose,$
@@ -140,7 +141,7 @@ if ~keyword_set(astrogrid) then astrogrid=11.2
 ; Registration for left pol frames:
 charis_register_cube,pfname,prefname=prefname,suffname=suffname,method=method,guessoffsets=-1*polcent_offset,$
   rsub=rsub, refcube=refcube, medbox=medbox, ladder=ladder, xcorr=xcorr, rin_corr=rin_corr,rout_corr=rout_corr,revise=revise, splitpsf=splitpsf,$
-  keepprev=keepprev, nosmooth=nosmooth, fwhmlim=fwhmlim, smallsteps=smallsteps, smask=smask,fittrim=fittrim,$
+  keepprev=keepprev, nosmooth=nosmooth, fwhmlim=fwhmlim, smallsteps=smallsteps, smask=smask,fittrim=fittrim,fitgauss=fitgauss,$
   checkquality=checkquality, astrogrid=astrogrid, verbose=verbose, help=help
 
 if ~keyword_set(ladder) then spawn,'mv reduc.log reduc_left.log'
@@ -149,7 +150,7 @@ for i=0L,nfiles-1 do spawn,'mv '+reducdir+filesout[i]+' '+reducdir+Lfilesout[i]
 ; Registration for right pol frames:
 charis_register_cube,pfname,prefname=prefname,suffname=suffname,method=method,guessoffsets=polcent_offset,$
   rsub=rsub, refcube=refcube, medbox=medbox, ladder=ladder, xcorr=xcorr, rin_corr=rin_corr,rout_corr=rout_corr,revise=revise, splitpsf=splitpsf,$
-  keepprev=keepprev, nosmooth=nosmooth, fwhmlim=fwhmlim, smallsteps=smallsteps, smask=smask,fittrim=fittrim,$
+  keepprev=keepprev, nosmooth=nosmooth, fwhmlim=fwhmlim, smallsteps=smallsteps, smask=smask,fittrim=fittrim,fitgauss=fitgauss,$
   checkquality=checkquality, astrogrid=astrogrid, verbose=verbose, help=help
 
 if ~keyword_set(ladder) then spawn,'cp reduc.log reduc_right.log'; Just copy instead of moving this one to leave reduc.log for total intensity PSF sub later.
