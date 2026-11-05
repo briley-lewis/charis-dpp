@@ -1,0 +1,526 @@
+diff --git a/idl/pdi/charis_pdi_register_cube.pro b/idl/pdi/charis_pdi_register_cube.pro
+index 8bd1ec1..0d6c686 100644
+--- a/idl/pdi/charis_pdi_register_cube.pro
++++ b/idl/pdi/charis_pdi_register_cube.pro
+@@ -5,9 +5,13 @@ astrogrid=astrogrid,$
+ method=method,$
+ rsub=rsub,$
+ refcube=refcube,$
++fitgauss=fitgauss,$
++fittrim=fittrim,$
+ medbox=medbox,$
+ ladder=ladder,$
+ xcorr=xcorr,$
++rin_corr=rin_corr,$
++rout_corr=rout_corr,$
+ revise=revise,$
+ splitpsf=splitpsf,$
+ keepprev=keepprev,$
+@@ -47,6 +51,38 @@ if ~keyword_set(polcent_offset) then polcent_offset=[31.758, 16.542]
+ datadir='./reduc/prep/'
+ reducdir='./reduc/reg/'
+ 
++;******
++;LOGGING
++;the command line call
++
++dpp_command=(recall_commands())[0]
++
++;setting up log file
++currenttime=systime()
++ct=strsplit(currenttime,/extract,' ')
++;format is month, day, hms, year
++currenttime_log=ct[1]+ct[2]+'_'+ct[4]+'_'+ct[3]
++trimmed_time_log=ct[1]+ct[2]+'_'+ct[4]
++logfilename=currenttime_log+'.log'
++logfilenametrimmed=trimmed_time_log
++
++;now, look to see if logfile exists
++checklog_list=file_search('./log/'+logfilenametrimmed+'*',count=count_checklog)
++checklog=checklog_list[n_elements(checklog_list)-1]
++
++if count_checklog eq 0 then begin
++logname='./log/'+logfilename
++openw,11,logname
++printf,11,ct[3],dpp_command,format='(a,x,a)'
++endif else begin
++logname='./'+checklog
++openw,11,logname,/append
++printf,11,ct[3],dpp_command,format='(a,x,a)'
++endelse
++;*****
++
++close,11
++
+ if ~keyword_set(ladder) then param,'fnum_sat',flist,/get,pfname=pfname else param,'fnum_lad',flist,/get,pfname=pfname
+ if ~keyword_set(prefname) then prefname='n'
+ ; This could be used on any of four product types: 
+@@ -83,20 +119,22 @@ filesout=filelist(filenum,prefix=prefname,suffix='reg')
+ Lfilesout=filelist(filenum,prefix=prefname,suffix='leftreg')
+ Rfilesout=filelist(filenum,prefix=prefname,suffix='rightreg')
+ 
++if ~keyword_set(astrogrid) then astrogrid=11.2
++
+ ; Registration for left pol frames:
+ charis_register_cube,pfname,prefname=prefname,suffname=suffname,method=method,guessoffsets=-1*polcent_offset,$
+-  rsub=rsub, refcube=refcube, medbox=medbox, ladder=ladder, xcorr=xcorr, revise=revise, splitpsf=splitpsf,$
++  rsub=rsub, refcube=refcube, medbox=medbox, ladder=ladder, xcorr=xcorr, rin_corr=rin_corr,rout_corr=rout_corr,revise=revise, splitpsf=splitpsf,$
+   keepprev=keepprev, nosmooth=nosmooth, fwhmlim=fwhmlim, smallsteps=smallsteps, smask=smask,$
+-  checkquality=checkquality, astrogrid=astrogrid, verbose=verbose, help=help
++  checkquality=checkquality, astrogrid=astrogrid, verbose=verbose, help=help,fittrim=fittrim,fitgauss=fitgauss
+ 
+ if ~keyword_set(ladder) then spawn,'mv reduc.log reduc_left.log'
+ for i=0L,nfiles-1 do spawn,'mv '+reducdir+filesout[i]+' '+reducdir+Lfilesout[i]
+ 
+ ; Registration for right pol frames:
+ charis_register_cube,pfname,prefname=prefname,suffname=suffname,method=method,guessoffsets=polcent_offset,$
+-  rsub=rsub, refcube=refcube, medbox=medbox, ladder=ladder, xcorr=xcorr, revise=revise, splitpsf=splitpsf,$
++  rsub=rsub, refcube=refcube, medbox=medbox, ladder=ladder, xcorr=xcorr, rin_corr=rin_corr,rout_corr=rout_corr,revise=revise, splitpsf=splitpsf,$
+   keepprev=keepprev, nosmooth=nosmooth, fwhmlim=fwhmlim, smallsteps=smallsteps, smask=smask,$
+-  checkquality=checkquality, astrogrid=astrogrid, verbose=verbose, help=help
++  checkquality=checkquality, astrogrid=astrogrid, verbose=verbose, help=help,fittrim=fittrim,fitgauss=fitgauss
+ 
+ if ~keyword_set(ladder) then spawn,'cp reduc.log reduc_right.log'; Just copy instead of moving this one to leave reduc.log for total intensity PSF sub later.
+ for i=0L,nfiles-1 do spawn,'mv '+reducdir+filesout[i]+' '+reducdir+Rfilesout[i]
+@@ -129,6 +167,7 @@ for i=0L,nfiles-1 do begin
+ 
+     Lreg = fltarr(sz[0],sz[1],sz[2])
+     Rreg = fltarr(sz[0],sz[1],sz[2])
++    tot = fltarr(sz[0],sz[1],sz[2])
+     for iL=0L,sz[2]-1 do begin
+         Lshift = strsplit(sxpar(Lh1, 'shift_'+((string(iL)).trim())), /extract)
+         Ldx = float(Lshift[0])
+@@ -139,19 +178,26 @@ for i=0L,nfiles-1 do begin
+         Rdx = float(Rshift[0])
+         Rdy = float(Rshift[1])
+         Rreg[*,*,iL] = shift_sub(im0[*,*,iL],Rdx,Rdy)
++        tot[*,*,iL]=sqrt(Rreg[*,*,iL]^2.+Lreg[*,*,iL]^2)
+     endfor
+     ;Set any pixels where either L or R isn't defined to nan
+     both_finite = finite(Lreg)*finite(Rreg)
+     bad = where(~both_finite)
+     Lreg[bad] = !values.f_nan
+     Rreg[bad] = !values.f_nan
++    tot[bad]=!values.f_nan
+ 
+     writefits,reducdir+Lfilesout[i],0,Lh0
+     writefits,reducdir+Lfilesout[i],Lreg,Lh1,/append
+ 
+     writefits,reducdir+Rfilesout[i],0,Rh0
+     writefits,reducdir+Rfilesout[i],Rreg,Rh1,/append 
++
++    writefits,reducdir+filesout[i],0,Lh0
++    writefits,reducdir+filesout[i],tot,Lh1,/append
+ endfor
+ 
++close,/all
++
+ endofprogram:
+ end
+diff --git a/idl/reg/charis_register_cube.pro b/idl/reg/charis_register_cube.pro
+old mode 100755
+new mode 100644
+index 31a6917..f1e85cc
+--- a/idl/reg/charis_register_cube.pro
++++ b/idl/reg/charis_register_cube.pro
+@@ -5,20 +5,26 @@ rsub=rsub,$
+ refcube=refcube,$
+ medbox=medbox,$
+ ladder=ladder,$
++fitgauss=fitgauss,$
++fittrim=fittrim,$
+ xcorr=xcorr,$
++rin_corr=rin_corr,$
++rout_corr=rout_corr,$
+ revise=revise,$
+ splitpsf=splitpsf,$
+ keepprev=keepprev,$
+ nosmooth=nosmooth,$
+ fwhmlim=fwhmlim,$
+ smallsteps=smallsteps,$
+-;,bandaid=bandaid,$
+ ;refslice=refslice,$
+ smask=smask,$
+ checkquality=checkquality,$
+ astrogrid=astrogrid,$
+ verbose=verbose,help=help
+ 
++;09/21/2023 - current version of image registration module.  previously called charis_register_cube2.pro
++;06/30/2023 - added option to increase/decrease number of channels poly_fitted; added option for elliptical gaussian fitting
++;01/07/2022 - Improved documentation
+ ;05/24/2021 - Edited to add 'astrogrid' keyword: if using PDI mode, set to 11.2
+ ;03/27/2020 - Edited to handle cal spot frame used to register images without spots
+ ;03/25/2020 - Includes switch to register ladder sequences that select different files and do not produce a reduc.log file
+@@ -36,8 +42,7 @@ verbose=verbose,help=help
+ ; components.  
+ 
+ ;Limitations ... 
+-;- cross-correlation currently does not work
+-;- gaussian centroiding ONLY for method = 'psf'
++;- cross-correlation currently does not work well
+ ;- does not yet do method = 'halo'
+ 
+ ;*****Nominal Program (no switches)*****
+@@ -59,7 +64,7 @@ starttime=systime(/seconds)
+ 
+ if (N_PARAMS() eq 0 or keyword_set(help)) then begin
+ print,"charis_register_cube,pfname,method=method,guessoffsets=guessoffsets,astrogrid=astrogrid,rsub=rsub,medbox=medbox"
+-print,",refcube=refcube,ladder=ladder,xcorr=xcorr,splitpsf=splitpsf,keepprev=keepprev,nosmooth=nosmooth,revise=revise,fwhmlim=fwhmlim"
++print,",refcube=refcube,ladder=ladder,fitgauss=fitgauss,fittrim=fittrim,xcorr=xcorr,rin_corr=rin_corr,rout_corr=rout_corr,splitpsf=splitpsf,keepprev=keepprev,nosmooth=nosmooth,revise=revise,fwhmlim=fwhmlim"
+ print,"smallsteps=smallsteps,smask=smask,checkquality=checkquality,verbose=verbose,help=help"
+ print,""
+ print,"***Major Keywords***"
+@@ -68,26 +73,35 @@ print,'*pfname - parameter file (e.g. HR8799_low.info)'
+ print,""
+ print,"*method - [which method used for registering cubes?]"
+ print," - choices: "
+-print," 0/'sats' [use sat spots], Examples: charis_register_cube,'HR8799_low.info',method=0"
++print," 0/'sats' [use sat spots], Examples: charis_register_cube,'HR8799_low.info',method=0 [DEFAULT]"
+ print,"OR","                                  charis_register_cube,'HR8799_low.info',method='sats'"
+ print,""
+ print," 1/'psf' [use unsat. PSF], Examples: charis_register_cube,'LkCa15_low.info',method=1"
+ print,"OR","                                  charis_register_cube,'LkCa15_low.info',method='psf'"
+ print,""
+ print," 2/'calsat' [use sat spots in cal. cube to register cubes w/o spots]"
++print,"             note: in this case, the cubes-with-spots are sometimes known as 'ladder cubes'"
++print,"             so this method selects computes a centroid for a cube in fnum_lad and then ..."
++print,"             uses halo cross-correlation to centroid cubes in fnum_sat"
+ print,"                          Examples: charis_register_cube,'ABAur_low.info',method=2"
+-print,"OR","                                  charis_register_cube,'ABAur_low.info',method='calsat'"
++print,"                                    charis_register_cube,'ABAur_low.info',method='calsat'"
+ print,""
+-print,"*guessoffsets - guess the starting centroid offset from array center [default=0]"
++print,"*guessoffsets - guess the starting centroid offset from array center (default=[0,0] ) *** USE THIS IF THE STAR IS OFF-CENTERED!!!***"
+ print,"*rsub - subtract radial profile b4 centroiding? [default=no]; *medbox - box-width for unsharp masking [default=15]"
++print,"*medbox - subtract off a moving-box median filter of specified width
++print,"*fittrim - how many channels do you trim off -- short and long wavelengths? -- default = 2. If you want 0 -- i.e. fit all channels -- then set fittrim=-1"
++print,"*fitgauss - if set, then fit an elliptical gaussian with FWHM & tilt as free parameters to determine the centroid instead of relying on gcntrd.pro"
+ print,""
+ print,"***other keywords"
+-print,"*refcube [reference cube for centroiding, method=1],*ladder [is this a ladder sequence?],*xcorr [are we doing cross-correlating?, method=0]"
+-print,"*revise [in case of bad centroiding],*splitpsf [fix for a splitting PSF core], *keepprev [keeps orig. centroid estimate incaseof failure]"
++print,"*refcube [reference cube for centroiding, method=1]
++print,"*ladder [is this a ladder sequence?] - if so, it will register cubes in fnum_lad"
++print,"        [note: this is step not required as a prerequisite for registering cubes-without-spots using calmethod=2"
++print,"*xcorr [are we doing cross-correlating?, method=0: **note**: not well tested, inadvisable at this time]"
++print,"*revise [in case of bad centroiding],*splitpsf [fix for a splitting PSF core], *keepprev [keeps orig. centroid estimate in case of failure]"
+ print,"*nosmooth [do not do sub-PSF core smoothing b4 centroiding],*fwhmlim[boxsize for centroid search]"
+ print,"*smallsteps[for method=0+xcorr flag thrown,*smask[mask pixels surrounding bright companion]"
+ print,"*checkquality[calculate core-to-halo ratio, plot results],*verbose[for debugging]"
+-print,"*astrogrid [Alternate astrogrid spacing in lambda / D, to use for spacings other than 15.9 lambda/D; 15.9 lambda/D for total intensity, usually 11.2 lambda/D for PDI]"
++print,"*astrogrid [Alternate astrogrid spacing in lambda / D units]; to use for spacings other than 15.9 lambda/D. Note: 15.9 lambda/D for total intensity, usually 11.2 lambda/D for PDI"
+ goto,skiptotheend
+ endif
+ 
+@@ -120,6 +134,10 @@ skipmethodlist:
+ 
+ refslice=10 ;hardwire this for now
+ 
++if ~keyword_set(fittrim) then fittrim=4
++
++fittrim = fittrim > 0
++
+ if ~keyword_set(ladder) then begin
+ ;*****Output Log File
+ ;***Make file saving the centroid positions (just for accounting purposes), the inner saturation radius (don't worry),
+@@ -147,6 +165,37 @@ reducdir+=subdir
+ ;*******end Directory Structure
+ 
+ 
++;******
++;LOGGING
++;the command line call
++
++dpp_command=(recall_commands())[0]
++
++;setting up log file
++currenttime=systime()
++ct=strsplit(currenttime,/extract,' ')
++;format is month, day, hms, year
++currenttime_log=ct[1]+ct[2]+'_'+ct[4]+'_'+ct[3]
++trimmed_time_log=ct[1]+ct[2]+'_'+ct[4]
++logfilename=currenttime_log+'.log'
++logfilenametrimmed=trimmed_time_log
++
++;now, look to see if logfile exists
++checklog_list=file_search('./log/'+logfilenametrimmed+'*',count=count_checklog)
++checklog=checklog_list[n_elements(checklog_list)-1]
++
++if count_checklog eq 0 then begin
++logname='./log/'+logfilename
++openw,11,logname
++printf,11,ct[3],dpp_command,format='(a,x,a)'
++endif else begin
++logname='./'+checklog
++openw,11,logname,/append
++printf,11,ct[3],dpp_command,format='(a,x,a)'
++endelse
++;*****
++
++
+ ;******Keywords and Filenames*****
+ ;create list of filenames
+ param,'obsdate',date,/get,pfname=pfname & date=strtrim(date,2)
+@@ -286,6 +335,14 @@ endif
+ ;print,sat_yguess
+ ;stop
+ 
++get_charis_wvlh,h0,wvlhs
++scl=wvlhs[refslice]/wvlhs
++
++;Telescope Diameter for Subaru
++Dtel=charis_get_constant(name='Dtel')
++pixscale=charis_get_constant(name='pixscale')
++fwhm=1.*(1.d-6*wvlhs*1d-3/Dtel)*(180.*3600./!dpi)/pixscale
++
+ 
+ for i=0L,nfiles-1 do begin
+ 
+@@ -312,8 +369,6 @@ if parangle0 gt 180 and decdeg lt lat then parangle0-=360
+ ;*****Image Registration Loop.
+ ;**- If you have satellite spots then you have a choice of getting the centroid from gaussian-fitting or from joint cross-correlation
+ 
+-get_charis_wvlh,h0,wvlhs
+-scl=wvlhs[refslice]/wvlhs
+ 
+ 
+ ;****do an initial centroid measurement
+@@ -326,10 +381,19 @@ profrad_tc,a_firstchan,2,1,dim/2,p2d=pr
+ ;profrad_tc,imslice2,2,allrsat[i],rmax,p2d=pr,p1d=p1d,rayon=r
+ a_firstchan-=pr
+ endif
++
++ if ~keyword_set(fitgauss) then begin
+  gcntrd,a_firstchan,sat_xguess[0],sat_yguess[0],satcx0,satcy0,fwhmlim
+  gcntrd,a_firstchan,sat_xguess[1],sat_yguess[1],satcx1,satcy1,fwhmlim
+  gcntrd,a_firstchan,sat_xguess[2],sat_yguess[2],satcx2,satcy2,fwhmlim
+  gcntrd,a_firstchan,sat_xguess[3],sat_yguess[3],satcx3,satcy3,fwhmlim
++ endif else begin
++
++ calc_centroid_spots4,a_firstchan,[sat_xguess[0],sat_yguess[0]],fwhm[refslice],satcx0,satcy0
++ calc_centroid_spots4,a_firstchan,[sat_xguess[1],sat_yguess[1]],fwhm[refslice],satcx1,satcy1
++ calc_centroid_spots4,a_firstchan,[sat_xguess[2],sat_yguess[2]],fwhm[refslice],satcx2,satcy2
++ calc_centroid_spots4,a_firstchan,[sat_xguess[3],sat_yguess[3]],fwhm[refslice],satcx3,satcy3
++ endelse
+ 
+  
+ if (satcx0 lt 0 or satcy0 lt 0) then begin 
+@@ -401,11 +465,19 @@ endif
+ if ~keyword_set(xcorr) then begin
+ ;*Gaussian Centroiding
+ 
++ if ~keyword_set(fitgauss) then begin
+  gcntrd,a_test,cens[0,0,ii],cens[1,0,ii],satcx0,satcy0,fwhmlim
+  gcntrd,a_test,cens[0,1,ii],cens[1,1,ii],satcx1,satcy1,fwhmlim
+  gcntrd,a_test,cens[0,2,ii],cens[1,2,ii],satcx2,satcy2,fwhmlim
+  gcntrd,a_test,cens[0,3,ii],cens[1,3,ii],satcx3,satcy3,fwhmlim
+ 
++ endif else begin
++ calc_centroid_spots4,a_test,[cens[0,0,ii],cens[1,0,ii]],fwhm[ii],satcx0,satcy0
++ calc_centroid_spots4,a_test,[cens[0,1,ii],cens[1,1,ii]],fwhm[ii],satcx1,satcy1
++ calc_centroid_spots4,a_test,[cens[0,2,ii],cens[1,2,ii]],fwhm[ii],satcx2,satcy2
++ calc_centroid_spots4,a_test,[cens[0,3,ii],cens[1,3,ii]],fwhm[ii],satcx3,satcy3
++ endelse
++
+ if (satcx0 lt 0 or satcy0 lt 0) then begin 
+ cntrd,a_test,cens[0,0,ii],cens[1,0,ii],satcx0,satcy0,fwhmlim,/keepcenter
+ endif
+@@ -508,13 +580,20 @@ endfor
+ slices=findgen(sz[3])
+ ;-refslice
+ ;good=where(finite(PSFcens[0,*]) ne 0 and finite(PSFcens[1,*]) ne 0,ngood)
+-good=where(finite(PSFcens[0,2:sz[3]-1-2]) ne 0 and finite(PSFcens[1,2:sz[3]-1-2]) ne 0,ngood)
++
++good=where(finite(PSFcens[0,ceil(fittrim/2.):sz[3]-1-floor(fittrim/2.)]) ne 0 and finite(PSFcens[1,ceil(fittrim/2.):sz[3]-1-floor(fittrim/2.)]) ne 0,ngood)
++;good=where(finite(PSFcens[0,2:sz[3]-1-fittrim]) ne 0 and finite(PSFcens[1,2:sz[3]-1-fittrim]) ne 0,ngood)
++
+ print,'number of slices for fit ', ngood
+ 
+ ;****for now put in break to exit in case the program cannot find any centroids
++
+ if ngood gt 0 then begin
+-fitx=robust_poly_fit((slices[2:sz[3]-1-2])[good]-refslice,(PSFcens[0,2:sz[3]-1-2])[good]-PSFcens[0,refslice],2,numit=15)
+-fity=robust_poly_fit((slices[2:sz[3]-1-2])[good]-refslice,(PSFcens[1,2:sz[3]-1-2])[good]-PSFcens[1,refslice],2,numit=15)
++print,'fittrim is',fittrim
++fitx=robust_poly_fit((slices[ceil(fittrim/2.):sz[3]-1-floor(fittrim/2.)])[good]-refslice,(PSFcens[0,ceil(fittrim/2.):sz[3]-1-floor(fittrim/2.)])[good]-PSFcens[0,refslice],2,numit=15)
++fity=robust_poly_fit((slices[ceil(fittrim/2.):sz[3]-1-floor(fittrim/2.)])[good]-refslice,(PSFcens[1,ceil(fittrim/2.):sz[3]-1-floor(fittrim/2.)])[good]-PSFcens[1,refslice],2,numit=15)
++;fitx=robust_poly_fit((slices[2:sz[3]-1-fittrim])[good]-refslice,(PSFcens[0,2:sz[3]-1-fittrim])[good]-PSFcens[0,refslice],2,numit=15)
++;fity=robust_poly_fit((slices[2:sz[3]-1-fittrim])[good]-refslice,(PSFcens[1,2:sz[3]-1-fittrim])[good]-PSFcens[1,refslice],2,numit=15)
+ 
+ refoffsetx=PSFcens[0,refslice]-xc0
+ refoffsety=PSFcens[1,refslice]-yc0
+@@ -525,7 +604,10 @@ deltay=fity[0]+fity[1]*(slices-refslice)+fity[2]*(slices-refslice)^2.+refoffsety
+ print,refoffsetx,xc0,PSFcens[0,refslice]
+ 
+ if keyword_set(guessoffsets) then begin
+-plot,slices,PSFcens[0,*],yrange=[sz[1]/2-7+long(guessoffsets[0]),sz[1]/2+7+long(guessoffsets[1])],ystyle=1,/nodata
++plot,slices,PSFcens[0,*],yrange=[40,140],ystyle=1,/nodata
++;plot,slices,PSFcens[0,*],yrange=[median(PSFcens[0,*])-7,median(PSFcens[0,*])+7],ystyle=1,/nodata
++;sz[1]/2-7+long(guessoffsets[0]),sz[1]/2+7+long(guessoffsets[1])],ystyle=1,/nodata
++;plot,slices,PSFcens[0,*],yrange=[sz[1]/2-7+long(guessoffsets[0]),sz[1]/2+7+long(guessoffsets[1])],ystyle=1,/nodata
+ endif else begin
+ plot,slices,PSFcens[0,*],yrange=[sz[1]/2-7,sz[1]/2+7],ystyle=1,/nodata
+ endelse
+@@ -594,6 +676,7 @@ if keyword_set(verbose) then print,'Median PSF Center is ',psfcenx,psfceny
+ a=a_in
+ 
+ 
++sxaddpar,h0,'HISTORY',currenttime_log+' '+dpp_command
+ writefits,reducdir+filesout[i],0,h0
+ writefits,reducdir+filesout[i],a,h1,/append
+ if ~keyword_set(ladder) then printf,1,filenum[i],psfcenx,psfceny,rsat,ha0,parangle0
+@@ -632,11 +715,8 @@ endfor
+          ;dist_circle,g,[refsz[1],refsz[2]],xoo,yoo
+ 
+ ;Telescope Diameter for Subaru
+-;Dtel=7.9d0 ;visible pupil for SCExAO
+ Dtel=charis_get_constant(name='Dtel')
+-;pixel scale 16.4 mas/pixel
+ pixscale=charis_get_constant(name='pixscale')
+-;pixscale=0.0164
+ fwhm=1.*(1.d-6*wvlhs*1d-3/Dtel)*(180.*3600./!dpi)/pixscale
+          
+          ;Define variables
+@@ -673,7 +753,11 @@ if parangle0 gt 180 and decdeg lt lat then parangle0-=360
+ 
+ for il=0L,refsz[3]-1 do begin
+ 
++if ~keyword_set(fitgauss) then begin
+ gcntrd,a[*,*,il],xc0+guessoffsets[0],yc0+guessoffsets[1],xc1,yc1,fwhmlim
++endif else begin
++calc_centroid_spots4,a[*,*,il],[xc0+guessoffsets[0],yc0+guessoffsets[1]],fwhm[il],xc1,yc1
++endelse
+ 
+ if (xc1 lt 0 or yc1 lt 0) then begin
+ cntrd,a[*,*,il],xc0+guessoffsets[0],yc0+guessoffsets[1],xc1,yc1,fwhmlim,/keepcenter
+@@ -720,11 +804,11 @@ refoffsety=PSFcens[1,refslice]-yc0
+ ;slices=findgen(refsz[3]-refslice)
+ slices=findgen(refsz[3])
+ 
+-good=where(finite(PSFcens[0,2:refsz[3]-1-2]) ne 0 and finite(PSFcens[1,2:refsz[3]-1-2]) ne 0,ngood)
++good=where(finite(PSFcens[0,ceil(fittrim/2.):refsz[3]-1-floor(fittrim/2.)]) ne 0 and finite(PSFcens[1,ceil(fittrim/2.):refsz[3]-1-floor(fittrim/2.)]) ne 0,ngood)
+ 
+ if ngood gt 0 then begin
+-fitx=robust_poly_fit((slices[2:refsz[3]-1-2])[good]-refslice,(PSFcens[0,2:refsz[3]-1-2])[good]-PSFcens[0,refslice],2,numit=15)
+-fity=robust_poly_fit((slices[2:refsz[3]-1-2])[good]-refslice,(PSFcens[1,2:refsz[3]-1-2])[good]-PSFcens[1,refslice],2,numit=15)
++fitx=robust_poly_fit((slices[ceil(fittrim/2.):refsz[3]-1-floor(fittrim/2.)])[good]-refslice,(PSFcens[0,ceil(fittrim/2.):refsz[3]-1-floor(fittrim/2.)])[good]-PSFcens[0,refslice],2,numit=15)
++fity=robust_poly_fit((slices[ceil(fittrim/2.):refsz[3]-1-floor(fittrim/2.)])[good]-refslice,(PSFcens[1,ceil(fittrim/2.):refsz[3]-1-floor(fittrim/2.)])[good]-PSFcens[1,refslice],2,numit=15)
+  
+ deltax=fitx[0]+fitx[1]*(slices-refslice)+fitx[2]*(slices-refslice)^2.+refoffsetx
+ deltay=fity[0]+fity[1]*(slices-refslice)+fity[2]*(slices-refslice)^2.+refoffsety
+@@ -757,6 +841,10 @@ PSFcens[1,ii]-=deltay[ii]
+ sxaddpar,h1,'PSFC_'+strtrim(ii,2),$
+  string(strtrim(PSFcens[*,ii],2),format='(F7.3," ",F7.3)'),$
+   'PSF Center of slice '+strtrim(ii,2)
++
++sxaddpar,h1,'shift_'+strtrim(ii,2),$
++ string(strtrim([-1*deltax[ii],-1*deltay[ii]],2),format='(F7.3," ",F7.3)'),$
++  'Image shift for slice '+strtrim(ii,2)
+ endfor
+ 
+ 
+@@ -766,6 +854,7 @@ sxaddpar,h1,"PSFCENTX",psfcenx,'Mean PSF center X'
+ sxaddpar,h1,"PSFCENTY",psfceny,'Mean PSF center Y'
+ a=a_in
+ 
++sxaddpar,h0,'HISTORY',currenttime_log+' '+dpp_command
+ writefits,reducdir+filesout[i],0,h0
+ writefits,reducdir+filesout[i],a,h1,/append
+ if ~keyword_set(ladder) then printf,1,filenum[i],psfcenx,psfceny,rsat,ha0,parangle0
+@@ -824,6 +913,9 @@ sat_xguess+=guessoffsets[0]
+ sat_yguess+=guessoffsets[1]
+ endif
+ 
++if ~keyword_set(rin_corr) then rin_corr=0.2
++if ~keyword_set(rout_corr) then rout_corr=0.5
++
+ 
+ ;*****ref cube: not used for registration right now!*****
+ ;reference data cube
+@@ -832,6 +924,7 @@ endif
+ 
+         ;figure out the registration for this cube using cross-correlation
+         sz=size(refimage)
++        refsz=sz
+ ;********
+ 
+          ;wavelength array
+@@ -897,13 +990,16 @@ endfor
+ ;****Polynomial fit to individual slice centroid measurements****
+ slices=findgen(sz[3])
+ ;-refslice
+-good=where(finite(PSFcensref[0,2:sz[3]-1-2]) ne 0 and finite(PSFcensref[1,2:sz[3]-1-2]) ne 0,ngood)
++good=where(finite(PSFcensref[0,ceil(fittrim/2.):sz[3]-1-floor(fittrim/2.)]) ne 0 and finite(PSFcensref[1,ceil(fittrim/2.):sz[3]-1-floor(fittrim/2.)]) ne 0,ngood)
++;good=where(finite(PSFcensref[0,2:sz[3]-1-2]) ne 0 and finite(PSFcensref[1,2:sz[3]-1-2]) ne 0,ngood)
+ print,'good is', ngood
+ 
+ if ngood eq 0 then stop
+ 
+-fitx=robust_poly_fit((slices[2:sz[3]-1-2])[good]-refslice,(PSFcensref[0,2:sz[3]-1-2])[good]-PSFcensref[0,refslice],2,numit=15)
+-fity=robust_poly_fit((slices[2:sz[3]-1-2])[good]-refslice,(PSFcensref[1,2:sz[3]-1-2])[good]-PSFcensref[1,refslice],2,numit=15)
++fitx=robust_poly_fit((slices[ceil(fittrim/2.):sz[3]-1-floor(fittrim/2.)])[good]-refslice,(PSFcens[0,ceil(fittrim/2.):sz[3]-1-floor(fittrim/2.)])[good]-PSFcens[0,refslice],2,numit=15)
++fity=robust_poly_fit((slices[ceil(fittrim/2.):sz[3]-1-floor(fittrim/2.)])[good]-refslice,(PSFcens[1,ceil(fittrim/2.):sz[3]-1-floor(fittrim/2.)])[good]-PSFcens[1,refslice],2,numit=15)
++;fitx=robust_poly_fit((slices[2:sz[3]-1-fitttrim])[good]-refslice,(PSFcensref[0,2:sz[3]-1-fittrim])[good]-PSFcensref[0,refslice],2,numit=15)
++;fity=robust_poly_fit((slices[2:sz[3]-1-fitttrim])[good]-refslice,(PSFcensref[1,2:sz[3]-1-fittrim])[good]-PSFcensref[1,refslice],2,numit=15)
+ 
+ refoffsetx=PSFcensref[0,refslice]-xc0
+ refoffsety=PSFcensref[1,refslice]-yc0
+@@ -913,7 +1009,6 @@ deltayref=fity[0]+fity[1]*(slices-refslice)+fity[2]*(slices-refslice)^2.+refoffs
+ 
+ print,'Offsets of Reference Image ',deltaxref,deltayref
+ 
+-stop
+ if keyword_set(guessoffsets) then begin
+ plot,slices,PSFcensref[0,*],yrange=[sz[1]/2-7+long(guessoffsets[0]),sz[1]/2+7+long(guessoffsets[1])],ystyle=1,/nodata
+ endif else begin
+@@ -984,7 +1079,7 @@ print,'Registering File Number ',i+1,' ',files[i]
+ 
+    print,PSFcensrefcorr[0,10],PSFcensrefcorr[1,10]
+    dist_circle,cendistance,201,PSFcensrefcorr[0,10],PSFcensrefcorr[1,10]  
+-   roi=where(cendistance gt 0.2/pixscale and cendistance le 0.5/pixscale)
++   roi=where(cendistance gt rin_corr/pixscale and cendistance le rout_corr/pixscale)
+    cendistance[roi]=10
+ 
+  ;**- If you have satellite spots then you have a choice of getting the centroid from gaussian-fitting or from joint cross-correlation
+@@ -1002,8 +1097,10 @@ slices=findgen(sz[3])
+ 
+ good=where(finite(PSFcens[0,2:sz[3]-1-2]) ne 0 and finite(PSFcens[1,2:sz[3]-1-2]) ne 0,ngood)
+ 
+-fitx=robust_poly_fit((slices[2:sz[3]-1-2])[good]-refslice,(PSFcens[0,2:sz[3]-1-2])[good]-PSFcens[0,refslice],2,numit=15)
+-fity=robust_poly_fit((slices[2:sz[3]-1-2])[good]-refslice,(PSFcens[1,2:sz[3]-1-2])[good]-PSFcens[1,refslice],2,numit=15)
++fitx=robust_poly_fit((slices[ceil(fittrim/2.):refsz[3]-1-floor(fittrim/2.)])[good]-refslice,(PSFcens[0,ceil(fittrim/2.):refsz[3]-1-floor(fittrim/2.)])[good]-PSFcens[0,refslice],2,numit=15)
++fity=robust_poly_fit((slices[ceil(fittrim/2.):refsz[3]-1-floor(fittrim/2.)])[good]-refslice,(PSFcens[1,ceil(fittrim/2.):refsz[3]-1-floor(fittrim/2.)])[good]-PSFcens[1,refslice],2,numit=15)
++;fitx=robust_poly_fit((slices[2:sz[3]-1-fittrim])[good]-refslice,(PSFcens[0,2:sz[3]-1-fittrim])[good]-PSFcens[0,refslice],2,numit=15)
++;fity=robust_poly_fit((slices[2:sz[3]-1-fittrim])[good]-refslice,(PSFcens[1,2:sz[3]-1-fittrim])[good]-PSFcens[1,refslice],2,numit=15)
+ 
+ refoffsetx=PSFcens[0,refslice]-xc0
+ refoffsety=PSFcens[1,refslice]-yc0
+@@ -1040,6 +1137,7 @@ psfceny=median(PSFcens[1,*],/even)
+ sxaddpar,h1,"PSFCENTX",psfcenx,'Mean PSF center X'
+ sxaddpar,h1,"PSFCENTY",psfceny,'Mean PSF center Y'
+ 
++sxaddpar,h0,'HISTORY',currenttime_log+' '+dpp_command
+ writefits,reducdir+filesout[i],0,h0
+ writefits,reducdir+filesout[i],a,h1,/append
+ 
+@@ -1060,11 +1158,8 @@ test=headfits(reducdir+filesout[0])
+ 
+ get_charis_wvlh,h0,wvlhs
+ ;Telescope Diameter for Subaru
+-;Dtel=7.9d0 ;visible pupil for SCExAO
+ Dtel=charis_get_constant(name='Dtel')
+-;pixel scale 16.4 mas/pixel
+ pixscale=charis_get_constant(name='pixscale')
+-;pixscale=0.0164
+ fwhm=1.*(1.d-6*wvlhs*1d-3/Dtel)*(180.*3600./!dpi)/pixscale
+ 
+ openw,2,'PSFquality'
+@@ -1142,6 +1237,8 @@ close,2
+ 
+ endtime=systime(/seconds)
+ print,"elapsed time is ",endtime-starttime," seconds"
++
++close,11
+ skiptotheend:
+ 
+ end
