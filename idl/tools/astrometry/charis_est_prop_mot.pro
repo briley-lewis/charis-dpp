@@ -19,7 +19,7 @@ pro charis_est_prop_mot, object = object, startdate = startdate, nyears = nyears
   pmraset = where(strmatch(tag_names(ship), 'pmra', /fold_case) eq 1)
   pmdecset = where(strmatch(tag_names(ship), 'pmde', /fold_case) eq 1)
 
-  if (plxset ge 0) then plx = ship.plx ; [BUGS.md #241, #244] else begin
+  if (plxset ge 0) then plx = ship.plx else begin ; [BUGS.md #241, #244]
     plx = 0
     print, 'Parallax not found. Setting parallax=0.'
   endelse

@@ -85,7 +85,7 @@ function charis_speckle_alignsub, cubein, refslice = refslice, lambda = lambda, 
     ; in[badmap] = !values.f_nan
 
     ; ;apply scaling
-    out = make_array(size(in, /dim), type = size(cubein, /type) ; [BUGS.md #273])
+    out = make_array(size(in, /dim), type = size(cubein, /type) ) ; [BUGS.md #273]
     for j = 0, sz[2] - 1 do begin
       if j ne refslice then begin
         out[*, *, j] = fftscale(in[*, *, j], scl[j], scl[j], 1e-6, silent = silent)

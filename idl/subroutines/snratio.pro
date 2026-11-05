@@ -171,5 +171,3 @@ pro snratio, image, coord = coord, fwhm = fwhm, expfilt = expfilt, rmax = rmax, 
     endelse
   endif
 end
-
-end

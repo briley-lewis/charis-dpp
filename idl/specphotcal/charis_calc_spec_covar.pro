@@ -223,25 +223,25 @@ pro charis_calc_spec_covar, data_cube, rho = rho, $
   ; help,pi
   ; stop
   ; set boundaries, initialize
-  pi[0 : 3].limited(0) = 1
-  pi[0 : 3].limited(1) = 1
+  pi[0 : 3].limited[0] = 1
+  pi[0 : 3].limited[1] = 1
 
   ; set the boundaries for A_rho and A_lambda between 0.1 and 0.8, adjust if necessary
-  pi[0].limits(0) = 0.0005
-  pi[0].limits(1) = 0.9
-  pi[1].limits(0) = 0.0005
-  pi[1].limits(1) = 0.9
+  pi[0].limits[0] = 0.0005
+  pi[0].limits[1] = 0.9
+  pi[1].limits[0] = 0.0005
+  pi[1].limits[1] = 0.9
 
   ; unfortunately cannot do this.
-  ; pi(0).limits(1)=0.99-pi(1).limits(1)
+  ; pi(0).limits[1]=0.99-pi(1).limits[1]
 
   ; sigma_rho = the correlated noise part due to speckle noise
-  pi[2].limits(0) = 0.01
-  pi[2].limits(1) = 0.9
-  ; pi(2).limits(1)=2.9
+  pi[2].limits[0] = 0.01
+  pi[2].limits[1] = 0.9
+  ; pi(2).limits[1]=2.9
   ; sigma_lambda = noise due to spectral extraction
-  pi[3].limits(0) = 0.025
-  pi[3].limits(1) = 2.9
+  pi[3].limits[0] = 0.025
+  pi[3].limits[1] = 2.9
 
   ; fix the value for rho
   pi[4].fixed = 1

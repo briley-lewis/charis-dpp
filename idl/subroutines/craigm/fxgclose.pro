@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE:
+;   UPDATED VERSIONs can be found on my WEB PAGE: 
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -51,34 +51,33 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-; -
-pro FXGCLOSE, UNIT
-  compile_opt idl2
+;-
+PRO FXGCLOSE, UNIT
 
   on_error, 2
 
-  if n_params() ne 1 then begin
-    message, 'USAGE: FXGCLOSE, UNIT', /info
-    return
+  if n_params() NE 1 then begin
+      message, 'USAGE: FXGCLOSE, UNIT', /info
+      return
   endif
-  if n_elements(UNIT) eq 0 then $
+  if n_elements(unit) EQ 0 then $
     message, 'ERROR: UNIT is not defined'
 
-  @fxfilter
-  if UNIT lt 0 or UNIT ge FXFILTER_MAX_LUN then $
+@fxfilter
+  if unit LT 0 OR unit GE FXFILTER_MAX_LUN then $
     message, 'ERROR: UNIT is not a valid file unit'
 
   free_lun = 'FREE_LUN'
-  if filterflag(UNIT) and 1 then $
-    if close_cmd(UNIT) ne '' then free_lun = close_cmd(UNIT)
+  if filterflag(unit) AND 1  then $
+    if close_cmd(unit) NE '' then free_lun = close_cmd(unit)
+  
+  call_procedure, free_lun, unit
 
-  call_procedure, free_lun, UNIT
-
-  FILTERFLAG(UNIT) = 0 ; ; Zero out the dispatch entries
-  SEEK_CMD(UNIT) = ''
-  READ_CMD(UNIT) = ''
-  WRITE_CMD(UNIT) = ''
-  CLOSE_CMD(UNIT) = ''
+  FILTERFLAG(UNIT) = 0   ;; Zero out the dispatch entries
+  SEEK_CMD(UNIT)   = ''
+  READ_CMD(UNIT)   = ''
+  WRITE_CMD(UNIT)  = ''
+  CLOSE_CMD(UNIT)  = ''
 
   return
 end

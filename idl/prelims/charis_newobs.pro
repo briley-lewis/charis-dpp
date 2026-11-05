@@ -129,11 +129,11 @@ pro charis_newobs, date = date, object = object, filter = filter, help = help, o
     epmdecset = where(strmatch(tag_names(ship), 'e_pmde', /fold_case) eq 1)
     sptypeset = where(strmatch(tag_names(ship), 'sptype', /fold_case) eq 1)
 
-    if (plxset ge 0) then plx = ship.plx ; [BUGS.md #1] else begin
+    if (plxset ge 0) then plx = ship.plx else begin ; [BUGS.md #1]
       plx = 0
       print, 'Parallax not found. Setting parallax=0.'
     endelse
-    if (eplxset ge 0) then eplx = ship.e_plx ; [BUGS.md #1] else begin
+    if (eplxset ge 0) then eplx = ship.e_plx else begin ; [BUGS.md #1]
       eplx = 0
       print, 'Error on parallax not found. Setting error on parallax=0.'
     endelse
@@ -208,7 +208,7 @@ pro charis_newobs, date = date, object = object, filter = filter, help = help, o
   ; default, canned values for other parameters
   ; other algorithm parameters
   ; unclear whether the below is needed
-  param, 'procdir', './reduc/proc/', ; [BUGS.md #7] 'Subdirectory to put processed files', /set, pfname = pfname
+  param, 'procdir', './reduc/proc/', 'Subdirectory to put processed files', /set, pfname = pfname ; [BUGS.md #7]
   param, 'rsat', -1., 'PSF saturation radius', /set, pfname = pfname
   param, 'fwhm', 2.63, 'Broadband PSF FWHM in pixels', /set, pfname = pfname
 
