@@ -9,9 +9,10 @@ function charis_get_constant, name = name, mjd = mjd, label = label
   ; the test parses them.
   ;
   ; Usage: charis_get_constant(name='pixscale', mjd=sxpar(h0,'MJD'))
-  ; Without mjd= the most recent epoch is used (the pre-existing behaviour
+  ; Without mjd= the session default set by charis_set_epoch is used; if none
+  ; has been set, the most recent epoch is used (the pre-existing behaviour
   ; of this routine, which always returned the latest values).  Later epochs
-  ; only state what changed; earlier values carry over.
+  ; only state what changed; earlier values carry over.  [BUGS.md #322]
   ;
   ; Spot guesses are absolute positions on a 201x201 frame (the Python
   ; package stores them relative to the frame centre).
@@ -22,7 +23,14 @@ function charis_get_constant, name = name, mjd = mjd, label = label
   epochs.add, {mjd: 60933.0d, label: 'post-NBS', parity: -1}
   epochs.add, {mjd: 61146.0d, label: 'M3-recoat-2026', m3_m1: 1.768d0, m3_b1: 12.77d0, m3_m2: 2.455d0, m3_b2: 15.67d0}
 
-  if n_elements(mjd) eq 0 then mjd_use = 1d9 else mjd_use = double(mjd[0])
+  common charis_epoch, charis_epoch_mjd
+  if n_elements(mjd) gt 0 then begin
+    mjd_use = double(mjd[0])
+  endif else if n_elements(charis_epoch_mjd) gt 0 && charis_epoch_mjd gt 0 then begin
+    mjd_use = double(charis_epoch_mjd)
+  endif else begin
+    mjd_use = 1d9
+  endelse
   values = hash()
   label = ''
   foreach ep, epochs do begin

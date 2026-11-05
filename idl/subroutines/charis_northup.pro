@@ -3,7 +3,11 @@ pro charis_northup, image, header0, header1, angoffset = angoffset, outputrot = 
   ; takes a CHARIS cube and rotates it north up.
 
   ; if ~keyword_set(angoffset) then angoffset=0
-  if ~keyword_set(angoffset) then angoffset = charis_get_constant(name = 'angoffset')
+  if ~keyword_set(angoffset) then begin
+    mjd0 = sxpar(header0, 'MJD', count = nmjd) ; [BUGS.md #322] epoch of this frame
+    if nmjd gt 0 then angoffset = charis_get_constant(name = 'angoffset', mjd = mjd0) $
+    else angoffset = charis_get_constant(name = 'angoffset')
+  endif
 
   extast, header1, astr, res
   getrot, header1, npa, cdelt, /silent

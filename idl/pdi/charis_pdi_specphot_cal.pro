@@ -45,6 +45,8 @@ if (N_PARAMS() eq 0 or keyword_set(help)) then begin
     goto,endofprogram
 endif
 
+charis_set_epoch, pfname = pfname ; [BUGS.md #322] constants for this night
+
 reducdir='./reduc/'
 
 ;data directory

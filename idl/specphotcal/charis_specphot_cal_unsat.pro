@@ -60,6 +60,8 @@ print,'fluxunits - What Flux Density units? 0=mJy,1=Jy,2=W/m^2/um,3=ergs/s/cm^2/
 goto,skiptoend
 endif
 
+charis_set_epoch, pfname = pfname ; [BUGS.md #322] constants for this night
+
 ;Aapplies a photometric calibration either to an entire sequence of files or to one or more identified image
 
 ;default is to apply to sequence of registered but not PSF subtracted images

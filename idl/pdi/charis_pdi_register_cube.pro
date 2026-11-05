@@ -47,6 +47,8 @@ if (N_PARAMS() eq 0 or keyword_set(help)) then begin
     goto,endofprogram
 endif
 
+charis_set_epoch, pfname = pfname ; [BUGS.md #322] constants for this night
+
 if ~keyword_set(polcent_offset) then polcent_offset=[31.758, 16.542]
 
 ;* Figuring out what charis_register_cube is going to name our products:

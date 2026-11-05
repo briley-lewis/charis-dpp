@@ -1,4 +1,4 @@
-function m3_model, lambda, epsilon_m3 = epsilon_m3
+function m3_model, lambda, epsilon_m3 = epsilon_m3, mjd = mjd
   compile_opt idl2
   ;+
   ; INPUTS:
@@ -14,11 +14,15 @@ function m3_model, lambda, epsilon_m3 = epsilon_m3
   ;
 
   lambda_meters = lambda * 1e-09
-  ; all vals updated via new unpol standard fit post 2026 m3 silver recoat
-  m1 = 1.768d
-  b1 = 12.77d
-  m2 = 2.455d 
-  b2 = 15.67d
+  ; Power-law coefficients of the M3 dielectric function fit.  Taken from the
+  ; dated epoch table so that data taken before the 2026-04-16 silver recoat
+  ; use the Hart+2021 (pre-recoat) fit and later data the 2026 unpolarised
+  ; standard fit.  mjd= selects the epoch; without it the session default from
+  ; charis_set_epoch applies.  [BUGS.md #307]
+  m1 = charis_get_constant(name = 'm3_m1', mjd = mjd)
+  b1 = charis_get_constant(name = 'm3_b1', mjd = mjd)
+  m2 = charis_get_constant(name = 'm3_m2', mjd = mjd)
+  b2 = charis_get_constant(name = 'm3_b2', mjd = mjd)
 
   eps_r1 = -(10.d ^ b1) * (lambda_meters ^ m1)
   eps_r2 = (10.d ^ b2) * (lambda_meters ^ m2)

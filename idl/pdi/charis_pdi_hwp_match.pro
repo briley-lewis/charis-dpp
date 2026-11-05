@@ -32,6 +32,8 @@ pro charis_pdi_hwp_match, pfname, use_headers = use_headers, hwpfilein = hwpfile
     goto, endofprogram
   endif
 
+charis_set_epoch, pfname = pfname ; [BUGS.md #322] constants for this night
+
   reducdir = './reduc/'
   datadir = reducdir + 'reg/'
 

@@ -53,6 +53,8 @@ if (N_PARAMS() eq 0 or keyword_set(help)) then begin
     goto,endofprogram
 endif
 
+charis_set_epoch, pfname = pfname ; [BUGS.md #322] constants for this night
+
 command = ((recall_commands())[0]).replace("'", '"')
 
 
@@ -135,7 +137,7 @@ get_charis_wvlh,h0test,lambda
   ; Get constant (per wavelength) values for Mueller matrix
   delta_hwp = hwp_model(lambda, epsilon_hwp = epsilon_hwp)
   delta_h_der = derotator_model(lambda, delta_45_der=delta_45_der, delta_r_der=delta_r_der, epsilon_der = epsilon_der)
-  delta_tel = m3_model(lambda, epsilon_m3 = epsilon_tel)
+  delta_tel = m3_model(lambda, epsilon_m3 = epsilon_tel, mjd = sxpar(h0test, 'MJD')) ; [BUGS.md #307]
   epsilon_bs = wollaston_efficiency(lambda) ; updated wollaston with inefficiency from McIntosh+ 2026
   dtheta_hwp = -0.04d ; updated McIntosh+ 2026 value
   dtheta_der = -0.02d ; updated McIntosh+ 2026 value

@@ -305,6 +305,7 @@ print,'ERROR, missing MJD date: check your cubes'
 stop
 endif
 
+charis_set_epoch, mjd = mjd_date ; [BUGS.md #322]
 if charis_get_constant(name='parity', mjd=mjd_date) eq -1 then begin ; [BUGS.md #316] epoch table
 
 ;print,'POST-NBS Parity Flip and NorthPA correction'

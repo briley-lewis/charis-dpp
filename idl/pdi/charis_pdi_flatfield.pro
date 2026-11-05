@@ -23,6 +23,8 @@ pro charis_pdi_flatfield, pfname, prefname = prefname, suffname = suffname, dark
     goto, endofprogram
   endif
 
+charis_set_epoch, pfname = pfname ; [BUGS.md #322] constants for this night
+
   ; ********Directory Structure*****
   reducdir = './reduc/'
 

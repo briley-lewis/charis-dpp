@@ -82,6 +82,8 @@ pro charis_specphot_cal, pfname, calmethod = calmethod, pick = pick, datacube = 
     goto, skiptoend
   endif
 
+charis_set_epoch, pfname = pfname ; [BUGS.md #322] constants for this night
+
   ; Applies a photometric calibration either to an entire sequence of files or to one or more identified image
 
   ; default is to apply to sequence of registered but not PSF subtracted images

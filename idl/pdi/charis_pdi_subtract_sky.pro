@@ -18,6 +18,8 @@ pro charis_pdi_subtract_sky, pfname, medbox = medbox, prefname = prefname, suffn
     goto, endofprogram
   endif
 
+charis_set_epoch, pfname = pfname ; [BUGS.md #322] constants for this night
+
   ; setupdir,reducdir=reducdir
   datadir = './reduc/prep/'
 

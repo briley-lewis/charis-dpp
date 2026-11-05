@@ -109,6 +109,8 @@ print,"*astrogrid [Alternate astrogrid spacing in lambda / D units]; to use for 
 goto,skiptotheend
 endif
 
+charis_set_epoch, pfname = pfname ; [BUGS.md #322] constants for this night
+
 if ~keyword_set(smoothval) then smoothval=3
 
 if ~keyword_set(method) then begin 
