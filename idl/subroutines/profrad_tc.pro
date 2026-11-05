@@ -27,7 +27,7 @@ pro profrad_tc, imt, res, r1, r2, med4q = med4q, p2d = p2d, p1d = p1d, rayon = r
     if (n_params() eq 1) then res = 1.
     distarr = shift(dist(dimx, dimy), dimx / 2, dimy / 2)
     if n_elements(r1) eq 0 then rmin = 0. else rmin = r1
-    if n_elements(r2) eq 0 then rmax = max[distarr] else rmax = r2
+    if n_elements(r2) eq 0 then rmax = max(distarr) else rmax = r2
     if res ne 0 then rdistarr = round(distarr / res) * res else rdistarr = distarr
     rayon = rdistarr[0 : dimx / 2, 0 : dimy / 2]
     rayon = rayon[where(rayon ge rmin and rayon le rmax)]
@@ -42,7 +42,7 @@ pro profrad_tc, imt, res, r1, r2, med4q = med4q, p2d = p2d, p1d = p1d, rayon = r
     for r = 0, n_elements(rayon) - 1 do begin
       for i2 = i1, imax do if rdistarr[sind[i2]] ne rayon[r] then break
       p1d[r] = median(im[sind[i1 : i2 - 1]], /even)
-      if keyword_set(max) then p1d[r] = max[(im[sind[i1 : i2 - 1]])]
+      if keyword_set(max) then p1d[r] = max((im[sind[i1 : i2 - 1]]))
       i1 = i2
     endfor
     if keyword_set(nan) then begin

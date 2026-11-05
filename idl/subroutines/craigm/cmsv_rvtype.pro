@@ -472,7 +472,7 @@ pro cmsv_rvtype, block, pointer, result, sz, unit = unit, offset = offset, $
   endelse
 
   if n_elements(classes) gt 0 then begin
-    sz1 = size[classes]
+    sz1 = size(classes)
     if sz1[sz1[0] + 1] ne 7 then begin
       errmsg = 'ERROR: CMSV_RVTYPE: NAMED_CLASSES must be an array ' + $
         'of strings'
@@ -482,7 +482,7 @@ pro cmsv_rvtype, block, pointer, result, sz, unit = unit, offset = offset, $
   endif
 
   if n_elements(structs) gt 0 then begin
-    sz1 = size[structs]
+    sz1 = size(structs)
     if sz1[sz1[0] + 1] ne 7 then begin
       errmsg = 'ERROR: CMSV_RVTYPE: NAMED_STRUCTS must be an array ' + $
         'of strings'

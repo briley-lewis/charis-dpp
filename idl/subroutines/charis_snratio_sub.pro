@@ -76,7 +76,7 @@ pro charis_snratio_sub, image, coord = coord, fwhm = fwhm, rmax = rmax, exc = ex
 
       ; step 2, determine number of PSF footprints that are masked at a given r
       for i = 0l, n_elements(radpoint) - 1 do begin
-        badmask = where((abs(gmask - long(radpoint[i])) le 0.5) and (finite[immask] eq 0), nbadmask, complement = ngoodmask)
+        badmask = where((abs(gmask - long(radpoint[i])) le 0.5) and (finite(immask) eq 0), nbadmask, complement = ngoodmask)
         goodmask = where(abs(gmask - long(radpoint[i])) le 0.5, ntot)
         extramaskedpix[i] = nbadmask / float(ntot) * 2 * !pi * radpoint[i] / fwhm
       endfor
@@ -181,7 +181,7 @@ pro charis_snratio_sub, image, coord = coord, fwhm = fwhm, rmax = rmax, exc = ex
     ; print,'Integrated Signal Is ',flux
     ; print,'1-Sigma Noise Is ',imnoise[xcf,ycf]
 
-    if finite[flux] eq 0 then begin
+    if finite(flux) eq 0 then begin
 
     endif else begin
       snrval = flux / imnoise[round(xcf), round(ycf)]

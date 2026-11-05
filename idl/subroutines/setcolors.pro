@@ -295,7 +295,7 @@ pro setcolors, names = names, values = ctindx, $
       message, 'PLOTCOLORS, R_PLOT, G_PLOT, & B_PLOT must have same size!'
 
     ; PLOTCOLORS HAD BETTER BE A STRING ARRAY...
-    if (size[plotcolors, /tname] ne 'STRING') then $
+    if (size(plotcolors, /tname) ne 'STRING') then $
       message, 'PLOTCOLORS must be of type STRING!'
 
     ; IF YOU'RE SILLY AND PUT MORE THAN ONE VALUE OF A COLOR IN

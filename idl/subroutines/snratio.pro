@@ -154,7 +154,7 @@ pro snratio, image, coord = coord, fwhm = fwhm, expfilt = expfilt, rmax = rmax, 
     print, 'Integrated Signal Is ', flux
     print, '1-Sigma Noise Is ', imnoise[xcf, ycf]
 
-    if finite[flux] eq 0 then begin
+    if finite(flux) eq 0 then begin
       if ~keyword_set(finite) then begin
         print, 'approx SNR ratio is ', im1[xcf, ycf] / imnoise[xcf, ycf]
       endif else begin

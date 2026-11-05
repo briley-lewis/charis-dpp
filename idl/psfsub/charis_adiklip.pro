@@ -254,7 +254,7 @@ pro charis_adiklip, pfname, prefname = prefname, suffname = suffname, nfwhm = nf
     stop
   endif
 
-  dtmean = mean[(abs(allpa - shift(allpa, -1)))[0 : nfiles - 2]] * !dtor
+  dtmean = mean((abs(allpa - shift(allpa, -1)))[0 : nfiles - 2]) * !dtor
 
   ; determine radii
   if n_elements(drsub0) eq 1 then begin ; [BUGS.md #127]
@@ -546,12 +546,12 @@ pro charis_adiklip, pfname, prefname = prefname, suffname = suffname, nfwhm = nf
 
           for nf = 0l, nfiles - 1 do begin
             ; meanopt[nf]=median(annuli[isub,nf])
-            meanopt[nf] = mean[annuli[isub, nf], /nan]
+            meanopt[nf] = mean(annuli[isub, nf], /nan)
             annuli[isub, nf] -= meanopt[nf]
             ; optreg[*,nf]-=mean(optreg[isub,nf],/nan)
 
             if keyword_set(fwdmod) then begin
-              meanopt_fwd[nf] = mean[annuli_fwd[isub, nf], /nan]
+              meanopt_fwd[nf] = mean(annuli_fwd[isub, nf], /nan)
               annuli_fwd[isub, nf] -= meanopt_fwd[nf]
             endif
           endfor

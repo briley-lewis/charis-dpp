@@ -319,7 +319,7 @@ pro charis_adialoci, pfname, prefname = prefname, nfwhm = nfwhm, drsub = drsub0,
     stop
   endif
 
-  dtmean = mean[(abs(allpa - shift(allpa, -1)))[0 : nfiles - 2]] * !dtor
+  dtmean = mean((abs(allpa - shift(allpa, -1)))[0 : nfiles - 2]) * !dtor
 
   ; determine radii
   if n_elements(drsub0) eq 1 then begin ; [BUGS.md #127]

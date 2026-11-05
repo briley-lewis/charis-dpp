@@ -269,7 +269,7 @@ pro charis_rdiklip, pfname, refpath = refpath, prefname = prefname, suffname = s
     stop
   endif
 
-  dtmean = mean[(abs(allpa - shift(allpa, -1)))[0 : nfiles - 2]] * !dtor
+  dtmean = mean((abs(allpa - shift(allpa, -1)))[0 : nfiles - 2]) * !dtor
 
   ; determine radii
   if n_elements(drsub0 eq 1) then begin
@@ -613,18 +613,18 @@ pro charis_rdiklip, pfname, refpath = refpath, prefname = prefname, suffname = s
 
         for nf = 0l, nfiles - 1 do begin
           ; meanopt[nf]=median(annuli[isub,nf])
-          meanopt[nf] = mean[annuli[isub, nf], /nan]
+          meanopt[nf] = mean(annuli[isub, nf], /nan)
           annuli[isub, nf] -= meanopt[nf]
           ; optreg[*,nf]-=mean(optreg[isub,nf],/nan)
 
           if keyword_set(fwdmod) then begin
-            meanopt_fwd[nf] = mean[annuli_fwd[isub, nf], /nan]
+            meanopt_fwd[nf] = mean(annuli_fwd[isub, nf], /nan)
             annuli_fwd[isub, nf] -= meanopt_fwd[nf]
           endif
         endfor
 
         for nfref = 0, nreffiles - 1 do begin
-          meanoptref[nfref] = mean[annuliref[isub, nfref], /nan]
+          meanoptref[nfref] = mean(annuliref[isub, nfref], /nan)
           annuliref[isub, nfref] -= meanoptref[nfref]
         endfor
       endif

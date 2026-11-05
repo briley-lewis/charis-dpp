@@ -27,8 +27,8 @@ function cmrebin, array, D1, D2, D3, D4, dimension = dims, total = total
   endcase
 
   if keyword_set(total) then begin
-    total1 = double(total[array])
-    total2 = double(total[tmpres])
+    total1 = double(total(array))
+    total2 = double(total(tmpres))
     if total2 gt 0 then tmpres = temporary(tmpres) * (total1 / total2)
   endif
 
