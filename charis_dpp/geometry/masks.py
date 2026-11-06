@@ -60,15 +60,28 @@ def sector_mask(
     return annulus(shape, r_in, r_out, center) & (sectors(shape, n, center, phase_deg) == k)
 
 
-def fov_mask(shape, half_size: float, angle_deg: float, center: XY | None = None) -> np.ndarray:
-    """Square field of view of half-width ``half_size`` rotated by ``angle_deg`` (PDI FOV)."""
+def fov_mask(
+    shape,
+    half_size: float,
+    angle_deg: float,
+    center: XY | None = None,
+    half_size_y: float | None = None,
+) -> np.ndarray:
+    """Rectangular field of view of half-widths ``half_size`` (x) and
+    ``half_size_y`` (y, default ``half_size``) rotated by ``angle_deg`` (PDI FOV).
+
+    ``charis_generate_roi, roirange=[dx, dy, pa]`` takes *full* widths, so a
+    caller translating an IDL ``roirange`` passes ``dx / 2`` and ``dy / 2``.
+    """
     from charis_dpp.geometry.grids import xy_grids
 
+    if half_size_y is None:
+        half_size_y = half_size
     dx, dy = xy_grids(shape, center)
     t = np.deg2rad(angle_deg)
     u = dx * np.cos(t) + dy * np.sin(t)
     v = -dx * np.sin(t) + dy * np.cos(t)
-    return (np.abs(u) <= half_size) & (np.abs(v) <= half_size)
+    return (np.abs(u) <= half_size) & (np.abs(v) <= half_size_y)
 
 
 def roi_rect_rotated(

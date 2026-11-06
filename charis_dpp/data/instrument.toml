@@ -144,7 +144,7 @@ max_bad_pixels = 5
 [epoch.pdi]
 astrogrid_lambda_d = 11.2
 polcent_offset_px = [31.758, 16.542]     # Wollaston beam offset from centre (x, y)
-fov_mask = { half_size_px = 125, angle_deg = -26.9166 }
+fov_mask = { width_px = 125, angle_deg = -26.9166 }   # charis_generate_roi roirange=[125,125,-26.9166]: full widths
 hwp_angles_deg = [0.0, 22.5, 45.0, 67.5]
 hwp_position_order = [0, 1, 2, 3]       # index of each angle above in a cycle
 beam_centre_offsets_px = [[-30, -16], [30, 16]]   # left, right (check_health)

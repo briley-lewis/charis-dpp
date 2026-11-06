@@ -71,7 +71,10 @@ def pdi_flatfield(
         first = read_cube(bright[0])
         fm = res.instrument.pdi.fov_mask
         scale = first.shape[1] / float(res.instrument.detector.cube_size_px)
-        fov = fov_mask(first.shape, float(fm["half_size_px"]) * scale, float(fm["angle_deg"]))
+        # roirange widths are full widths (charis_generate_roi uses dx/2); with the
+        # full 125 px taken as a half-width the mask covered the whole frame, the
+        # median inside it was the out-of-FOV zero and the flat came out as all ones
+        fov = fov_mask(first.shape, 0.5 * float(fm["width_px"]) * scale, float(fm["angle_deg"]))
         flat, h0, h1 = make_master_flat(bright, dark, fov)
         write_cube(master_path, flat, h0, h1)
         log.info(

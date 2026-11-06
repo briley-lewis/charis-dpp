@@ -97,7 +97,13 @@ def _cal(parser):
     parser.add_argument("--starlib")
     parser.add_argument("--av", type=float)
     parser.add_argument("--empspectrum")
-    parser.add_argument("--fov-mask", nargs=2, type=float, metavar=("HALFSIZE", "ANGLE"))
+    parser.add_argument(
+        "--fov-mask",
+        nargs=3,
+        type=float,
+        metavar=("DX", "DY", "ANGLE"),
+        help="full widths (px) and angle (deg) of the valid FOV, as IDL fov_mask_pars",
+    )
 
     def run(args) -> int:
         from charis_dpp.pdi.specphot_cal import pdi_specphot_cal

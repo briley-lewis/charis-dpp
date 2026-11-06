@@ -32,7 +32,7 @@ _COPY_KEYS = ("FLUXUNIT", "SKY_IN", "SKY_OUT")
 def pdi_specphot_cal(
     cfg: DatasetConfig | str | Path,
     *,
-    fov_mask_pars: tuple[float, float] | None = None,
+    fov_mask_pars: tuple[float, float, float] | None = None,
     prefix: str = "n",
     left_suffix: str = "leftreg",
     right_suffix: str = "rightreg",
@@ -45,7 +45,9 @@ def pdi_specphot_cal(
     first = read_cube(dirs.reg / frame_filename(nums[0], left_suffix, prefix))
     outside = None
     if fov_mask_pars is not None:
-        outside = ~fov_mask(first.shape, float(fov_mask_pars[0]), float(fov_mask_pars[1]))
+        # IDL fov_mask_pars=[dx, dy, pa] are full widths (charis_generate_roi)
+        wx, wy, pa = (float(v) for v in fov_mask_pars)
+        outside = ~fov_mask(first.shape, 0.5 * wx, pa, half_size_y=0.5 * wy)
     for n, t in zip(nums, tmp, strict=True):
         left = read_cube(dirs.reg / frame_filename(n, left_suffix, prefix))
         right = read_cube(dirs.reg / frame_filename(n, right_suffix, prefix))
