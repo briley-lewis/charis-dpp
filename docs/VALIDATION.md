@@ -1,7 +1,7 @@
 # Validation: old IDL → new IDL → Python on real 2023-07-30 CHARIS PDI data
 
-Status (2026-11-05, evening): **HD 236894 three-way run complete; Europa cube
-extraction running on mueller (117/228 at 23:40 HST)**. Every number below comes
+Status (2026-11-06, 00:10 HST): **HD 236894 three-way run complete and all port
+defects it exposed fixed; Europa cube extraction running on mueller (138/228)**. Every number below comes
 from `~/charis-val/compare/*/compare.csv` on mueller or from the aperture
 photometry script quoted in the Results section.
 
@@ -107,15 +107,20 @@ previous step):
 | step | files | result | notes |
 |---|---|---|---|
 | `imprep` | 32 | identical | |
-| `pdi_flatfield` (`master_pdiflat`) | 1 | median ratio py/IDL 0.99995 / 1.00064 / 1.0015 at channels 0 / 10 / 21 | the ROI mask is built the IDL way but `rotate_image` and `rotat` still disagree on 246 of 16 135 edge pixels; and 109 (ch 0) / 1 (ch 21) pixels where the IDL flat is < 0.05 are set to 1 by the port (#216) while the IDL divides by them (values up to 7×10³ in `n####e_flat`). These edge pixels dominate every downstream per-pixel statistic of the full chain. |
+| `pdi_flatfield` (`master_pdiflat`, `n####e_flat`) | 25 | **identical** (rel_rms 4e-8) | after #326, #328, #334 the ROI mask is the IDL one pixel for pixel; the #216 near-zero guard is now opt-in (`[pdi] flat_floor`) because it changed 109 edge pixels per channel |
 | `pdi_register_cube` on the IDL flats (`py_regtest`) | 128 | **128 pass, 0 fail**: `leftreg` rel_rms 1.7e-6, `reg` 9e-5; per-slice `SHIFT_n` agree to ≤ 0.001 px | after #329 (gcntrd) and #333 (robust_poly_fit) |
 | `charis pdi` Mueller off on the IDL `reg/` (`py_pditest_nomm`) | 145 | **132 pass, 0 fail**; pre-derotation `c####_{q,u,iq,iu}` agree to 2.5e-8, derotated to 4e-6 | derotation kernel (`rotate_image` = `rotat` port) |
 | `charis pdi` Mueller on (`py_pditest_mm`) | 177 | **107 pass, 1 fail** (`pdi_aolp.fits` cube, rel_rms 9e-3: the angle wraps at ±90 deg where Q and U are ~0) | after #330, #331, #332, #335; Mueller rows agree to 3e-4 before #335, better after |
 
-Full Python chain (`py`, flats → registration → HWP → pdi) vs new IDL: 69 pass /
-95 fail of 177, all failures traceable to the flat-edge pixels above
-(`leftreg` 6e-4 pass, `reg` 1e-2 fail, `pdi_q` 2 %, `pdi_u` 4 %, `pdi_aolp` 5 %;
-every `_collapsed` product passes).
+Full Python chain (`py`, flats → registration → HWP → pdi) vs new IDL:
+**146 pass, 18 fail** of 177 (13 "missing" are the Python-only
+`_derot_uncorr` cubes). `prep/` and `reg/` all pass (`leftreg` 1.7e-6,
+`rightreg` 1.8e-4: the right-beam centres differ by ≤ 0.001 px on a few
+frames). The 18 failures are the per-cycle `q/u_derot` cubes (2-9e-3),
+`pdi_q`/`pdi_qphi` (6e-3), `pdi_pi` (7e-3), `pdi_u` (4e-2) and the `pdi_aolp`
+cube (angle wrap): Q and U are ~1 % of I, so a 1e-4 registration residual in I
+becomes 1e-2 in Q/U per pixel. Every `_collapsed` product passes, and the
+aperture-integrated P and AoLP agree to 0.001 % and 0.01 deg (table below).
 
 ### Recovered polarisation of the standard
 
@@ -162,7 +167,7 @@ the old `psf` branch never writes). Both were already fixed by the fork.
 |---|---|
 | `proc/pdi_*` with Mueller on, old vs new | McIntosh+2026 Mueller model (commit `dfb9331`) |
 | `proc/pdi_aolp.fits`, `proc/pdi_c0005_u_derot.fits`, old vs new, Mueller off | 1.6e-6 rel_rms floating-point noise |
-| `prep/n####e_flat.fits` edge pixels, IDL vs Python | #216: the port does not divide by flat values < 0.05 |
+| `proc/pdi_c####_{q,u}_derot.fits`, `pdi_q`, `pdi_u`, `pdi_pi`, `pdi_qphi` cubes, IDL vs Python | registration residual (≤ 0.001 px) amplified by I/Q ≈ 100; collapsed products and aperture P/AoLP agree |
 | `proc/pdi_aolp.fits` cube, IDL vs Python | angle wrap where Q, U ≈ 0 |
 | `reduc_left/right.log` XC, YC columns | IDL logs the re-measured post-shift centre (≈ 99.98), Python the pre-shift centre (≈ 66, 82); HA/PA agree |
 
