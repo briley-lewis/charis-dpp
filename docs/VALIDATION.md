@@ -72,9 +72,9 @@ without it the two files fail to compile). Expected output on both IDL 9.1 and
 8.9: 329 files, **1 failed** (`subroutines/craigm/xwindow.pro`, third-party,
 needs Coyote's `pswindow`; it fails on the old tag too and nothing in the
 pipeline calls it), 4 skipped (`@include` fragments), and two `DUP` lines
-(`charis_getcenter` is defined identically in `reg/` and `subroutines/`;
-`gbfunc` in `gbfunc.pro` and inside `charis_calc_spec_covar.pro`). Anything
-else is a regression.
+(`charis_getcenter` is defined in both `reg/` and `subroutines/`, `gbfunc`
+in `gbfunc.pro` and inside `charis_calc_spec_covar.pro`; BUGS.md #325).
+Anything else is a regression. mueller (IDL 8.9, 2026-11-05): same result.
 
 ## Step list (identical for every run)
 
