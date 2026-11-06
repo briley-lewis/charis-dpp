@@ -1,9 +1,9 @@
 """Centroiding.
 
 * :func:`cntrd` — astrolib ``cntrd`` (derivative-weighted marginal centroid).
-* :func:`gcntrd` — Gaussian centroid: marginal profiles fit with a fixed-σ
-  Gaussian plus constant (same inputs/outputs as astrolib ``gcntrd``; failure
-  is signalled with NaN instead of ``-1``).
+* :func:`gcntrd` — astrolib ``gcntrd`` ported line by line (marginal
+  profiles fitted linearly to a fixed-σ Gaussian plus sky; failure is
+  signalled with NaN instead of ``-1``).
 * :func:`fit_gaussian2d` — elliptical 2-D Gaussian fit (replaces the missing
   ``calc_centroid_spots4`` used by ``register_cube /fitgauss``).
 * :func:`center_of_symmetry` — ``charis_getcenter.pro`` (180° symmetry search).
@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import numpy as np
 from astropy.modeling import fitting, models
-from scipy.optimize import least_squares
 
 from charis_dpp.geometry.grids import image_center
 from charis_dpp.image.interp import keys_cubic, rotate_image
@@ -82,37 +81,101 @@ def cntrd(
 
 
 def gcntrd(
-    im: np.ndarray, x: float, y: float, fwhm: float, *, keepcenter: bool = False
+    im: np.ndarray, im_x: float, im_y: float, fwhm: float, *, keepcenter: bool = False
 ) -> tuple[float, float]:
-    """Gaussian centroid of the marginal profiles (astrolib ``gcntrd`` semantics)."""
-    p = _prep(im, x, y, fwhm, keepcenter)
-    if p is None:
+    """Astrolib ``gcntrd``: marginal-profile fit against a fixed-width Gaussian.
+
+    A line-by-line port of ``gcntrd.pro`` (W. Landsman): the box is centred on
+    the brightest pixel of the Gaussian-convolved neighbourhood (unless
+    ``keepcenter``), the x and y marginals are weighted by a triangular window
+    and fitted linearly to a Gaussian of ``sigma = fwhm / 2.35482`` plus a sky
+    level, and the centroid offset is the closed-form first-order correction.
+    Failure (``-1`` in IDL) is signalled with NaN.  An earlier version used a
+    non-linear least-squares fit instead, which placed centres 0.05-0.1 px
+    away from the IDL ones on real CHARIS PSFs (BUGS.md #329).
+    """
+    from scipy.ndimage import correlate
+
+    img = np.asarray(im, dtype=float)
+    ny, nx = img.shape
+    maxbox = 13
+    radius = max(0.637 * fwhm, 2.001)
+    radsq = radius**2
+    sigsq = (fwhm / 2.35482) ** 2
+    nhalf = min(int(radius), (maxbox - 1) // 2)
+    nbox = 2 * nhalf + 1
+    ix, iy = int(np.round(im_x)), int(np.round(im_y))
+    # distance^2 grid, Gaussian kernel and triangular weights, all [y, x]
+    row2 = (np.arange(nbox) - nhalf) ** 2
+    g2 = row2[None, :] + row2[:, None]
+    mask = g2 <= radsq
+    g = np.exp(-0.5 * g2 / sigsq)
+    wt = nhalf - np.abs(np.arange(nbox) - nhalf) + 1.0
+    x_wt = np.broadcast_to(wt[None, :], (nbox, nbox))  # varies along x
+    y_wt = np.broadcast_to(wt[:, None], (nbox, nbox))  # varies along y
+    if not keepcenter:
+        c = g * mask
+        pixels = int(mask.sum())
+        sumc = c.sum()
+        sumcsq = (c**2).sum() - sumc**2 / pixels
+        sumc = sumc / pixels
+        c = np.where(mask, (c - sumc) / sumcsq, 0.0)
+        if ix < nhalf or ix + nhalf > nx - 1 or iy < nhalf or iy + nhalf > ny - 1:
+            return NAN2
+        x1, x2 = max(ix - nbox, 0), min(ix + nbox, nx - 1)
+        y1, y2 = max(iy - nbox, 0), min(iy + nbox, ny - 1)
+        h = correlate(img[y1 : y2 + 1, x1 : x2 + 1], c, mode="constant", cval=0.0)
+        h = h[nbox - nhalf : nbox + nhalf + 1, nbox - nhalf : nbox + nhalf + 1]
+        mx = np.nanmax(h)
+        my_, mx_ = np.nonzero(h == mx)
+        if mx_.size > 1:
+            idx, idy = int(np.round(mx_.mean())), int(np.round(my_.mean()))
+        else:
+            idx, idy = int(mx_[0]), int(my_[0])
+        xmax, ymax = ix - nhalf + idx, iy - nhalf + idy
+    else:
+        xmax, ymax = ix, iy
+    if xmax < nhalf or xmax + nhalf > nx - 1 or ymax < nhalf or ymax + nhalf > ny - 1:
         return NAN2
-    d, ix, iy, nhalf, nbox = p
-    sig = fwhm / 2.35482
-    pos = np.arange(nbox) - nhalf
-
-    def fit1d(prof: np.ndarray) -> float | None:
-        amp0 = prof.max() - prof.min()
-        if amp0 <= 0:
-            return None
-        c0 = float(pos[np.argmax(prof)])
-
-        def resid(p):
-            a, c, b = p
-            return a * np.exp(-0.5 * ((pos - c) / sig) ** 2) + b - prof
-
-        res = least_squares(resid, [amp0, c0, prof.min()], method="lm")
-        a, c, _ = res.x
-        if not res.success or a <= 0 or abs(c) > nhalf:
-            return None
-        return float(c)
-
-    cx = fit1d(d.sum(axis=0))
-    cy = fit1d(d.sum(axis=1))
-    if cx is None or cy is None:
+    d = img[ymax - nhalf : ymax + nhalf + 1, xmax - nhalf : xmax + nhalf + 1]
+    good = np.isfinite(d)
+    maskx = good.sum(axis=0) > 0  # per x column
+    masky = good.sum(axis=1) > 0  # per y row
+    if maskx.sum() < 3 or masky.sum() < 3:
         return NAN2
-    return ix + cx, iy + cy
+    ywt = y_wt * good
+    xwt = x_wt * good
+    wt1 = wt * maskx
+    wt2 = wt * masky
+    vec = nhalf - np.arange(nbox)
+
+    def fit_axis(sd: np.ndarray, sg: np.ndarray, w: np.ndarray) -> float | None:
+        sumg = np.sum(w * sg)
+        sumgsq = np.sum(w * sg * sg)
+        sumgd = np.sum(w * sg * sd)
+        sumd = np.sum(w * sd)
+        p = np.sum(w)
+        dgd = sg * vec
+        sdgds = np.sum(w * dgd**2)
+        sdgd = np.sum(w * dgd)
+        sddgd = np.sum(w * sd * dgd)
+        sgdgd = np.sum(w * sg * dgd)
+        hh = (sumgd - sumg * sumd / p) / (sumgsq - sumg**2 / p)
+        if not np.isfinite(hh) or hh <= 0:
+            return None
+        skylvl = (sumd - hh * sumg) / p
+        dd = (sgdgd - (sddgd - sdgd * (hh * sumg + skylvl * p))) / (hh * sdgds / sigsq)
+        if not np.isfinite(dd) or abs(dd) >= nhalf:
+            return None
+        return float(dd)
+
+    dx = fit_axis(np.nansum(d * ywt, axis=0), np.sum(g * ywt, axis=0), wt1)
+    if dx is None:
+        return NAN2
+    dy = fit_axis(np.nansum(d * xwt, axis=1), np.sum(g * xwt, axis=1), wt2)
+    if dy is None:
+        return NAN2
+    return xmax + dx, ymax + dy
 
 
 def fit_gaussian2d(

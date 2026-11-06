@@ -72,13 +72,20 @@ def fov_mask(
 
     ``charis_generate_roi, roirange=[dx, dy, pa]`` takes *full* widths, so a
     caller translating an IDL ``roirange`` passes ``dx / 2`` and ``dy / 2``.
+    ``angle_deg`` follows the IDL ``rotat`` convention used there: the mask
+    ``rotat(square, pa)`` produces is the square rotated by ``-pa`` in the
+    (x right, y up) frame, so the pixel coordinates are rotated by ``-pa``
+    before the box test (checked against ``charis_generate_roi`` output on
+    the 2023-07-30 PDI flats: with the sign the other way round the mask
+    stuck out of the lenslet field and the flat normalisation was off by
+    1-6 %, BUGS.md #328).
     """
     from charis_dpp.geometry.grids import xy_grids
 
     if half_size_y is None:
         half_size_y = half_size
     dx, dy = xy_grids(shape, center)
-    t = np.deg2rad(angle_deg)
+    t = -np.deg2rad(angle_deg)
     u = dx * np.cos(t) + dy * np.sin(t)
     v = -dx * np.sin(t) + dy * np.cos(t)
     return (np.abs(u) <= half_size) & (np.abs(v) <= half_size_y)
@@ -92,7 +99,7 @@ def roi_rect_rotated(
 
     xc, yc = image_center(shape) if center is None else center
     gx, gy = xy_grids(shape, (xc + offset[0], yc + offset[1]))
-    t = np.deg2rad(angle_deg)
+    t = -np.deg2rad(angle_deg)  # rotat convention, as in fov_mask (BUGS.md #328)
     u = gx * np.cos(t) + gy * np.sin(t)
     v = -gx * np.sin(t) + gy * np.cos(t)
     return (np.abs(u) <= dx / 2.0) & (np.abs(v) <= dy / 2.0)

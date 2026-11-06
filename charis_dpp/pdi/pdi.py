@@ -220,17 +220,18 @@ def pdi(
                             ld[il][m] = np.nan
                             rd[il][m] = np.nan
             cubes[k] = (ld, rd, left.h0, left.h1, n)
-        (lqp, rqp, _, h1_qp, n_qp), (lup, rup, h0_up, h1_up, n_up) = cubes[0], cubes[1]
-        (lqm, rqm, _, h1_qm, n_qm), (lum, rum, _, h1_um, n_um) = cubes[2], cubes[3]
+        (lqp, rqp, h0_qp, h1_qp, n_qp), (lup, rup, h0_up, h1_up, n_up) = cubes[0], cubes[1]
+        (lqm, rqm, h0_qm, h1_qm, n_qm), (lum, rum, h0_um, h1_um, n_um) = cubes[2], cubes[3]
         iq = 0.5 * ((lqp + rqp) + (lqm + rqm))
         iu = 0.5 * ((lup + rup) + (lum + rum))
         pq = 0.5 * ((rqp - lqp) - (rqm - lqm))
         pu = 0.5 * ((rup - lup) - (rum - lum))
         if terms is not None:
-            xqp = mueller_rows_per_channel(h1_qp, ang[nums.index(n_qp)], terms, adisync=adisync)
-            xqm = mueller_rows_per_channel(h1_qm, ang[nums.index(n_qm)], terms, adisync=adisync)
-            xup = mueller_rows_per_channel(h1_up, ang[nums.index(n_up)], terms, adisync=adisync)
-            xum = mueller_rows_per_channel(h1_um, ang[nums.index(n_um)], terms, adisync=adisync)
+            mr = mueller_rows_per_channel
+            xqp = mr(h1_qp, ang[nums.index(n_qp)], terms, adisync=adisync, h0=h0_qp)
+            xqm = mr(h1_qm, ang[nums.index(n_qm)], terms, adisync=adisync, h0=h0_qm)
+            xup = mr(h1_up, ang[nums.index(n_up)], terms, adisync=adisync, h0=h0_up)
+            xum = mr(h1_um, ang[nums.index(n_um)], terms, adisync=adisync, h0=h0_um)
             q_rows[ci] = 0.5 * (xqp - xqm)[:, :3]
             u_rows[ci] = 0.5 * (xup - xum)[:, :3]
         # the reference frame of the cycle is the U+ frame (its WCS is used); PA offsets relative to it

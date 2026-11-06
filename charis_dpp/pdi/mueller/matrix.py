@@ -161,15 +161,25 @@ def mueller_rows_per_channel(
     terms: MuellerTerms,
     *,
     adisync: bool = True,
+    h0: Header | None = None,
 ) -> np.ndarray:
     """First rows ``(nλ, 4)`` of the double-difference Mueller matrix for one frame.
 
-    ``h`` is the pipeline header carrying ``ALTITUDE``, ``AZIMUTH``, ``PARANG``
-    and ``D_IMRANG``; ``hwpang`` the HWP angle from the HWP table.
+    ``h`` is the pipeline extension header carrying ``ALTITUDE``, ``AZIMUTH``
+    and ``PARANG``; ``D_IMRANG`` (the image-rotator angle, which the IDL reads
+    from the raw cube's third extension) is looked up in ``h`` and then in the
+    primary header ``h0``, where ``imprep`` copies it.  A missing ``D_IMRANG``
+    is an error: silently using 0 deg gave a wrong correction (BUGS.md #330).
+    ``hwpang`` is the HWP angle from the HWP table.
     """
     altitude = float(header_get(h, "ALTITUDE", 0.0))
     parang = float(header_get(h, "PARANG", header_get(h, "PA", 0.0)))
-    theta_der = float(header_get(h, "D_IMRANG", 0.0))
+    theta_der = header_get(h, "D_IMRANG", None)
+    if theta_der is None and h0 is not None:
+        theta_der = header_get(h0, "D_IMRANG", None)
+    if theta_der is None:
+        raise KeyError("D_IMRANG (image rotator angle) missing from the frame headers")
+    theta_der = float(theta_der)
     if adisync:
         azimuth = float(header_get(h, "AZIMUTH", 180.0))
         theta_hwp = hwp_sync_angle(altitude, azimuth, terms.inst.latitude_deg) + hwpang
