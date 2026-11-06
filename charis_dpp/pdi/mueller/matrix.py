@@ -14,7 +14,10 @@ table (#306).
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
+from astropy.io import fits
 from astropy.io.fits import Header
 
 from charis_dpp.config.instrument import Instrument
@@ -162,14 +165,16 @@ def mueller_rows_per_channel(
     *,
     adisync: bool = True,
     h0: Header | None = None,
+    raw_dir: Path | None = None,
 ) -> np.ndarray:
     """First rows ``(nλ, 4)`` of the double-difference Mueller matrix for one frame.
 
     ``h`` is the pipeline extension header carrying ``ALTITUDE``, ``AZIMUTH``
     and ``PARANG``; ``D_IMRANG`` (the image-rotator angle, which the IDL reads
     from the raw cube's third extension) is looked up in ``h`` and then in the
-    primary header ``h0``, where ``imprep`` copies it.  A missing ``D_IMRANG``
-    is an error: silently using 0 deg gave a wrong correction (BUGS.md #330).
+    primary header ``h0``, where ``imprep`` copies it, and finally in the raw
+    cube's third extension under ``raw_dir`` (what the IDL does, for frames
+    prepared by the IDL ``imprep``).  A missing ``D_IMRANG`` is an error: silently using 0 deg gave a wrong correction (BUGS.md #330).
     ``hwpang`` is the HWP angle from the HWP table.
     """
     altitude = float(header_get(h, "ALTITUDE", 0.0))
@@ -177,6 +182,13 @@ def mueller_rows_per_channel(
     theta_der = header_get(h, "D_IMRANG", None)
     if theta_der is None and h0 is not None:
         theta_der = header_get(h0, "D_IMRANG", None)
+    if theta_der is None and raw_dir is not None:
+        # frames prepared by the IDL imprep carry no D_IMRANG: do what
+        # get_charis_mueller_matrix.pro does and read the raw cube's 3rd extension
+        orig = header_get(h, "ORIGNAME", None)
+        raw = Path(raw_dir) / f"CRSA{orig}_cube.fits" if orig is not None else None
+        if raw is not None and raw.exists():
+            theta_der = header_get(fits.getheader(raw, 3), "D_IMRANG", None)
     if theta_der is None:
         raise KeyError("D_IMRANG (image rotator angle) missing from the frame headers")
     theta_der = float(theta_der)
