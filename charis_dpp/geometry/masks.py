@@ -100,16 +100,21 @@ def generate_roi_mask(
     float subscripts) centred on ``(nx//2 + offx, ny//2 + offy)``, rotated with
     ``rotat`` (:func:`rotate_image`, cubic with bilinear fallback) and thresholded at
     ``> 0``.  The analytic :func:`fov_mask` is ~500 px smaller on a 201 px CHARIS
-    frame because the interpolated edge counts as inside here (BUGS.md #334).
+    frame because of the truncated bounds and the interpolated edge (BUGS.md #334).
     """
     from charis_dpp.image.interp import rotate_image
 
     ny, nx = shape[-2], shape[-1]
     offx, offy = int(offset[0]), int(offset[1])
     cx, cy = nx // 2 + offx, ny // 2 + offy
-    hx, hy = int(dx / 2.0), int(dy / 2.0)  # IDL float subscripts truncate
+    # IDL: outputroirange[-dx/2+cen : dx/2+cen, ...] = 1 with float bounds that are
+    # truncated toward zero, so for dx = 125 the box runs from int(37.5) = 37 to
+    # int(162.5) = 162: 126 px wide and half a pixel off centre.  rotat of this
+    # box, thresholded at > 0, reproduces the IDL mask pixel for pixel.
+    x_lo, x_hi = int(cx - dx / 2.0), int(cx + dx / 2.0)
+    y_lo, y_hi = int(cy - dy / 2.0), int(cy + dy / 2.0)
     box = np.zeros((ny, nx), dtype=float)
-    box[max(cy - hy, 0) : cy + hy + 1, max(cx - hx, 0) : cx + hx + 1] = 1.0
+    box[max(y_lo, 0) : y_hi + 1, max(x_lo, 0) : x_hi + 1] = 1.0
     if angle_deg == 0:
         return box == 1.0
     r = rotate_image(box, float(angle_deg), (float(cx), float(cy)))
