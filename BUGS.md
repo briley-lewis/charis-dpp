@@ -301,7 +301,7 @@ Severity: **CRASH** = won't compile or always errors on that path · **WRONG** =
 | 213 | charis_pdi.pro:182,337 | GEOM | `dist(sz[0])`, `angarr(dimx)` assume square | use both dims | Y (pending) |
 | 214 | charis_pdi.pro (fork) | DEAD | `coverage_map.fits` to CWD; `spawn rm` | `file_delete`; `reduc/proc` | Y (pending) |
 | 215 | charis_pdi_flatfield.pro:71 | WRONG | `flatslice[where(flatslice eq 0)]=1` no count check | guard | Y |
-| 216 | charis_pdi_flatfield.pro:65,86,53,91 | GEOM/WRONG | FOV ROI `[125,125,-26.9166]` hard-coded; suffix `'e_flat'` ignores `suffname`; unclear error with no dark flats; no guard on near-zero flat before division | fix | Y (pending) |
+| 216 | charis_pdi_flatfield.pro:65,86,53,91 | GEOM/WRONG | FOV ROI `[125,125,-26.9166]` hard-coded; suffix `'e_flat'` ignores `suffname`; unclear error with no dark flats; no guard on near-zero flat before division | fix — the port divides by near-zero values like the IDL by default; `[pdi] flat_floor = 0.05` opts in to the guard (parity with the IDL flats on HD 236894, 109 edge pixels per channel) | Y (pending) |
 | 217 | charis_pdi_split_pols.pro:47-55 (old) / fork register | WRONG | `n_elements(test) gt 1` — single file treated as none | `count=` | Y (pending) |
 | 218 | charis_pdi_split_pols.pro:95 | CRASH | divides by `dy0_pol` (zero possible) | guard | Y (pending) |
 | 219 | charis_pdi_register_cube.pro:70-80 | WRONG | `spawn mv/cp` Unix-only; help lists `guessoffsets=` not a keyword; forwards `help=help` | `file_move`/`file_copy` | Y (pending) |

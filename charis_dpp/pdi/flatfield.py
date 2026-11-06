@@ -5,8 +5,9 @@ channel by the median inside the field-of-view mask, and the prepared
 science and sky cubes are divided by it (``<n>e_flat.fits``).
 
 Fixes vs. IDL: the zero-pixel guard works (#215), the FOV mask comes from the
-instrument table, ``suffix`` is honoured, a missing flat directory gives a
-clear error and near-zero flat values are not divided by (#216).
+instrument table, ``suffix`` is honoured and a missing flat directory gives a
+clear error.  Near-zero flat values are divided by, as in the IDL, unless
+``[pdi] flat_floor`` is set (#216).
 """
 
 from __future__ import annotations
@@ -28,8 +29,14 @@ __all__ = ["pdi_flatfield", "make_master_flat"]
 
 
 def make_master_flat(
-    bright: list[Path], dark: list[Path] | None, fov: np.ndarray | None, *, floor: float = 0.05
+    bright: list[Path], dark: list[Path] | None, fov: np.ndarray | None, *, floor: float = 0.0
 ) -> tuple[np.ndarray, object, object]:
+    """Median of the bright (minus dark) flat cubes, each channel normalised by its
+    median inside ``fov``.  Pixels that are not finite or exactly zero are set to 1
+    (``charis_pdi_flatfield.pro``, #215).  With ``floor > 0`` pixels below ``floor``
+    are set to 1 as well (#216: no division by near-zero flat values); the default
+    keeps the IDL behaviour so the two sides agree (``[pdi] flat_floor`` in the
+    dataset file turns it on)."""
     cubes = [read_cube(p) for p in bright]
     flat = np.nanmedian(np.stack([c.data for c in cubes]), axis=0)
     if dark:
@@ -38,7 +45,8 @@ def make_master_flat(
         sl = flat[il]
         norm = np.nanmedian(sl[fov] if fov is not None else sl)
         sl = sl / norm
-        sl[~np.isfinite(sl) | (sl < floor)] = 1.0  # #215/#216: no division by ~0
+        bad = ~np.isfinite(sl) | ((sl < floor) if floor > 0 else (sl == 0))
+        sl[bad] = 1.0  # #215 (zeros) and, with floor > 0, #216 (near-zero values)
         flat[il] = sl
     return flat, cubes[0].h0, cubes[0].h1
 
@@ -74,7 +82,7 @@ def pdi_flatfield(
         # charis_generate_roi, roirange=[125, 125, -26.9166] (full widths; #326, #328, #334)
         w = float(fm["width_px"]) * scale
         fov = generate_roi_mask(first.shape, w, w, float(fm["angle_deg"]))
-        flat, h0, h1 = make_master_flat(bright, dark, fov)
+        flat, h0, h1 = make_master_flat(bright, dark, fov, floor=float(pd.get("flat_floor", 0.0)))
         write_cube(master_path, flat, h0, h1)
         log.info(
             "master flat from %d bright / %d dark cubes -> %s", len(bright), len(dark), master_path
