@@ -289,7 +289,11 @@ def hwp_match(
     ok = np.isfinite(hwp_ang)
     diff = np.abs(hwp_ang[ok, None] - np.array(angles)[None, :])
     hwp_pos[ok] = np.argmin(diff, axis=1)
-    hwp_pos[ok & (np.min(diff, axis=1) > 2.0)] = -1  # not one of the cycle angles
+    far = np.zeros(len(nums), dtype=bool)
+    far[ok] = np.min(diff, axis=1) > 2.0  # not one of the cycle angles
+    hwp_pos[far] = -1
+    for i in np.flatnonzero(~ok | far):
+        log.warning("%s: no usable HWP angle (%s); frame left out of the cycles", names[i], hwp_ang[i])
     cyc = assign_cycles(np.where(hwp_pos >= 0, hwp_pos, len(angles)), utc, len(angles))
     table = HwpTable(names, list(nums), hwp_pos, hwp_ang, cyc, angles)
     out = table.save(dirs.root / outfile)
