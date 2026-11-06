@@ -185,16 +185,21 @@ charis_set_epoch, pfname = pfname ; [BUGS.md #322] constants for this night
       origname = sxpar(h, 'ORIGNAME')
       origfile = './data/raw/CRSA' + origname + '_cube.fits'
       hraw = headfits(('./data/raw/CRSA' + (sxpar(h, 'origname')) + '_cube.fits'), ext = 3, /silent) ; This is the header of the raw image
-      dit = (sxpar(hraw, 'MJD-END') - sxpar(hraw, 'MJD-STR')) * 86400. ; In seconds
-      timestring = sxpar(h, 'UTC-TIME')
-      time = strsplit(timestring, /extract, ':')
-      time[2] -= 0.5 * dit
-
-      utcexp[i] = ten(time[0], time[1], time[2])
-      utcexp_end[i] = ten(time[0], time[1], time[2] + exptime)
+      mjd_str = sxpar(hraw, 'MJD-STR')
+      mjd_end = sxpar(hraw, 'MJD-END')
+      dit = (mjd_end - mjd_str) * 86400. ; In seconds
+      ; [BUGS.md #338] mid-exposure and end-of-exposure UT in hours from the MJDs. The
+      ; old code subtracted dit/2 from the *seconds string* of UTC-TIME and fed the
+      ; (sometimes negative) result to ten(), which then returned a negative hour.
+      mjd_mid = 0.5d * (mjd_str + mjd_end)
+      utcexp[i] = (mjd_mid - floor(mjd_mid)) * 24.d
+      utcexp_end[i] = (mjd_end - floor(mjd_end)) * 24.d
       if use_headers then begin
-        hwp_ang_i = sxpar(hraw, 'RET-ANG1')
-        if hwp_ang_i eq -1 then hwp_ang_i = 0.d
+        hwp_ang_i = sxpar(hraw, 'RET-ANG1', count = nret)
+        if nret eq 0 || hwp_ang_i lt 0 then begin ; [BUGS.md #337] missing angle: leave the frame out
+          print, 'charis_pdi_hwp_match: no RET-ANG1 in ' + origfile + '; frame left out of the cycles'
+          hwp_ang_i = !values.f_nan
+        endif
         hwp_ang[i] = hwp_ang_i
       endif else begin
         dts = abs(utchwp - utcexp[i])
@@ -203,8 +208,10 @@ charis_set_epoch, pfname = pfname ; [BUGS.md #322] constants for this night
         if utchwp[argmin] gt utcexp[i] then hwpind = argmin - 1 ; If corresponding time is after utcexp[i], then we want entry for one index prior
         hwp_ang[i] = angs[hwpind]
       endelse
-      min_diff = min(abs(hwp_ang[i] - uni_angs), angpos)
-      hwp_pos[i] = angpos
+      if finite(hwp_ang[i]) then begin
+        min_diff = min(abs(hwp_ang[i] - uni_angs), angpos)
+        hwp_pos[i] = angpos
+      endif else hwp_pos[i] = -1 ; [BUGS.md #337]
     endfor
   endif else begin ; logtype eq 'hwp_angles'
     hwp_ang = fltarr(nfiles)
