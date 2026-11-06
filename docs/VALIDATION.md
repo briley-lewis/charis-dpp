@@ -1,7 +1,9 @@
 # Validation: old IDL → new IDL → Python on real 2023-07-30 CHARIS PDI data
 
-Status: **set-up written, no runs yet** (2026-11-05). Results tables are filled in
-as each comparison completes.
+Status (2026-11-05, evening): **HD 236894 three-way run complete; Europa cube
+extraction running on mueller (117/228 at 23:40 HST)**. Every number below comes
+from `~/charis-val/compare/*/compare.csv` on mueller or from the aperture
+photometry script quoted in the Results section.
 
 ## Why
 
@@ -21,127 +23,163 @@ Two questions, in order:
    where a BUGS.md row or a deliberate change explains the difference.
 2. **Does Python match new IDL?** Same data via `charis migrate-info`. Expected:
    agreement at `tests/regression/tolerances.toml`, with the documented
-   deliberate differences (`/even` medians, even-size centre convention,
-   north-up WCS header, derotation kernel).
+   deliberate differences.
 
 Tool: `charis compare-trees A B --mode identical|port [--allow-list f] [--out d]`
 (`charis_dpp/testing/compare_trees.py`), which pairs `prep/`, `reg/`, `proc/`,
 `reduc*.log` and `hwp_info.txt` by relative path.
 
-## Layout on mueller
+## Layout on mueller (as built)
 
 ```
 ~/charis-val/
-  old-idl/      git worktree at tag old-idl-2025-04   (IDL 8.9, ~/idl/idl89)
-  new-idl/      git worktree at branch integrate-port
+  old-idl/      git worktree at tag old-idl-2025-04   (IDL 8.9, ~/idl/idl89; charis_path.pro edited, uncommitted)
+  new-idl/      git worktree at branch integrate-port (local branch integrate-port-val tracking it)
   datasets/
-    frames-2023-07-30.md          frame lists worked up from the observing log + headers (copy in docs/validation/)
-    HD236894_bb/                  polarized standard, 16 s broadband PDI
-      data/raw/CRSA*_cube.fits    symlinks to /home/shared/exoserver/Subaru-Europa/2023-07-30/HD236894-broadband-pol/
-      pdi_flats/                  extracted PDI flat cubes
-      HD236894_bb.info            hand-written; the same file for every run
-      HD236894_bb.toml            charis migrate-info HD236894_bb.info
-      old/ new/ py/               one working directory per run (each gets its own reduc/)
-    Europa_bb/                    same shape; raw = extracted cubes 123628–123847
-  compare/                        compare-trees outputs (compare.csv / compare.md per pair)
+    frames-2023-07-30.md, frames-2023-07-30-headers.csv    frame lists (copies in docs/validation/)
+    calib_2023-07-30/           CHARIS-DEP 2.0.1 buildcal on CRSA00123405 (1550 nm) with darks 123417-420,
+                                oversampled; recovered spot shift (-5.377487, 3.110374, -0.000860) equals the
+                                CAL_DX/DY/DPHI of the 2023 cubes to six digits; charis_2023-07-30.ini = sample.ini + calibdir
+    HD236894_bb/
+      data/raw/                 symlinks to the 32 cubes CRSA00123552-583 extracted in 2023
+      pdi_flats/                CRSA00123412-416 extracted here with the calibration above
+      HD236894_low.info         hand-built (see below); byte-identical copy in old/, new/, py/
+      old/ new/ py/             one working directory per run (reduc/, reduc*.log, hwp_info.txt, logs)
+      old_nomm/ new_nomm/       charis_pdi with /no_mm_ip_corr,/no_mm_crosstalk_corr on the same reg/ (symlink)
+      py_regtest/               Python registration run on the new-IDL flat-fielded frames
+      py_pditest_mm/, _nomm/    Python charis pdi run on the new-IDL registered frames
+    Europa_bb/
+      data/raw/                 CRSA00123628-855 being extracted (220 science + 8 sky)
+      pdi_flats/ -> HD236894_bb/pdi_flats cubes;  Europa_low.info in old/ new/ py/
+  compare/                      compare-trees outputs: HD236894_<A>_vs_<B>/{compare.csv,compare.md,stdout.txt}
 ```
 
-Set-up commands (run once connectivity to mueller is available):
+IDL is started per run with `IDL_PATH="+<worktree>/idl:+$HOME/IDLAstro/pro:<IDL_DEFAULT>"`
+(`~/IDLAstro` was cloned on mueller and on the laptop: no astrolib existed on
+either, and `robust_poly_fit` is called from `charis_pdi` and
+`charis_register_cube`) and, for the new tree, `CHARIS_DPP_PATH=~/charis-val/new-idl/idl`.
+Python: conda env `charisenv` (3.11), `pip install -e ~/charis-val/new-idl`.
 
-```bash
-ssh mueller
-cd ~/charis-dpp && git fetch origin integrate-port old-idl-2025-04 old-idl-2024-06
-mkdir -p ~/charis-val/datasets ~/charis-val/compare
-git worktree add ~/charis-val/old-idl old-idl-2025-04
-git worktree add ~/charis-val/new-idl integrate-port
-# old branch has the hard-coded path in idl/setup/charis_path.pro: point it at the worktree (do not commit)
-sed -i "s|charispath=.*|charispath='$HOME/charis-val/old-idl/'|" ~/charis-val/old-idl/idl/setup/charis_path.pro
-# Python side
-conda activate charisenv && pip install -e ~/charis-val/new-idl
-# compile gate for the new tree (IDL 8.9)
-IDL_PATH="+$HOME/charis-val/new-idl/idl:+$HOME/IDLAstro:<IDL_DEFAULT>" ~/idl/idl89/bin/idl -e charis_compile_check
-```
+Compile gate (`charis_compile_check`): expected output on IDL 9.1 (laptop) and
+8.9 (mueller) is 329 files, **1 failed** (`subroutines/craigm/xwindow.pro`,
+third-party, needs Coyote's `pswindow`; fails on the old tag too; unused), 4
+skipped (`@include` fragments) and two `DUP` lines (`charis_getcenter` in
+`reg/` and `subroutines/`, `gbfunc` in `gbfunc.pro` and inside
+`charis_calc_spec_covar.pro`; BUGS.md #325). Both machines give exactly this.
 
-Per run, IDL is started with `IDL_PATH` pointing at exactly one of the two
-worktrees (plus IDLAstro), and `CHARIS_DPP_PATH` set to the new worktree for
-the new-IDL run.
+## Inputs and decisions
 
-Compile gate (`charis_compile_check`, 2026-11-05): IDLAstro must be on the
-path (`robust_poly_fit` is called from `charis_pdi` and `charis_register_cube`;
-without it the two files fail to compile). Expected output on both IDL 9.1 and
-8.9: 329 files, **1 failed** (`subroutines/craigm/xwindow.pro`, third-party,
-needs Coyote's `pswindow`; it fails on the old tag too and nothing in the
-pipeline calls it), 4 skipped (`@include` fragments), and two `DUP` lines
-(`charis_getcenter` is defined in both `reg/` and `subroutines/`, `gbfunc`
-in `gbfunc.pro` and inside `charis_calc_spec_covar.pro`; BUGS.md #325).
-Anything else is a regression. mueller (IDL 8.9, 2026-11-05): same result.
-
-## Step list (identical for every run)
-
-```
-charis_newobs, date='20230730', object='HD236894', filter='low'    ; Europa: arbitrary name, sptype -999
-charis_imprep                                                      ; then set fnum_sat / fnum_sky by hand
-charis_pdi_flatfield, 'x.info', brightflatdir='../pdi_flats/'
-charis_pdi_subtract_sky, 'x.info', /scalesky
-charis_pdi_register_cube, 'x.info', astrogrid=11.2                 ; only if the astrogrid was on
-charis_pdi_specphot_cal, 'x.info', modamp=25, ap_factor=3, starlib=1   ; standard only
-charis_pdi_hwp_match, 'x.info', /use_headers
-charis_pdi, 'x.info', /meanadd, /save_derot_seq                    ; and a second run with /no_mm_ip_corr, /no_mm_crosstalk_corr
-```
-
-Python: the `charis imprep --pdi … charis pdi` sequence from `WORKFLOW.md` on the
-migrated `.toml`.
-
-Controlled variables (identical in every run, recorded here when fixed):
-
-| variable | value | why |
+| item | value | why |
 |---|---|---|
-| `fnum_sat`, `fnum_sky` | HD 236894: sat 123560–123583 (6 clean cycles), no sky; Europa: sat 123628–123847 (55 cycles), sky 123848–123855 | from `docs/validation/frames-2023-07-30.md`; the DPP mis-tags PDI frames as sky, so set by hand |
-| flats, darks | bright PDI lamp flat 123412–123416 (5 × 5.9 s, no lamp-off frames); darks 123417–123420 (200.6 s); twilight sky flats 123926–933 as the alternative | the only PDI flats taken that night |
-| HWP angle source | raw-frame `RET-ANG1` (cubes carry none); the angle at the start of the ramp | the waveplate moves during the last read(s) of each ramp, so `hwp_time_ref=start` semantics; a per-read check is an open question |
-| registration method, `polcent_offset` | non-spot: `X_GRDST=OFF` on every frame of the night (`docs/validation/frames-2023-07-30.md`); IDL `charis_pdi_register_cube` with the PSF-centroid method for the star, `method=xcorr` (Python) / cross-correlation for Europa; `polcent_offset` left at the instrument default | no satellite spots anywhere, so `astrogrid=` is not used |
-| `hwp_time_ref` | `mid` (Python default; IDL per code) | HWP log vs exposure timing |
-| `pdi.mueller.flip_matrix` | `false` | fork behaviour on both sides; BUGS.md #308 revisited afterwards |
-| `angoffset` | 2.2 (epoch `satspot-recal-2017`) | 2023 epoch; changing it means rerunning `charis_pdi` |
-| Mueller | two runs: corrected and `/no_mm_*` | isolates the Mueller term |
-| `unres_pol_sub`, `bg_sub` | off | |
-| out-of-FOV pixels | NaN before `charis_pdi` | coverage NaNs must agree (`finite_agree`) |
+| `.info` | built with the old tree's `param,/set` calls copied from `charis_newobs` (`docs/validation/HD236894_low.info`); SIMBAD values from the Harvard mirror (RA 28.05713, Dec +58.43509, plx 0.3334 mas, O8V, J/H/K 8.936/8.877/8.909) | CDS Strasbourg was unreachable from both machines, so `charis_newobs` died in `charis_querysimbadf`; HD 236894 is not in Hipparcos, so `newobs` would have written sptype -999 and zero parallax |
+| `fnum_sat`, `fnum_sky` | `9-32`, `''` | **sequence indices**, not CRSA numbers: `imprep` renumbers the raw cubes in sorted order (`n0001e` = 123552 … `n0032e` = 123583), so 123560-583 is 9-32. Both `imprep`s rewrite the lists (IDL: all 32 as sky; Python: all 32 as science), so they are set again after `imprep` |
+| flats | `pdi_flats/` = CRSA00123412-416, 5.9 s, no lamp-off frames, no `darkflatdir` | only PDI flats of the night |
+| sky subtraction | skipped on all sides | no sky frames for the standard |
+| registration | `method=1` (`psf`, gcntrd on the unsaturated PSF), `polcent_offset` default (31.758, 16.542), `fitgauss` off | no satellite spots anywhere that night (`X_GRDST=OFF`) |
+| specphot | **skipped on all sides** | the old tree's `/unsat` path dies on broadband data (BUGS.md #327); P and AoLP do not depend on it |
+| HWP angles | `/use_headers` (IDL reads `RET-ANG1` from the raw cube's 3rd extension) / `--source header` (Python `imprep` copies it to the primary header) | frames-2023-07-30.md; the cubes' 3rd extension is the raw primary header |
+| `charis_pdi` | `/meanadd, /save_derot_seq`, and a second run with `/no_mm_ip_corr, /no_mm_crosstalk_corr`; `angoffset` 2.2 via `charis_set_epoch` (MJD 60155) | isolates the Mueller term |
+| `flip_matrix` | false on both sides | fork behaviour; BUGS.md #308 |
 
-## Deliberate differences expected in `identical` mode (allow-list candidates)
+## Results: HD 236894
 
-Filled in from the first old-vs-new run. Every entry must cite a BUGS.md row or
-a commit on `integrate-port`.
+### Old IDL vs new IDL (identical mode)
+
+| step | files | result | attribution |
+|---|---|---|---|
+| `imprep` (`prep/n####e.fits`) | 32 | **identical** (rel_rms 0) | |
+| `pdi_flatfield` (`master_pdiflat`, `n####e_flat`) | 24 | **identical** | |
+| `pdi_register_cube` | 24×3 | old tree **crashes** at `charis_pdi_register_cube.pro:135` (`LSHIFT` out of range) after registering both beams; its per-slice centroids and `reduc_left/right.log` are identical to the new tree's | BUGS.md #336: the old wrapper needs `SHIFT_n` keywords that only the sat-spot branch writes; the fork writes them on every branch. The old native `leftreg/rightreg` (pre-NaN re-shift) are kept in `old/reduc/reg_oldnative/`; the old downstream steps ran on the new tree's `reg/` |
+| `pdi_hwp_match` (`hwp_info.txt`) | 24 rows | **identical** (6 cycles) | only the integer field width differs (nbrlist returns long, #285) |
+| `charis_pdi`, Mueller off (`old_nomm` vs `new_nomm`) | 132 | 106 pass, **2 fail at rel_rms 1.6e-6** (`pdi_aolp.fits`, `pdi_c0005_u_derot.fits`; max diff 0.012 deg / 0.013) | floating-point noise just above the 1e-6 threshold; allow-list candidates |
+| `charis_pdi`, Mueller on (`old` vs `new`) | 24 | **24 fail**: `pdi_q` 9 %, `pdi_u` 41 %, `pdi_aolp` 57 % rel_rms | **deliberate**: the fork's McIntosh+2026 Mueller model (derotator retardances from `mcintosh_2026_spie_wavelength_fits.csv` instead of the Hart+2021 mirror model, HWP thicknesses 1.653/1.291 mm instead of 1.623/1.268, Wollaston efficiency from the CSV instead of 1, `dtheta_hwp` −0.04 instead of −0.002 deg, `dtheta_der` −0.02 instead of −0.0118 deg; `m3_model` constants unchanged for 2023). Commit `dfb9331`. |
+
+Verdict: **the core PDI arithmetic is unchanged between the old tag and this
+branch**; every difference in the corrected products is the Mueller-model
+update, and the old tree could not have run this dataset's registration or
+spectrophotometric calibration at all.
+
+### New IDL vs Python (port mode, `tests/regression/tolerances.toml`)
+
+Step-isolated comparisons (each Python step run on the new-IDL products of the
+previous step):
+
+| step | files | result | notes |
+|---|---|---|---|
+| `imprep` | 32 | identical | |
+| `pdi_flatfield` (`master_pdiflat`) | 1 | median ratio py/IDL 0.99995 / 1.00064 / 1.0015 at channels 0 / 10 / 21 | the ROI mask is built the IDL way but `rotate_image` and `rotat` still disagree on 246 of 16 135 edge pixels; and 109 (ch 0) / 1 (ch 21) pixels where the IDL flat is < 0.05 are set to 1 by the port (#216) while the IDL divides by them (values up to 7×10³ in `n####e_flat`). These edge pixels dominate every downstream per-pixel statistic of the full chain. |
+| `pdi_register_cube` on the IDL flats (`py_regtest`) | 128 | **128 pass, 0 fail**: `leftreg` rel_rms 1.7e-6, `reg` 9e-5; per-slice `SHIFT_n` agree to ≤ 0.001 px | after #329 (gcntrd) and #333 (robust_poly_fit) |
+| `charis pdi` Mueller off on the IDL `reg/` (`py_pditest_nomm`) | 145 | **132 pass, 0 fail**; pre-derotation `c####_{q,u,iq,iu}` agree to 2.5e-8, derotated to 4e-6 | derotation kernel (`rotate_image` = `rotat` port) |
+| `charis pdi` Mueller on (`py_pditest_mm`) | 177 | **107 pass, 1 fail** (`pdi_aolp.fits` cube, rel_rms 9e-3: the angle wraps at ±90 deg where Q and U are ~0) | after #330, #331, #332, #335; Mueller rows agree to 3e-4 before #335, better after |
+
+Full Python chain (`py`, flats → registration → HWP → pdi) vs new IDL: 69 pass /
+95 fail of 177, all failures traceable to the flat-edge pixels above
+(`leftreg` 6e-4 pass, `reg` 1e-2 fail, `pdi_q` 2 %, `pdi_u` 4 %, `pdi_aolp` 5 %;
+every `_collapsed` product passes).
+
+### Recovered polarisation of the standard
+
+Aperture sums (r < 12 px) of the collapsed Q, U and of the mean of the I_Q/I_U
+double sums; P in per cent, AoLP in degrees (pipeline frame, north-up, before
+any catalogue comparison):
+
+| run | P % | AoLP | q % | u % | P % per channel 0 / 5 / 10 / 15 / 21 |
+|---|---|---|---|---|---|
+| old IDL, Mueller on | 1.287 | −89.11 | −1.286 | −0.040 | 1.99 1.73 1.09 0.93 0.18 |
+| new IDL, Mueller on | 1.360 | −85.63 | −1.344 | −0.206 | 2.00 1.74 1.18 0.98 0.26 |
+| Python, Mueller on (full chain) | 1.360 | −85.62 | −1.344 | −0.207 | 2.01 1.74 1.18 0.98 0.26 |
+| Python on IDL reg/, Mueller on | 1.360 | −85.63 | −1.344 | −0.206 | 2.00 1.74 1.18 0.98 0.26 |
+| old IDL, Mueller off | 1.861 | 54.70 | −0.618 | 1.755 | 2.66 2.48 1.67 1.44 0.53 |
+| new IDL, Mueller off | 1.861 | 54.70 | −0.618 | 1.755 | 2.66 2.48 1.67 1.44 0.53 |
+| Python, Mueller off | 1.861 | 54.70 | −0.618 | 1.755 | 2.66 2.48 1.67 1.44 0.53 |
+
+Python and new IDL agree to 0.001 % in P and 0.01 deg in AoLP. The old-vs-new
+difference (1.29 % / −89 deg vs 1.36 % / −86 deg) is the Mueller-model update.
+The catalogue value of HD 236894 is still to be compared (the AoLP here is in
+the pipeline's north-up frame).
+
+## Port defects found on this dataset (all fixed on `integrate-port`)
+
+| BUGS.md | what | effect before the fix |
+|---|---|---|
+| #326 | `roirange` widths taken as half-widths | master flat all ones |
+| #328 | FOV mask rotated the wrong way | flat normalisation off by 1-6 % |
+| #329 | `gcntrd` was a non-linear fit, not astrolib's | centres 0.05-0.1 px off IDL |
+| #330 | `D_IMRANG` read from the wrong header, silently 0 | corrected P/AoLP 1.56 % / −71.5 deg instead of 1.36 % / −85.6 deg |
+| #331 | HWP Sellmeier instead of the precomputed table; `np.interp` clamps where `interpol` extrapolates | Mueller terms off at 2e-4 |
+| #332 | `getrot` port ignored the CD determinant sign | every north-up product rotated by 2× the field angle (6.6 deg) |
+| #333 | `robust_poly_fit` weights and stopping rule | fitted centres 0.01 px off |
+| #334 | analytic ROI vs IDL's `rotat`-based one | flat normalisation off by 0.06-0.35 % |
+| #335 | (IDL) single-precision literals in `hwp_model.pro`; the port mirrors them | HWP retardance 0.04 deg |
+
+Old-tree defects recorded: #327 (`charis_specphot_cal_unsat` has no
+`'Broadband'` case), #336 (PDI registration wrapper needs `SHIFT_n` keywords
+the old `psf` branch never writes). Both were already fixed by the fork.
+
+## Deliberate differences (allow-list candidates)
 
 | product | reason |
 |---|---|
-| | |
+| `proc/pdi_*` with Mueller on, old vs new | McIntosh+2026 Mueller model (commit `dfb9331`) |
+| `proc/pdi_aolp.fits`, `proc/pdi_c0005_u_derot.fits`, old vs new, Mueller off | 1.6e-6 rel_rms floating-point noise |
+| `prep/n####e_flat.fits` edge pixels, IDL vs Python | #216: the port does not divide by flat values < 0.05 |
+| `proc/pdi_aolp.fits` cube, IDL vs Python | angle wrap where Q, U ≈ 0 |
+| `reduc_left/right.log` XC, YC columns | IDL logs the re-measured post-shift centre (≈ 99.98), Python the pre-shift centre (≈ 66, 82); HA/PA agree |
 
-## Results
+## Europa (pending)
 
-### HD 236894 (polarized standard)
+Plan once the 228 cubes exist (`Europa_low.info`: `fnum_sat` 1-220, `fnum_sky`
+221-228, sptype -999, coordinates of frame 123740):
 
-| pair | mode | files | pass | fail | notes |
-|---|---|---|---|---|---|
-| old IDL vs new IDL | identical | | | | |
-| new IDL vs Python | port | | | | |
-
-Recovered P and AoLP vs catalogue, per run: TBD.
-
-### Europa
-
-| pair | mode | files | pass | fail | notes |
-|---|---|---|---|---|---|
-| old IDL vs new IDL | identical | | | | |
-| new IDL vs Python | port | | | | |
-| new IDL vs 2023 products | (gross structure only) | | | | |
-
-Checks specific to Europa: the c0019–c0036 cycle-pairing anomaly around frame
-123705 in the 2023 products; the sign of disk-median Q; integrated Q and U per
-cycle against time for the corrected and uncorrected runs (a trend in the
-corrected run means the Mueller model or the non-sidereal bookkeeping is off);
-bootstrap uncertainties on q, u, P and AoLP over the 55 cycles.
-
-## Verdicts
-
-One line per difference found, with its attribution (BUGS.md row, commit, or
-"unexplained → new BUGS.md row").
+1. `imprep` and `pdi_flatfield` on all three sides; `pdi_subtract_sky /scalesky`
+   (old, new, Python): identical-mode and port-mode comparisons.
+2. Registration: neither IDL tree can register an extended source without spots
+   (methods are sats / psf / calsat), so registration is Python-only
+   (`--method xcorr`, `xcorr_center = centroid`), as the 2023 reduction was
+   Python-only. Its registered frames feed `charis_pdi_hwp_match` + `charis_pdi`
+   on old and new IDL and `charis pdi` in Python, Mueller on and off.
+3. Checks: the c0019-c0036 cycle-pairing anomaly around frame 123705 in the 2023
+   products; the sign of disk-median Q; integrated Q and U per cycle against
+   time for the corrected and uncorrected runs; bootstrap uncertainties on q, u,
+   P and AoLP over the 55 cycles; comparison with `2023_europa_processed` in
+   gross structure only.

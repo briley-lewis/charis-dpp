@@ -1,0 +1,48 @@
+NAME    = 'Europa'             /                                                
+RA      =        41.1763420000 /RA, equinox J2000, epoch J2000                  
+DEC     =        14.6560280000 /DEC, equinox J2000, epoch J2000                 
+RA_HMS  = ' 02:44:42.32'       /RA, equinox J2000, epoch J2000                  
+DEC_DMS = '+14:39:21.7'        /DEC, equinox J2000, epoch J2000                 
+PLX     =              0.00000 / Parallax, mas                                  
+DISTANCE=              0.00000 / Distance (pc)                                  
+EPLX    =              0.00000 / Error on parallax, mas                         
+PMRA    =              0.00000 / Proper motion RA [*cos(DEC)], mas/yr           
+EPMRA   =              0.00000 / Error on PMRA                                  
+PMDEC   =              0.00000 / Proper motion DEC, mas/yr                      
+EPMDEC  =              0.00000 / Error on PMDEC                                 
+SPTYPE  = '-999'               / Spectral Type                                  
+JMAG    =              0.00000 /J magnitude, 2MASS                              
+EJMAG   =              0.00000 /Error on JMAG                                   
+HMAG    =              0.00000 /H magnitude, 2MASS                              
+EHMAG   =              0.00000 /Error on HMAG                                   
+KMAG    =              0.00000 /Ks magnitude, 2MASS                             
+EKMAG   =              0.00000 /Error on KMAG                                   
+OBSDATE = '20230730'           /Observation date                                
+FNUM_SAT= '1-220'              /File #s, sat, main seq                          
+FNUM_SKY= '221-228'            /File #s, sky frames                             
+FNUM_LAD= '1-5'                /File #s, ladder                                 
+PROCDIR = './proc/'            /Subdirectory to put processed files             
+RSAT    =             -1.00000 /PSF saturation radius                           
+FWHM    =              2.63000 /Broadband PSF FWHM in pixels                    
+****    = '******PSF Sub Range' /                                               
+NFWHM   =             0.750000 /Min displacement for sub, in # of PSF FWHM      
+DR      =              5.00000 /Width of subtraction annuli                     
+RMIN    =                    5 /Min radius for PSF sub                          
+RMAX    =                   65 /Max radius for PSF sub                          
+*****   = '******Switches for Sub/Comb' /                                       
+MEANADD =                    0 /median-comb(=0), mean-comb(=1)                  
+ZERO    =                    0 /no sub median annulus(=0), sub med. annulus(=1) 
+RSUB    =                    0 /no rad-prof sub.(=0), rad-prof sub. b4 PSF sub(=
+******  = '******(A-)LOCI Params' /                                             
+LOCINA  =              100.000 /Area of optimization regions, LOCI              
+LOCIGEOM=              1.00000 /Geometry of optimization regions, LOCI          
+ALOCISVD=                   -6 /log of the SVD cutoff, A-LOCI                   
+ALOCINRE=                   50 /frame selection for A-LOCI                      
+PIXMASK =                    0 /no pixmask(=0),pixmask(=1)                      
+******* = '******KLIP Params'  /                                                
+KLIPNPCA=                    5 /Number of KL Modes, KLIP                        
+KLIPNZON=                    1 /Number of azimuthal zones per annulus, KLIP     
+MEANSUB =                    1 /no subtract mean(=0), subtract mean(=1)         
+********= 'PlntFwdMod'         /                                                
+PLANMOD = 'L0_g.fits'          /Model Plan Spec                                 
+END     
