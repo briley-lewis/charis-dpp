@@ -140,8 +140,13 @@ any catalogue comparison):
 
 Python and new IDL agree to 0.001 % in P and 0.01 deg in AoLP. The old-vs-new
 difference (1.29 % / −89 deg vs 1.36 % / −86 deg) is the Mueller-model update.
-The catalogue value of HD 236894 is still to be compared (the AoLP here is in
-the pipeline's north-up frame).
+Catalogue: the observing target list gives P = 3.92 % (Heiles 2000, optical)
+and no position angle for HD 236894 (H = 8.877); no near-infrared standard value
+was found in the literature (searched 2026-11-06). For interstellar polarisation
+with a Serkowski curve, P(H)/P(V) ≈ 0.3, so ≈ 1.2 % is expected around 1.6 μm,
+falling towards K: the measured 2.0 % (1.16 μm) → 1.18 % (1.63 μm) → 0.26 %
+(2.37 μm) is of the right size and shape. A proper check needs the Heiles 2000
+position angle and the pipeline's AoLP convention; left for the user.
 
 ## Port defects found on this dataset (all fixed on `integrate-port`)
 
