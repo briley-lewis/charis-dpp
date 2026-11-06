@@ -8,7 +8,11 @@ the IDL reduction to round-off, plus ``combine_frames`` replacing
 
 from __future__ import annotations
 
+import logging
+
 import numpy as np
+
+log = logging.getLogger(__name__)
 
 __all__ = [
     "idl_median",
@@ -137,42 +141,97 @@ def robust_sigma(y: np.ndarray, zero: bool = False) -> float:
     return float(np.sqrt(sig2)) if sig2 > 0 else 0.0
 
 
-def robust_poly_fit(x: np.ndarray, y: np.ndarray, degree: int, numit: int = 25) -> np.ndarray:
-    """Astrolib ``robust_poly_fit``: iteratively re-weighted (biweight) polynomial fit.
+def rob_checkfit(
+    y: np.ndarray, yfit: np.ndarray, eps: float = 1e-20, del_: float = 5e-7, bfac: float = 6.0
+):
+    """Astrolib ``rob_checkfit``: ``(istat, sig, ngood, w)``; ``istat == 0`` means the fit is already good."""
+    dev = y - yfit
+    sig = robust_sigma(dev, zero=True)
+    if sig < eps:
+        return 0, sig, y.size, None
+    if del_ > 0:
+        q = np.abs(yfit) > eps
+        fracdev = 0.0 if q.sum() < 3 else float(np.median(np.abs(dev[q] / yfit[q])))
+        if fracdev < del_:
+            return 0, sig, y.size, None
+    b = np.abs(dev) / (bfac * sig)
+    nbad = int((b > 1.0).sum())
+    b = np.minimum(b, 1.0)
+    w = 1.0 - b**2
+    w = w / w.sum()
+    return 1, sig, y.size - nbad, w
 
-    Returns coefficients lowest order first (IDL convention).
+
+def robust_poly_fit(x: np.ndarray, y: np.ndarray, degree: int, numit: int = 25) -> np.ndarray:
+    """Astrolib ``robust_poly_fit`` (the ``NPTS < 10000`` least-squares branch), ported line by line.
+
+    Centres ``x``/``y`` on their means (``degree < 6``), starts from an unweighted
+    fit, then iterates ``poly_fit(measure_errors = 1/W^2)`` (weights ``W^2`` in the
+    least-squares sense, ``W = 1 - (|dev| / 6 sigma)^2`` from ``rob_checkfit``),
+    dropping zero-weight points, until the robust sigma changes by less than
+    ``max(0.03 sqrt(0.5 / (n - 1)), 5e-7)`` or ``numit`` iterations.  Returns the
+    coefficients lowest order first, un-centred like the IDL.  The earlier port
+    used biweight weights ``(1 - u^2)^2`` and a different stopping rule, which
+    moved the fitted PSF centres by up to 0.01 px (BUGS.md #333).
     """
     x = np.asarray(x, dtype=float)
     y = np.asarray(y, dtype=float)
     ok = np.isfinite(x) & np.isfinite(y)
     x, y = x[ok], y[ok]
-    n = x.size
-    if n <= degree + 1:
+    npts = x.size
+    minpts = degree + 1
+    if npts <= degree + 1:
         raise ValueError("robust_poly_fit: too few points")
-    coeff = np.polyfit(x, y, degree)[::-1]
-    yfit = np.polyval(coeff[::-1], x)
-    sig = robust_sigma(y - yfit)
-    if sig <= 0:
-        return coeff
-    w = np.ones(n)
-    for _ in range(numit):
-        resid = y - yfit
-        u = resid / (6.0 * max(sig, 1e-30))
-        uu = u * u
-        w = np.where(uu < 1, (1 - uu) ** 2, 0.0)
-        if (w > 0).sum() <= degree + 1:
-            break
-        coeff = np.polyfit(x, y, degree, w=np.sqrt(w))[::-1]
-        yfit_new = np.polyval(coeff[::-1], x)
-        new_sig = robust_sigma(y - yfit_new)
-        if new_sig <= 0:
-            break
-        conv = abs(new_sig - sig) / max(sig, 1e-30)
-        sig = new_sig
-        yfit = yfit_new
-        if conv < 0.03:
-            break
-    return coeff
+    degmax = 6
+    if degree < degmax:
+        x0, y0 = x.mean(), y.mean()
+        u, v = x - x0, y - y0
+    else:
+        x0 = y0 = 0.0
+        u, v = x, y
+
+    def poly_fit(uu, vv, w=None):
+        c = np.polyfit(uu, vv, degree, w=w)[::-1]
+        return c, np.polyval(c[::-1], uu)
+
+    badfit = False
+    cc, yfit = poly_fit(u, v)
+    istat, sig, ngood, w = rob_checkfit(v, yfit)
+    if istat != 0:
+        if ngood < minpts:
+            log.warning("robust_poly_fit: no fit possible")
+            return np.zeros(degree + 1)
+        close_enough = max(0.03 * np.sqrt(0.5 / (npts - 1)), 5e-7)
+        diff = 1e10
+        sig_1 = min(100.0 * sig, 1e20)
+        nit = 0
+        while diff > close_enough and nit < numit:
+            nit += 1
+            sig_2 = sig_1
+            sig_1 = sig
+            g = w > 0
+            if g.sum() < w.size:
+                u, v, w = u[g], v[g], w[g]
+            cc, yfit = poly_fit(u, v, w=w**2)
+            istat, sig, ngood, w = rob_checkfit(v, yfit)
+            if istat == 0:
+                break
+            if ngood < minpts:
+                log.warning("robust_poly_fit: questionable fit")
+                badfit = True
+                break
+            diff = min(abs(sig_1 - sig) / sig, abs(sig_2 - sig) / sig)
+    cc = np.asarray(cc, dtype=float)
+    if degree < degmax and degree >= 1:
+        # un-centre: p(x) = sum c_k (x - x0)^k + y0
+        shifted = np.polynomial.Polynomial(cc)(np.polynomial.Polynomial([-x0, 1.0]))
+        cc = np.asarray(shifted.coef, dtype=float)
+        if cc.size < degree + 1:
+            cc = np.concatenate([cc, np.zeros(degree + 1 - cc.size)])
+        cc[0] += y0
+    if badfit:
+        cc = np.concatenate([cc, [0.0]])
+    return cc
 
 
 def combine_frames(

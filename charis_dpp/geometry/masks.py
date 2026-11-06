@@ -20,6 +20,7 @@ __all__ = [
     "fov_mask",
     "point_mask",
     "roi_rect_rotated",
+    "generate_roi_mask",
     "spider_mask",
     "Zone",
     "loci_zones",
@@ -89,6 +90,30 @@ def fov_mask(
     u = dx * np.cos(t) + dy * np.sin(t)
     v = -dx * np.sin(t) + dy * np.cos(t)
     return (np.abs(u) <= half_size) & (np.abs(v) <= half_size_y)
+
+
+def generate_roi_mask(
+    shape, dx: float, dy: float, angle_deg: float, offset: XY = (0.0, 0.0)
+) -> np.ndarray:
+    """``charis_generate_roi, roirange=[dx, dy, pa]``, geometry part, done the way the
+    IDL does it: an axis-aligned ``dx × dy`` box of ones (full widths, IDL's truncating
+    float subscripts) centred on ``(nx//2 + offx, ny//2 + offy)``, rotated with
+    ``rotat`` (:func:`rotate_image`, cubic with bilinear fallback) and thresholded at
+    ``> 0``.  The analytic :func:`fov_mask` is ~500 px smaller on a 201 px CHARIS
+    frame because the interpolated edge counts as inside here (BUGS.md #334).
+    """
+    from charis_dpp.image.interp import rotate_image
+
+    ny, nx = shape[-2], shape[-1]
+    offx, offy = int(offset[0]), int(offset[1])
+    cx, cy = nx // 2 + offx, ny // 2 + offy
+    hx, hy = int(dx / 2.0), int(dy / 2.0)  # IDL float subscripts truncate
+    box = np.zeros((ny, nx), dtype=float)
+    box[max(cy - hy, 0) : cy + hy + 1, max(cx - hx, 0) : cx + hx + 1] = 1.0
+    if angle_deg == 0:
+        return box == 1.0
+    r = rotate_image(box, float(angle_deg), (float(cx), float(cy)))
+    return np.isfinite(r) & (r > 0)
 
 
 def roi_rect_rotated(

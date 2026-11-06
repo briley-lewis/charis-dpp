@@ -17,7 +17,7 @@ from pathlib import Path
 import numpy as np
 
 from charis_dpp.config.dataset import DatasetConfig
-from charis_dpp.geometry.masks import fov_mask
+from charis_dpp.geometry.masks import generate_roi_mask
 from charis_dpp.io.filelists import frame_filename
 from charis_dpp.io.fits import read_cube, write_cube
 from charis_dpp.prelims.setupdir import Dirs
@@ -71,10 +71,9 @@ def pdi_flatfield(
         first = read_cube(bright[0])
         fm = res.instrument.pdi.fov_mask
         scale = first.shape[1] / float(res.instrument.detector.cube_size_px)
-        # roirange widths are full widths (charis_generate_roi uses dx/2); with the
-        # full 125 px taken as a half-width the mask covered the whole frame, the
-        # median inside it was the out-of-FOV zero and the flat came out as all ones
-        fov = fov_mask(first.shape, 0.5 * float(fm["width_px"]) * scale, float(fm["angle_deg"]))
+        # charis_generate_roi, roirange=[125, 125, -26.9166] (full widths; #326, #328, #334)
+        w = float(fm["width_px"]) * scale
+        fov = generate_roi_mask(first.shape, w, w, float(fm["angle_deg"]))
         flat, h0, h1 = make_master_flat(bright, dark, fov)
         write_cube(master_path, flat, h0, h1)
         log.info(

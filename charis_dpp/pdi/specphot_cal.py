@@ -16,7 +16,7 @@ from pathlib import Path
 import numpy as np
 
 from charis_dpp.config.dataset import DatasetConfig
-from charis_dpp.geometry.masks import fov_mask
+from charis_dpp.geometry.masks import generate_roi_mask
 from charis_dpp.io.filelists import frame_filename
 from charis_dpp.io.fits import read_cube, write_cube
 from charis_dpp.prelims.setupdir import Dirs
@@ -47,7 +47,7 @@ def pdi_specphot_cal(
     if fov_mask_pars is not None:
         # IDL fov_mask_pars=[dx, dy, pa] are full widths (charis_generate_roi)
         wx, wy, pa = (float(v) for v in fov_mask_pars)
-        outside = ~fov_mask(first.shape, 0.5 * wx, pa, half_size_y=0.5 * wy)
+        outside = ~generate_roi_mask(first.shape, wx, wy, pa)
     for n, t in zip(nums, tmp, strict=True):
         left = read_cube(dirs.reg / frame_filename(n, left_suffix, prefix))
         right = read_cube(dirs.reg / frame_filename(n, right_suffix, prefix))

@@ -78,8 +78,19 @@ def hwp_retardance(lam_um, inst: Instrument) -> tuple[np.ndarray, float]:
     h = inst.get("pdi.mueller.hwp")
     lam = np.asarray(lam_um, dtype=float)
     if lam.size == 22:  # hwp_model.pro: precomputed broadband indices
-        no_sio2, ne_sio2 = _HWP_BROADBAND_NO_SIO2, _HWP_BROADBAND_NE_SIO2
-        no_mgf2, ne_mgf2 = _HWP_BROADBAND_NO_MGF2, _HWP_BROADBAND_NE_MGF2
+        # the IDL writes them as double([1.3726446018..., ...]): the literals are
+        # parsed as single precision first, so the indices it actually uses are
+        # rounded to ~7 digits, which moves the retardance by 0.04 deg (BUGS.md
+        # #335); rounded the same way here so the two sides agree
+        f32 = np.float32
+        no_sio2, ne_sio2 = (
+            f32(_HWP_BROADBAND_NO_SIO2).astype(float),
+            f32(_HWP_BROADBAND_NE_SIO2).astype(float),
+        )
+        no_mgf2, ne_mgf2 = (
+            f32(_HWP_BROADBAND_NO_MGF2).astype(float),
+            f32(_HWP_BROADBAND_NE_MGF2).astype(float),
+        )
     else:
         no_sio2 = sellmeier_ghosh(lam, h.sio2_o)
         ne_sio2 = sellmeier_ghosh(lam, h.sio2_e)

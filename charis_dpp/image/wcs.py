@@ -30,16 +30,39 @@ def cd_matrix(h: Header) -> np.ndarray | None:
 
 
 def rotation_from_header(h: Header) -> float:
-    """Astrolib ``getrot``: counter-clockwise rotation of north from the +y axis, degrees."""
+    """Astrolib ``getrot``: rotation of the image from north-up, degrees (port of ``getrot.pro``).
+
+    ``extast`` stores ``astr.cd[i, j] = CD(i+1)_(j+1)``; ``sgn`` is the sign of
+    the CD determinant (−1 for the parity-flipped CHARIS frames),
+    ``rot = atan(sgn·CD1_2, sgn·CD1_1)`` (x axis), ``rot2 = atan(−CD2_1, CD2_2)``
+    (y axis), averaged when they differ by less than 2 deg, else ``rot`` is kept.
+    Checked against IDL ``getrot`` on unflipped, flipped and asymmetric headers.
+    The earlier ``atan2(CD1_2, CD2_2)`` ignored ``sgn`` and so had the opposite
+    sign for CHARIS (``+3.31`` for ``−3.31`` deg): every north-up product was
+    rotated by twice the field angle (BUGS.md #332).
+    """
     cd = cd_matrix(h)
     if cd is None:
         if "TOT_ROT" in h:
             return float(h["TOT_ROT"])
         raise KeyError("header has no CD matrix / CDELT to derive the rotation from")
-    # astrolib getrot: rot = atan(cd[1,0], cd[1,1]) with IDL cd[i,j] = CD(j+1)_(i+1),
-    # i.e. rot = atan2(CD1_2, CD2_2).  For the CHARIS headers (CD1_2 = sin(a)*xp,
-    # CD2_2 = cos(a)*yp with xp = -yp... ) this returns the total rotation angle.
-    return float(np.degrees(np.arctan2(cd[0, 1], cd[1, 1])))
+    cd1_1, cd1_2 = float(cd[0, 0]), float(cd[0, 1])
+    cd2_1, cd2_2 = float(cd[1, 0]), float(cd[1, 1])
+    det = cd1_1 * cd2_2 - cd2_1 * cd1_2
+    sgn = -1.0 if det < 0 else 1.0
+    if cd1_2 == 0 and cd2_1 == 0:
+        return 0.0
+    rot = np.arctan2(sgn * cd1_2, sgn * cd1_1)
+    rot2 = np.arctan2(-cd2_1, cd2_2)
+    if rot != rot2:
+        tpi = 2 * np.pi
+        if abs(rot - rot2) < np.deg2rad(2):
+            rot = 0.5 * (rot + rot2)
+        elif abs(rot - rot2 - tpi) < np.deg2rad(2):
+            rot = 0.5 * (rot + rot2 - tpi)
+        elif abs(rot - rot2 + tpi) < np.deg2rad(2):
+            rot = 0.5 * (rot + rot2 + tpi)
+    return float(np.degrees(rot))
 
 
 def rotate_wcs(h: Header, deg: float, center: tuple[float, float]) -> None:
