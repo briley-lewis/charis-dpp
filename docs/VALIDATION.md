@@ -1,7 +1,7 @@
 # Validation: old IDL → new IDL → Python on real 2023-07-30 CHARIS PDI data
 
-Status (2026-11-06, 00:10 HST): **HD 236894 three-way run complete and all port
-defects it exposed fixed; Europa cube extraction running on mueller (138/228)**. Every number below comes
+Status (2026-11-06, 01:30 HST): **HD 236894 and Europa three-way runs complete;
+every port defect they exposed is fixed on `integrate-port`**. Every number below comes
 from `~/charis-val/compare/*/compare.csv` on mueller or from the aperture
 photometry script quoted in the Results section.
 
@@ -176,20 +176,76 @@ the old `psf` branch never writes). Both were already fixed by the fork.
 | `proc/pdi_aolp.fits` cube, IDL vs Python | angle wrap where Q, U ≈ 0 |
 | `reduc_left/right.log` XC, YC columns | IDL logs the re-measured post-shift centre (≈ 99.98), Python the pre-shift centre (≈ 66, 82); HA/PA agree |
 
-## Europa (pending)
+## Results: Europa (2023-07-30, 220 science + 8 sky frames, 13.3 s broadband PDI)
 
-Plan once the 228 cubes exist (`Europa_low.info`: `fnum_sat` 1-220, `fnum_sky`
-221-228, sptype -999, coordinates of frame 123740):
+Inputs: `Europa_low.info` (`docs/validation/`; `fnum_sat` 1-220, `fnum_sky`
+221-228, sptype −999, coordinates of frame 123740), the 228 cubes extracted on
+mueller with the same CHARIS-DEP calibration as the flats, lamp flats as above,
+`pdi_subtract_sky /scalesky` with the 8 sky frames.
 
-1. `imprep` and `pdi_flatfield` on all three sides; `pdi_subtract_sky /scalesky`
-   (old, new, Python): identical-mode and port-mode comparisons.
-2. Registration: neither IDL tree can register an extended source without spots
-   (methods are sats / psf / calsat), so registration is Python-only
-   (`--method xcorr`, `xcorr_center = centroid`), as the 2023 reduction was
-   Python-only. Its registered frames feed `charis_pdi_hwp_match` + `charis_pdi`
-   on old and new IDL and `charis pdi` in Python, Mueller on and off.
-3. Checks: the c0019-c0036 cycle-pairing anomaly around frame 123705 in the 2023
-   products; the sign of disk-median Q; integrated Q and U per cycle against
-   time for the corrected and uncorrected runs; bootstrap uncertainties on q, u,
-   P and AoLP over the 55 cycles; comparison with `2023_europa_processed` in
-   gross structure only.
+### Stage 1: imprep, flat-field, sky subtraction
+
+| pair | mode | files | result |
+|---|---|---|---|
+| old IDL vs new IDL | identical | 676 | **676 pass** |
+| new IDL vs Python | port | 676 | **676 pass** |
+
+### Stage 2: registration, HWP matching, `charis_pdi`
+
+Neither IDL tree can register an extended source without satellite spots
+(methods are `sats`, `psf`, `calsat`), exactly as in 2023, so registration is
+Python-only: `charis pdi-register --method xcorr` with per-beam centroid boxes
+(`[pdi.xcorr] left_box = [43, 93, 58, 108]`, `right_box = [107, 157, 92, 142]`),
+i.e. the 2023 notebook method. Its `reg/` feeds all three `charis_pdi` runs.
+
+| pair | mode | files | result | attribution |
+|---|---|---|---|---|
+| HWP table, old vs new IDL (before #337/#338) | — | 220 rows | identical, 55 cycles, **reproduces the 2023 c0019-c0036 pairing anomaly exactly** (cycle 19 = 123704+123709, …, 123705 in cycle 36) | BUGS.md #338: the mid-exposure seconds go negative for frames whose `UTC-TIME` seconds field is < dit/2 and `ten()` returns a negative hour; #337: frame CRSA00123812 has no `RET-ANG1` and was taken as 0 deg, making a bogus 55th cycle |
+| HWP table, new IDL (patched) vs Python | — | 220 rows | **identical**: 54 complete cycles, 123704 paired with 123705, 123812 (and its 45 deg partner) left out with a warning | |
+| `charis_pdi` Mueller off, old vs new | identical | 892 | 756 pass, 132 fail (per-cycle cubes of the re-paired cycles ≥ 19; collapsed `pdi_q` 5.5e-3, `pdi_u` 4.3e-3) | #337/#338 only: before the patch the same comparison gave 817 pass and 75 fails at ≤ 5.6e-6 |
+| `charis_pdi` Mueller off, new vs Python | port | 997 | **888 pass, 0 fail** (`pdi_q_collapsed` 9e-5, `pdi_u_collapsed` 6e-6) | |
+| `charis_pdi` Mueller on, new vs Python | port | 1673 | **1564 pass, 0 fail** (`pdi_q_collapsed` 2e-5, `pdi_aolp_collapsed` 3e-4) | 109 "missing" are the Python-only `_derot_uncorr` cubes |
+| `charis_pdi` Mueller on, old vs new | identical | 1568 | 1446 pass, 122 fail (`pdi_q` 17 %, `pdi_u` 49 %, `pdi_aolp` 76 %) | Mueller-model update (as for HD 236894) plus #337/#338 |
+
+### Stage 3: disk-integrated polarisation, trends, 2023 comparison
+
+Disk aperture r < 25 px on the collapsed products; per-cycle values from the
+`c####_{q,u,iq,iu}_derot` cubes (`docs/validation/per_cycle_qu.csv`,
+`europa_qu_vs_time.png`); bootstrap over cycles (2000 draws).
+
+| run | cycles | q % | u % | P % | AoLP | dq/dt, du/dt per hour (significance) |
+|---|---|---|---|---|---|---|
+| new IDL, Mueller on | 54 | −0.067 ± 0.004 | −0.097 ± 0.003 | 0.118 ± 0.003 | −62.2 ± 0.9 | +0.039 (3.3σ), +0.026 (2.6σ) |
+| Python, Mueller on | 54 | −0.067 ± 0.004 | −0.097 ± 0.003 | 0.118 ± 0.004 | −62.2 ± 0.9 | +0.039 (3.3σ), +0.026 (2.6σ) |
+| old IDL, Mueller on (Hart+2021 model, old pairing) | 55 | −0.096 | −0.043 | 0.105 | −78.0 | +0.041 (3.6σ), +0.012 (1.3σ) |
+| new IDL / Python, Mueller off | 54 | +0.543 ± 0.005 | +0.722 ± 0.007 | 0.903 ± 0.004 | 26.5 ± 0.3 | +0.094 (9.5σ), −0.154 (13σ) |
+
+Reading: the instrumental term is ≈ 0.9 % and rotates strongly with time (10-13σ
+trends when the Mueller correction is off); the McIntosh+2026 model removes
+it to 0.12 % with residual trends of ~3σ (0.04 %/h), which is Kellen's "model
+or non-sidereal bookkeeping slightly off" regime and worth a closer look with
+the 2025 nights. Disk-median Q is negative in the corrected products (−16
+counts; the 2023 products had −30 with a different flux scale), positive
+before correction.
+
+Against the 2023 hybrid products (same frames, notebook registration with hand
+offsets, old pairing, Python specphot): the total-intensity images correlate
+at 0.989 over the disk after a 1.3/2.1 px centre shift, Q at 0.90, U at 0.82
+and PI at 0.79, with a flux ratio of 2.06 (the 2023 products were
+spectrophotometrically scaled). The 27 cycles that pair differently are
+cycles 19-36 (#338) and 46-54 (#337).
+
+## Overall verdict
+
+1. **New IDL = old IDL** wherever the old code runs: `imprep`, flats, sky
+   subtraction, HWP tables and the Mueller-off `charis_pdi` are identical to
+   ≤ 6e-6. The only differences are deliberate (McIntosh+2026 Mueller model) or
+   fixes of old defects found here (#327, #336, #337, #338). The old code could
+   not register either dataset.
+2. **Python = new IDL**: identical `imprep`/flats/sky/HWP tables; registration
+   to ≤ 0.001 px; `charis_pdi` products within port tolerance on Europa
+   (0 failures of 2452 files) and, on the star, everywhere except the per-pixel
+   Q/U cubes whose residual is the 1e-4 registration difference amplified by
+   I/Q; disk-integrated P and AoLP agree to 0.001 % and 0.1 deg on both targets.
+   Nine port defects (#326, #328-#335 mirror) and one matcher bug were found and
+   fixed on the way; none was visible on synthetic data.
