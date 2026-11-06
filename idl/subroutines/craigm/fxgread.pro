@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE:
+;   UPDATED VERSIONs can be found on my WEB PAGE: 
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -69,46 +69,45 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-; -
+;-
 
-pro FXGREAD, UNIT, BUFFER, transfer_count = TC, status = STATUS
-  compile_opt idl2
+PRO FXGREAD, UNIT, BUFFER, TRANSFER_COUNT=TC, STATUS=STATUS
 
   on_error, 2
-  TC = 0
+  tc = 0
 
-  if n_params() ne 2 then begin
-    message, 'USAGE: FXGREAD, UNIT, BUFFER [, TRANSFER_COUNT=TC ]', /info
-    return
+  if n_params() NE 2 then begin
+      message, 'USAGE: FXGREAD, UNIT, BUFFER [, TRANSFER_COUNT=TC ]', /info
+      return
   endif
-  if n_elements(UNIT) eq 0 then $
+  if n_elements(unit) EQ 0 then $
     message, 'ERROR: UNIT is not defined'
-  if n_elements(BUFFER) eq 0 then $
+  if n_elements(buffer) EQ 0 then $
     message, 'ERROR: BUFFER is not defined'
 
-  @fxfilter
-  if UNIT lt 0 or UNIT ge FXFILTER_MAX_LUN then $
+@fxfilter
+  if unit LT 0 OR unit GE FXFILTER_MAX_LUN then $
     message, 'ERROR: UNIT is not a valid file unit'
 
   readu = 'READU'
-  if filterflag(UNIT) and 1 then $
-    if read_cmd(UNIT) ne '' then readu = read_cmd(UNIT)
-  if readu eq '-' then begin
-    errmsg = string(UNIT, $
-      format = '("ERROR: Resource unit ",I0," does not support reading.")')
-    message, errmsg
+  if filterflag(unit) AND 1  then $
+    if read_cmd(unit) NE '' then readu = read_cmd(unit)
+  if readu EQ '-' then begin
+      errmsg = string(unit, $
+               format='("ERROR: Resource unit ",I0," does not support reading.")')
+      message, errmsg
   endif
 
-  TC = 0l
-  STATUS = 0l
+  tc = 0L
+  status = 0L
   catch, catcherror
-  if catcherror ne 0 then begin
-    STATUS = !err
-    catch, /cancel
-    return
+  if catcherror NE 0 then begin
+      status = !err
+      catch, /cancel
+      return
   endif
 
-  call_procedure, readu, UNIT, BUFFER, transfer_count = TC
+  call_procedure, readu, unit, buffer, transfer_count=tc
 
   return
 end

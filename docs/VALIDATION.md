@@ -66,6 +66,16 @@ Per run, IDL is started with `IDL_PATH` pointing at exactly one of the two
 worktrees (plus IDLAstro), and `CHARIS_DPP_PATH` set to the new worktree for
 the new-IDL run.
 
+Compile gate (`charis_compile_check`, 2026-11-05): IDLAstro must be on the
+path (`robust_poly_fit` is called from `charis_pdi` and `charis_register_cube`;
+without it the two files fail to compile). Expected output on both IDL 9.1 and
+8.9: 329 files, **1 failed** (`subroutines/craigm/xwindow.pro`, third-party,
+needs Coyote's `pswindow`; it fails on the old tag too and nothing in the
+pipeline calls it), 4 skipped (`@include` fragments), and two `DUP` lines
+(`charis_getcenter` is defined identically in `reg/` and `subroutines/`;
+`gbfunc` in `gbfunc.pro` and inside `charis_calc_spec_covar.pro`). Anything
+else is a regression.
+
 ## Step list (identical for every run)
 
 ```

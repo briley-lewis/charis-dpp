@@ -5,7 +5,7 @@
 ; AUTHOR:
 ;   Craig B. Markwardt, NASA/GSFC Code 662, Greenbelt, MD 20770
 ;   craigm@lheamail.gsfc.nasa.gov
-;   UPDATED VERSIONs can be found on my WEB PAGE:
+;   UPDATED VERSIONs can be found on my WEB PAGE: 
 ;      http://cow.physics.wisc.edu/~craigm/idl/idl.html
 ;
 ; PURPOSE:
@@ -68,36 +68,35 @@
 ; Permission to use, copy, modify, and distribute modified or
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
-; -
-pro FXGSEEK, UNIT, POSITION
-  compile_opt idl2
+;-
+PRO FXGSEEK, UNIT, POSITION
 
   on_error, 2
 
-  if n_params() eq 0 then begin
-    message, 'USAGE: FXGSEEK, UNIT, POSITION', /info
-    return
+  if n_params() EQ 0 then begin
+      message, 'USAGE: FXGSEEK, UNIT, POSITION', /info
+      return
   endif
-  if n_elements(UNIT) eq 0 then $
+  if n_elements(unit) EQ 0 then $
     message, 'ERROR: UNIT is not defined'
-  if UNIT gt 0 and n_elements(POSITION) eq 0 then $
+  if unit GT 0 AND n_elements(position) EQ 0 then $
     message, 'ERROR: POSITION is not defined'
 
-  @fxfilter
-  if UNIT lt -FXFILTER_MAX_LUN or UNIT ge FXFILTER_MAX_LUN then $
+@fxfilter
+  if unit LT -FXFILTER_MAX_LUN OR unit GE FXFILTER_MAX_LUN then $
     message, 'ERROR: UNIT is not a valid file unit'
-  unit0 = abs(UNIT[0])
+  unit0 = abs(unit(0))
 
   point_lun = 'POINT_LUN'
-  if filterflag(unit0) and 1 then $
-    if seek_cmd(unit0) ne '' then point_lun = seek_cmd(unit0)
-  if point_lun eq '-' then begin
-    errmsg = string(UNIT, $
-      format = '("ERROR: Resource unit ",I0," does not support seeking.")')
-    message, errmsg
+  if filterflag(unit0) AND 1  then $
+    if seek_cmd(unit0) NE '' then point_lun = seek_cmd(unit0)
+  if point_lun EQ '-' then begin
+      errmsg = string(unit, $
+               format='("ERROR: Resource unit ",I0," does not support seeking.")')
+      message, errmsg
   endif
-
-  call_procedure, point_lun, UNIT, POSITION
+  
+  call_procedure, point_lun, unit, position
 
   return
 end
