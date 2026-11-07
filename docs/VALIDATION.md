@@ -1,7 +1,9 @@
 # Validation: old IDL → new IDL → Python on real 2023-07-30 CHARIS PDI data
 
-Status (2026-11-06, 01:30 HST): **HD 236894 and Europa three-way runs complete;
-every port defect they exposed is fixed on `integrate-port`**. Every number below comes
+Status (2026-11-06, 21:30 HST): **HD 236894 and Europa 2023 three-way runs complete,
+the three February 2025 Europa nights and six standards reduced with the Python
+chain and cross-checked against the new IDL; every port defect they exposed is
+fixed on `integrate-port`**. Every number below comes
 from `~/charis-val/compare/*/compare.csv` on mueller or from the aperture
 photometry script quoted in the Results section.
 
@@ -235,6 +237,143 @@ and PI at 0.79, with a flux ratio of 2.06 (the 2023 products were
 spectrophotometrically scaled). The 27 cycles that pair differently are
 cycles 19-36 (#338) and 46-54 (#337).
 
+## Results: Europa and standards, February 2025 (three nights, Chen2023 epoch)
+
+Purpose: run the validated Python chain on the 2025-02-09/10/11 Europa nights
+and the six standards, with the new IDL as a cross-check on every night
+(the old IDL cannot register these data either). Everything is in
+`~/charis-val/datasets/2025/` on mueller; the scripts are in
+`docs/validation/europa2025/` (the sequence is `extract_parallel.sh` →
+`watch_night.sh` → `reduce_night.sh` → `europa2025_stage3.py` →
+`idl_check_night.sh`; standards: `run_stars.sh`).
+
+### Inputs and decisions
+
+- **Cubes**: re-extracted on mueller with CHARIS-DEP 2.0.1 and the same
+  calibration as the laptop extraction of April 2026 (`buildcal` on
+  CRSA00153676, 1550 nm, no darks, oversample; the recovered shift
+  −4.648608, 1.774604, −0.000891 is identical to the laptop `cal_params.fits`),
+  `charis_2025.ini` = package `sample.ini` with only `calibdir` changed.
+  `extractcube` runs on one core (~22 s/frame, 3.7 GB), so the 2 711 frames
+  were extracted as 16 parallel chunks. One flat, CRSA00154539, crashes
+  `fit_nonlin` (ZeroDivisionError) on both machines and is skipped (02-10 has
+  four lamp flats instead of five).
+- **Frame selection**: the laptop accept/reject decisions
+  (`frame_decisions_laptop_2026-04-28.csv`, 1563 accepted / 159 rejected) define
+  the science lists; the rejected sky-position frames are the sky frames; the
+  30 s saturated test frame CRSA00153692 is excluded. 02-09 keeps 286 of 413
+  Europa frames (clouds), 02-10 all 615, 02-11 662 of 674 (one undecided frame, CRSA00155876, kept).
+- **Chain** (per night): `charis imprep --pdi`, `pdi-flatfield` (the night's
+  lamp flats), `pdi-subtract-sky --scalesky` (20 sky frames per night),
+  `pdi-register --method xcorr` with the 2023 beam boxes (the beams sit at
+  the same places), `pdi-hwp-match --source header`, then `charis pdi --meanadd
+  --save-derot-seq` with and without the Mueller correction. `assign_cycles`
+  has no time-gap limit, so `filter_cycles.py` drops cycles whose four frames
+  span more than 10 min (culling leaves stragglers that the nearest-in-time
+  matcher pairs across gaps): 3 of 68 on 02-09, 0 of 152 on 02-10,
+  0 of 159 on 02-11.
+- **Epoch**: MJD 60715-60717 resolves to Chen2023 (pixscale 0.01615, north
+  offset 2.03 deg), parity +1, pre-recoat M3 on both sides
+  (`charis_set_epoch` in the IDL logs, per-frame MJD in Python).
+- **IDL cross-check** (`idl_check_night.sh`): new-IDL `charis_imprep`,
+  `charis_pdi_flatfield`, `charis_pdi_subtract_sky` on the same cubes
+  (port-mode comparison), then `charis_pdi_hwp_match, /use_headers` compared
+  with the Python table, and `charis_pdi` (Mueller on and off) on the Python
+  registered frames with the Python cycle table.
+
+### Stage 1 and HWP tables, new IDL vs Python
+
+| night | prep files (port mode) | HWP table: positions and cycle partition |
+|---|---|---|
+| 2025-02-09 | 1863 pass, 0 fail | identical (286 frames; 68 cycles; the four frames without `RET-ANG1`, CRSA00153693-5 and 153796, are left out on both sides) |
+| 2025-02-10 | 1885 pass, 0 fail | identical (615 frames, 152 cycles) |
+| 2025-02-11 | 2038 pass, 0 fail | identical (662 frames, 159 cycles; CRSA00155713 without `RET-ANG1` left out on both sides) |
+
+### Stage 2: `charis_pdi`, new IDL vs Python (port mode)
+
+| night | Mueller off | Mueller on | what fails |
+|---|---|---|---|
+| 2025-02-09 | 1129 pass, 1 fail | 2134 pass, 1 fail | `pdi_aolp.fits` only (per-pixel angle wrap in noise-dominated pixels; `pdi_aolp_collapsed` 3e-4) |
+| 2025-02-10 | 2463 pass, 2 fail | 4347 pass, 3 fail | `pdi_aolp.fits`, and cycle 97 (`c0097_q/u_derot`, hence `pdi_u` 1.6e-3): one pixel, (124, 110) in channels 5 and 12, differs by ~20 counts in both beams' sum, i.e. a bad-pixel treatment difference in one frame |
+| 2025-02-11 | 2634 pass, 0 fail | 4669 pass, 3 fail | `pdi_aolp`, `pdi_u`, `pdi_uphi` at 1.1-1.5e-3 (no per-cycle cube fails; six pixels near (43, 87) in channel 14 of cycle 15 differ by up to 5 counts, again a bad-pixel treatment difference; the collapsed products pass at ≤ 3e-4) |
+
+"Missing" files in the comparison tables are the Python-only
+`_derot_uncorr` cubes and `coverage_map.fits`.
+
+### Stage 3: disk-integrated polarisation and trends (Python)
+
+Disk aperture on the collapsed products, per-cycle values from the
+`c####_{q,u,iq,iu}_derot` cubes (`docs/validation/europa2025/per_cycle_qu_2025.csv`,
+`europa2025_qu_vs_time.png`), bootstrap over cycles (2000 draws).
+
+| night | cycles | Mueller on: q %, u %, P %, AoLP | dq/dt, du/dt per hour | Mueller off: P %, AoLP | trends off |
+|---|---|---|---|---|---|
+| 2025-02-09 (clouds) | 65 | −0.357 ± 0.024, −0.118 ± 0.026, 0.378 ± 0.020, −80.8 ± 2.2 | −0.114 (4.2σ), +0.121 (4.0σ) | 0.971 ± 0.047, 29.8 | −0.37 (11σ), +0.52 (9σ) |
+| 2025-02-10 (excellent) | 152 | −0.278 ± 0.016, +0.000 ± 0.016, 0.279 ± 0.016, 90 (u ≈ 0) | −0.096 (6.9σ), −0.042 (2.7σ) | 0.817 ± 0.041, 37.8 | +0.08 (2.0σ), +0.24 (6.5σ) |
+| 2025-02-11 | 159 | −0.253 ± 0.022, −0.017 ± 0.019, 0.255 ± 0.023, −88 (u ≈ 0) | −0.122 (5.6σ), +0.007 (0.4σ) | 0.816 ± 0.041, 37.2 | −0.04 (1.0σ), +0.36 (10.7σ) |
+| 2023-07-30 (for reference) | 54 | −0.067, −0.097, 0.118 ± 0.004, −62.2 | +0.039 (3.3σ), +0.026 (2.6σ) | 0.903, 26.5 | +0.09 (9.5σ), −0.15 (13σ) |
+
+Reading (02-10, the clean night): the uncorrected disk-integrated Q and U swing
+by ±1 % as the field crosses the meridian (0.7-1.1 h after the first cycle,
+where the derotator and parallactic angles change fastest) and drift by
+0.2-0.3 % over the rest of the sequence. The McIntosh+2026 correction removes
+the drift and most of the swing, but a ±0.5 % residual bump remains at transit
+and q settles at −0.35 % afterwards versus −0.30 % before, which is the 7σ
+"trend". So the Mueller model is good away from transit and demonstrably
+imperfect through it; the 2023 sequence did not cross the meridian, which is
+why its residual was only 3σ. 02-11 repeats 02-10 almost exactly (q −0.25 %,
+u ≈ 0 after transit, the same ±0.5 % transit bump) and adds three cycles at
+~1.4 h and one at ~3.15 h that spike by ±1 % in both the corrected and the
+uncorrected run, i.e. bad data rather than model (worth culling before any
+science use). The cloudy night gives the same sign of q and a larger P, as
+expected from a worse instrumental calibration on variable flux. Across the
+three nights Europa's corrected disk-integrated polarisation is 0.25-0.38 %
+at AoLP ≈ 90° (Q < 0, U ≈ 0), against 0.12 % at −62° in July 2023.
+
+### Standards (Python only; `register_star.py`, `star_pol.py`, aperture r < 12 px)
+
+`charis pdi-register --method psf` aims the 9 px `gcntrd` box at the frame
+centre ± the nominal Wollaston offset (31.8, 16.5); in Feb 2025 the stars sit
+up to 7 px from that (pointing), so most HD 43384 and HD 40280 frames found no
+centroid. `register_star.py` measures the channel-10 beam peaks and offsets the
+guesses accordingly (the target stays the frame centre); every frame then
+registers. The HWP cycle filter drops nothing (median cycle span 0.4-1.3 min).
+
+| star | night | frames / cycles | Mueller on: P, AoLP | Mueller off: P, AoLP | P per channel 0/5/10/15/21 (on) | catalogue |
+|---|---|---|---|---|---|---|
+| HD 30675 (pol) | 02-10 | 101 / 25 | 1.49 %, 69.2° | 2.04 %, 59.8° | 2.20 1.67 1.36 1.04 0.74 | H: 1.10 ± 0.08 %, 61 ± 4° (J 1.90 %, 58°) [Whittet+1992 via ING] |
+| HDE 283800 (pol) | 02-11 | 40 / 9 | 1.16 %, 39.1° | 1.21 %, 81.8° | 1.89 1.46 1.06 0.79 0.40 | 1.94 ± 0.08 % / 27 ± 1° and 1.36 ± 0.06 % / 29 ± 2° (J, H) [same]; faint, clouds |
+| HD 43384 (pol) | 02-09 | 80 / 19 | 0.66 %, −13.9° | 0.32 %, 11.1° | 1.05 0.89 0.62 0.44 0.32 | V: 2.94 %, 169.8° [Hsu & Breger 1982]; no NIR value; clouds, 50× flux swings |
+| HD 25532 (unpol) | 02-09 | 101 / 25 | 0.18 %, −74.6° | 0.51 %, 49.8° | 0.40 0.29 0.20 0.17 0.20 | 0; clouds, first frame 31 s |
+| HD 40280 (unpol) | 02-09 | 105 / 25 | 0.34 %, −84.7° | 1.01 %, 36.9° | 0.36 0.36 0.36 0.27 0.28 | 0 |
+| HD 35532 (unpol) | 02-10 | 101 / 25 | 0.43 %, 87.1° | 1.14 %, 56.2° | 0.53 0.38 0.42 0.37 0.27 | 0 |
+
+Reading: the full-band aperture P is weighted towards the blue channels where
+interstellar polarisation is highest; at the H-band centre (channels 10-15)
+HD 30675 gives 1.0-1.4 %, consistent with the catalogue 1.10 ± 0.08 %, and the
+corrected AoLP (69°) is 8° from the catalogue 61° where the uncorrected one is
+1° from it, so the crosstalk correction rotates slightly too far on this star.
+HDE 283800 (9 cycles through cloud) is 10° off and 0.2 % low; HD 43384 agrees
+with the V-band angle within 4° at a third of the V-band P, as Serkowski
+predicts. The unpolarised stars drop from 0.5-1.1 % to 0.2-0.4 % with the
+correction: a few tenths of a percent of instrumental polarisation remain,
+the same order as the Europa transit residual.
+
+### Defects found on this dataset
+
+- #339 (port, fixed): a frame with exactly three valid centroid channels
+  raised `ValueError` out of `pdi-register` instead of being skipped.
+- #340 (port, fixed): `gcntrd` crashed with `IndexError` on an all-NaN box.
+- #341 (IDL, documented): the `.info` reader `param`/`sxpar_param` follows
+  FITS `CONTINUE` cards only when a `LONGSTRN` card is present, so a
+  `FNUM_SAT` list longer than 68 characters written the FITS way is silently
+  truncated (02-09's list became 162 frames ending in a stray "2" and every
+  cycle after 34 used frame 2). Long lists must be written on one line; the
+  IDL `param` writer does so itself.
+- `charis pdi-register --method psf` has no way to move the centroid search
+  box short of `polcent_offset`, which moves the target too (worked around
+  in `register_star.py`; a `--guess-center` option would be the fix).
+
 ## Overall verdict
 
 1. **New IDL = old IDL** wherever the old code runs: `imprep`, flats, sky
@@ -249,3 +388,12 @@ cycles 19-36 (#338) and 46-54 (#337).
    I/Q; disk-integrated P and AoLP agree to 0.001 % and 0.1 deg on both targets.
    Nine port defects (#326, #328-#335 mirror) and one matcher bug were found and
    fixed on the way; none was visible on synthetic data.
+3. **2025 nights (Python = new IDL again)**: identical frame preparation, HWP
+   positions and cycle partitions on all three nights; `charis_pdi` products
+   within tolerance except the per-pixel AoLP map and single bad pixels in one
+   cycle per night. Europa's corrected polarisation is 0.25-0.38 % at AoLP
+   ≈ 90° with a ±0.5 % residual of the Mueller model through meridian transit;
+   the polarised standard HD 30675 recovers the catalogue H-band P at the band
+   centre and an AoLP 8° from the catalogue; the unpolarised standards keep
+   0.2-0.4 % after correction. Two more port defects (#339, #340) and one
+   IDL `.info` reader limitation (#341) were found and fixed or documented.
