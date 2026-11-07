@@ -130,9 +130,11 @@ def fit_centers_vs_channel(centers: np.ndarray, refslice: int, fittrim: int) -> 
     use = np.zeros(nlam, dtype=bool)
     use[lo:hi] = True
     use &= np.isfinite(centers).all(axis=1)
-    if use.sum() < 3 or not np.isfinite(centers[refslice]).all():
+    # robust_poly_fit needs more than degree + 1 = 3 points; a frame with exactly three valid
+    # channels used to raise ValueError out of the registration loop instead of being skipped
+    if use.sum() < 4 or not np.isfinite(centers[refslice]).all():
         # fall back: fit through whatever is finite, relative to its median
-        if use.sum() < 3:
+        if use.sum() < 4:
             return None
         ref = np.nanmedian(centers[use], axis=0)
     else:
@@ -448,7 +450,7 @@ def register_cube(cfg: DatasetConfig | str | Path, **kwargs) -> ReducLog:
             fitted = fit_centers_vs_channel(psfcens, refslice, opts.fittrim)
             if fitted is None:
                 raise RuntimeError("too few channels with a valid centroid")
-        except RuntimeError as exc:
+        except (RuntimeError, ValueError) as exc:
             log.error("frame %d: registration failed (%s); skipped", n, exc)
             continue
         data, xc, yc = _apply_registration(c, fitted, target, cens=cens, res=res, refslice=refslice)

@@ -126,7 +126,9 @@ def gcntrd(
         y1, y2 = max(iy - nbox, 0), min(iy + nbox, ny - 1)
         h = correlate(img[y1 : y2 + 1, x1 : x2 + 1], c, mode="constant", cval=0.0)
         h = h[nbox - nhalf : nbox + nhalf + 1, nbox - nhalf : nbox + nhalf + 1]
-        mx = np.nanmax(h)
+        mx = np.nanmax(h) if np.isfinite(h).any() else np.nan
+        if not np.isfinite(mx):
+            return NAN2  # box entirely NaN (IDL: max(/nan) = NaN, where() = -1, then an index error)
         my_, mx_ = np.nonzero(h == mx)
         if mx_.size > 1:
             idx, idy = int(np.round(mx_.mean())), int(np.round(my_.mean()))
